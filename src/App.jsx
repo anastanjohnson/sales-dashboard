@@ -6,7 +6,6 @@ import "./theme.css";
 import "./layout.css";
 
 export default function App() {
-    const [activePage, setActivePage] = useState("sales-salary");
     const [theme, setTheme] = useState(() => {
           if (typeof window !== "undefined" && window.matchMedia) {
                   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -22,11 +21,11 @@ export default function App() {
 
   return (
         <div className="app-shell">
-          <Sidebar activePage={activePage} onNavigate={setActivePage} />
+          <Sidebar />
           <div className="app-main">
             <Topbar theme={theme} onToggleTheme={toggleTheme} />
             <main className="app-content">
-              <Dashboard activePage={activePage} />
+              <Dashboard />
             </main></div>
         </div>
 );
