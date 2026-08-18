@@ -390,6 +390,9 @@
 .metric-switch { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; }
 .metric-switch button { border: 0; border-radius: 6px; padding: 7px 10px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
 .metric-switch button.active { background: var(--surface); color: var(--text-primary); box-shadow: var(--shadow); }
+.sales-year-switch { align-items: center; gap: 4px; padding-left: 10px; }
+.sales-year-switch > svg { color: var(--text-muted); margin-right: 2px; }
+.sales-year-switch button { min-width: 58px; font-weight: 600; }
 .sales-table { font-variant-numeric: tabular-nums; }
 .sales-table th, .sales-table td { padding: 12px 16px; white-space: nowrap; }
 .sales-table th:not(:first-child), .sales-table td:not(:first-child) { text-align: right; }
