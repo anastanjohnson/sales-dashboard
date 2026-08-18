@@ -29,7 +29,7 @@ export default function Dashboard() {
       <div className="dashboard">
             <div className="dashboard__header">
                     <div>
-                              <h1>Analytics</h1>
+                              <h1>KARIKAALA - Overall Performance</h1>
                               <p className="dashboard__subtitle">Analyze restaurant data and generate insights.</p>
                     </div>
                     <div className="dashboard__header-actions">
@@ -43,19 +43,7 @@ export default function Dashboard() {
                               </button>
                     </div>
             </div>
-      
-            <div className="hero-card">
-                    <div>
-                              <h2>Analytics Dashboard</h2>
-                              <p>Generate and visualize reports for your restaurant</p>
-                    </div>
-                    <button className="btn btn--accent">
-                              <Download size={15} />
-                              Download Report
-                    </button>
-            </div>
-      
-          <div className="toolbar">
+      <div className="toolbar">
             <div className="tabs">
               {TABS.map((tab) => (
                           <button
