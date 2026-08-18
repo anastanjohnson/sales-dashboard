@@ -1,0 +1,16 @@
+export const salaryData = [
+  { month: "June", revenue: 47612.0, kitchenSalary: 8627.14, serviceSalary: 5606.14 },
+  { month: "July", revenue: 52564.0, kitchenSalary: 7881.26, serviceSalary: 4377.26 },
+  { month: "August", revenue: 71238.0, kitchenSalary: 8337.76, serviceSalary: 4858.26 },
+  { month: "September", revenue: 49322.0, kitchenSalary: 6675.0, serviceSalary: 3856.0 },
+  { month: "October", revenue: 65268.0, kitchenSalary: 6557.0, serviceSalary: 4713.0 },
+  { month: "November", revenue: 70008.0, kitchenSalary: 7035.0, serviceSalary: 5737.25 },
+  { month: "December", revenue: 87295.0, kitchenSalary: 8550.0, serviceSalary: 7682.0 },
+  { month: "January", revenue: 59112.55, kitchenSalary: 7390.0, serviceSalary: 5030.0 },
+  { month: "February", revenue: 16024.3, kitchenSalary: 5920.0, serviceSalary: 3355.0 },
+  { month: "March", revenue: 32592.49, kitchenSalary: 4809.0, serviceSalary: 5825.0 },
+  { month: "April", revenue: 54750.55, kitchenSalary: 8012.92, serviceSalary: 5540.3 },
+  { month: "May", revenue: 58477.8, kitchenSalary: 7782.92, serviceSalary: 6551.4 },
+  { month: "June", revenue: 34122.4, kitchenSalary: 0, serviceSalary: 0 },
+  { month: "July", revenue: 48075.95, kitchenSalary: 6945.68, serviceSalary: 4262.0 },
+];
