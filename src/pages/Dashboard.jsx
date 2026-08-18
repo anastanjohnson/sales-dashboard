@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import StatCard from "../components/StatCard";
 import SalesChart from "../components/SalesChart";
-import SalaryPage from "./SalaryPage";
 import {
     salesByDay,
     stats,
@@ -22,11 +21,9 @@ import {
 
 const TABS = ["Daily Report", "Sales", "Inventory", "Customer"];
 
-export default function Dashboard({ activePage }) {
+export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("Sales");
     const [showTable, setShowTable] = useState(false);
-
-  if (activePage === "sales-salary") return <SalaryPage />;
 
   return (
       <div className="dashboard">
@@ -185,3 +182,4 @@ export default function Dashboard({ activePage }) {
 </div>
     );
     }
+
