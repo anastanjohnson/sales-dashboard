@@ -22,11 +22,11 @@ import {
 
 const TABS = ["Daily Report", "Sales", "Inventory", "Customer"];
 
-export default function Dashboard({ activePage }) {
+export default function Dashboard({ activePage, salaryData }) {
     const [activeTab, setActiveTab] = useState("Sales");
     const [showTable, setShowTable] = useState(false);
 
-  if (activePage === "sales-salary") return <SalaryPage />;
+  if (activePage === "sales-salary") return <SalaryPage salaryData={salaryData} />;
 
   return (
       <div className="dashboard">
