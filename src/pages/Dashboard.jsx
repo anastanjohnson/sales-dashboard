@@ -12,6 +12,7 @@ import {
 import StatCard from "../components/StatCard";
 import SalesChart from "../components/SalesChart";
 import SalaryPage from "./SalaryPage";
+import SalesPage from "./SalesPage";
 import {
     salesByDay,
     stats,
@@ -27,6 +28,7 @@ export default function Dashboard({ activePage }) {
     const [showTable, setShowTable] = useState(false);
 
   if (activePage === "sales-salary") return <SalaryPage />;
+  if (activePage === "sales") return <SalesPage />;
 
   return (
       <div className="dashboard">
