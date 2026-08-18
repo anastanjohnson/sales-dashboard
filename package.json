@@ -1,21 +1,25 @@
 {
-    "name": "sales-dashboard",
-    "private": true,
-    "version": "0.0.0",
-    "type": "module",
-    "scripts": {
-          "dev": "vite",
-          "build": "vite build",
-          "preview": "vite preview"
-    },
-    "dependencies": {
-          "lucide-react": "^1.31.0",
-          "react": "^19.2.8",
-          "react-dom": "^19.2.8",
-          "recharts": "^3.10.1"
-    },
-    "devDependencies": {
-          "@vitejs/plugin-react": "^6.0.4",
-          "vite": "^8.2.0"
-    }
+  "name": "sales-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node server.js",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "lucide-react": "^1.31.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.4",
+    "vite": "^8.2.0"
+  }
 }
