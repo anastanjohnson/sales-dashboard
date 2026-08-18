@@ -55,7 +55,6 @@ export default function Dashboard() {
                     </button>
             </div>
       
-      </div>
           <div className="toolbar">
             <div className="tabs">
               {TABS.map((tab) => (
@@ -123,9 +122,9 @@ export default function Dashboard() {
                       <table>
                                     <thead>
                                                     <tr>
-                                                                      <th>Day</th>th>
-                                                                      <th>Sales</th>th>
-                                                                      <th>Orders</th>th>
+                                                                      <th>Day</th>
+                                                                      <th>Sales</th>
+                                                                      <th>Orders</th>
                                                     </tr>
                                     </thead>
                                     <tbody>
@@ -195,4 +194,4 @@ export default function Dashboard() {
 </div>
     );
     }
-  </div>
+
