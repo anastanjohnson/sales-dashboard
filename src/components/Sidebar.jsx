@@ -14,11 +14,12 @@ import { useState } from "react";
 
 const NAV_ITEMS = [
   { icon: LayoutGrid, label: "Overview", page: "overview" },
-  { icon: ShoppingCart, label: "Orders" },
+  { icon: ShoppingCart, label: "Sales", page: "sales" },
+  { icon: Receipt, label: "Orders" },
   { icon: UtensilsCrossed, label: "Menu" },
   { icon: BookOpen, label: "Reservations" },
   { icon: Users, label: "Staff" },
-  { icon: Receipt, label: "Billing" },
+  { icon: ShoppingCart, label: "Billing" },
   { icon: BarChart3, label: "Salary", page: "sales-salary" },
   { icon: Settings, label: "Settings" },
   ];
