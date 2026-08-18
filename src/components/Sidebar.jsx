@@ -13,17 +13,17 @@ import {
 import { useState } from "react";
 
 const NAV_ITEMS = [
-  { icon: LayoutGrid, label: "Overview", page: "overview" },
+  { icon: LayoutGrid, label: "Overview" },
   { icon: ShoppingCart, label: "Orders" },
   { icon: UtensilsCrossed, label: "Menu" },
   { icon: BookOpen, label: "Reservations" },
   { icon: Users, label: "Staff" },
   { icon: Receipt, label: "Billing" },
-  { icon: BarChart3, label: "Sales Salary", page: "sales-salary" },
+  { icon: BarChart3, label: "Analytics", active: true },
   { icon: Settings, label: "Settings" },
   ];
 
-export default function Sidebar({ activePage, onNavigate }) {
+export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -36,11 +36,10 @@ export default function Sidebar({ activePage, onNavigate }) {
                 {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
               </button>
             <nav className="sidebar__nav">
-              {NAV_ITEMS.map(({ icon: Icon, label, page }) => (
+              {NAV_ITEMS.map(({ icon: Icon, label, active }) => (
                   <button
                                 key={label}
-                                className={`sidebar__item ${page && activePage === page ? "sidebar__item--active" : ""}`}
-                                onClick={() => page && onNavigate(page)}
+                                className={`sidebar__item ${active ? "sidebar__item--active" : ""}`}
                                 title={label}
                               >
                               <Icon size={18} />
