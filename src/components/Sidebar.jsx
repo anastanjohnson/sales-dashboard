@@ -9,12 +9,14 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
+    CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
 const NAV_ITEMS = [
   { icon: LayoutGrid, label: "Overview", page: "overview" },
   { icon: ShoppingCart, label: "Sales", page: "sales" },
+  { icon: CalendarDays, label: "Weekly Performance", page: "weekly-performance", child: true },
   { icon: Receipt, label: "Orders" },
   { icon: UtensilsCrossed, label: "Menu" },
   { icon: BookOpen, label: "Reservations" },
@@ -37,10 +39,10 @@ export default function Sidebar({ activePage, onNavigate }) {
                 {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
               </button>
             <nav className="sidebar__nav">
-              {NAV_ITEMS.map(({ icon: Icon, label, page }) => (
+              {NAV_ITEMS.map(({ icon: Icon, label, page, child }) => (
                   <button
                                 key={label}
-                                className={`sidebar__item ${page && activePage === page ? "sidebar__item--active" : ""}`}
+                                className={`sidebar__item ${child ? "sidebar__item--child" : ""} ${page && activePage === page ? "sidebar__item--active" : ""}`}
                                 onClick={() => page && onNavigate(page)}
                                 title={label}
                               >
