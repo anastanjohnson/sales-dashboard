@@ -442,6 +442,18 @@
 .metric-switch { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; }
 .metric-switch button { border: 0; border-radius: 6px; padding: 7px 10px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
 .metric-switch button.active { background: var(--surface); color: var(--text-primary); box-shadow: var(--shadow); }
+.salary-department-switch button.active {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    font-weight: 650;
+}
+
+.salary-department-switch button.active:hover {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    filter: brightness(1.06);
+}
 .sales-year-switch { align-items: center; gap: 4px; padding-left: 10px; }
 .sales-year-switch > svg { color: var(--text-muted); margin-right: 2px; }
 .sales-year-switch button { min-width: 58px; font-weight: 600; }
