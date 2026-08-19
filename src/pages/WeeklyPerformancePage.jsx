@@ -17,7 +17,7 @@ function KpiCard({ icon: Icon, label, value, note, change }) {
       <div className="stat-card__head"><span className="stat-card__label">{label}</span><span className="stat-card__icon"><Icon size={16} /></span></div>
       <div className="stat-card__value">{value}</div>
       <div className={change == null ? "sales-kpi-note" : `sales-change ${change >= 0 ? "sales-change--up" : "sales-change--down"}`}>
-        {change == null ? note : <>{change >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{change >= 0 ? "+" : ""}{change.toFixed(1)}% vs 2025</>}
+        {change == null ? note : <>{change >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{note}</>}
       </div>
     </div>
   );
