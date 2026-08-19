@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, RefreshCw, Table2, Users } from "lucide-react";
+import { BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -79,8 +79,8 @@ export default function SalaryPage() {
       </div>
 
       <div className="toolbar salary-toolbar">
-        <div className="toolbar__controls">
-          <label className="select-btn"><Users size={14} /><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="All">All departments</option><option value="Kitchen">Kitchen</option><option value="Service">Service</option></select></label>
+        <div className="metric-switch salary-department-switch" role="group" aria-label="Filter by department">
+          {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => setDepartment(option)}>{option}</button>)}
         </div>
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
