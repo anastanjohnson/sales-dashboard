@@ -59,7 +59,9 @@ export const buildWeekSlots = (weeklyData, reportingYear = 2026, count = 52) => 
     const week = weeksByNumber.get(number) || null;
     const generatedRange = getWeekRange(reportingYear, number);
     const totals = getWeekTotals(week);
-    const hasData = Boolean(week?.days?.length);
+    const hasCurrentData = Boolean(week?.days?.some((row) => row.currentRevenue != null));
+    const hasBenchmark = Boolean(week?.days?.some((row) => row.comparisonRevenue != null));
+    const hasData = hasCurrentData || hasBenchmark;
 
     return {
       number,
@@ -67,7 +69,9 @@ export const buildWeekSlots = (weeklyData, reportingYear = 2026, count = 52) => 
       week,
       startDate: week?.startDate || generatedRange.startDate,
       endDate: week?.endDate || generatedRange.endDate,
-      change: hasData ? percentageChange(totals.current, totals.comparison) : null,
+      change: hasCurrentData && hasBenchmark ? percentageChange(totals.current, totals.comparison) : null,
+      hasCurrentData,
+      hasBenchmark,
       hasData,
     };
   });
