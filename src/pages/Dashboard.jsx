@@ -14,6 +14,8 @@ import SalesChart from "../components/SalesChart";
 import SalaryPage from "./SalaryPage";
 import SalesPage from "./SalesPage";
 import WeeklyPerformancePage from "./WeeklyPerformancePage";
+import AverageSpendingPage from "./AverageSpendingPage";
+import SettingsPage from "./SettingsPage";
 import {
     salesByDay,
     stats,
@@ -24,13 +26,15 @@ import {
 
 const TABS = ["Daily Report", "Sales", "Inventory", "Customer"];
 
-export default function Dashboard({ activePage }) {
+export default function Dashboard({ activePage, theme, onToggleTheme }) {
     const [activeTab, setActiveTab] = useState("Sales");
     const [showTable, setShowTable] = useState(false);
 
   if (activePage === "sales-salary") return <SalaryPage />;
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyPerformancePage />;
+  if (activePage === "average-spending") return <AverageSpendingPage />;
+  if (activePage === "settings") return <SettingsPage theme={theme} onToggleTheme={onToggleTheme} />;
 
   return (
       <div className="dashboard">
