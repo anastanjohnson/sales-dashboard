@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp, UserPlus, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks } from "../data/weeklyBenchmarks";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
-import { getIsoWeekNumber, getWeekTotals } from "../data/weeklyPerformanceUtils";
+import { getIsoWeekNumber, getWeekTotals, mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks } from "../data/weeklyPerformanceUtils";
 
 const number = new Intl.NumberFormat("de-DE");
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const shortDate = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
-const guestWeeks = mergeWeeklyGuestBenchmarks(weeklyGuestData);
-const latestWeekId = guestWeeks.filter((week) => week.available).at(-1)?.id || "";
+const latestWeekId = weeklyGuestData.filter((week) => week.available).at(-1)?.id || "";
 
 const dateLabel = (value) => value ? shortDate.format(new Date(`${value}T12:00:00`)) : "—";
 const rangeLabel = (week) => week ? `${dateLabel(week.startDate)} – ${dateLabel(week.endDate)}` : "Thursday – Monday";
@@ -45,6 +43,7 @@ function GuestTooltip({ active, payload, label }) {
 export default function WeeklyGuestCountPage() {
   const [selectedWeekId, setSelectedWeekId] = useState(latestWeekId);
   const [view, setView] = useState("chart");
+  const [guestWeeks, setGuestWeeks] = useState(weeklyGuestData);
   const [weeklyRevenueData, setWeeklyRevenueData] = useState([]);
   const [revenueStatus, setRevenueStatus] = useState("loading");
   const selectedWeek = guestWeeks.find((week) => week.id === selectedWeekId) || guestWeeks.find((week) => week.available);
@@ -68,18 +67,23 @@ export default function WeeklyGuestCountPage() {
     : null;
 
   useEffect(() => {
-    fetch("/api/weekly-performance", { credentials: "include" })
-      .then((response) => {
-        if (response.status === 401) return window.location.reload();
-        if (!response.ok) throw new Error("Unable to load weekly revenue data.");
-        return response.json();
+    Promise.all([
+      fetch("/api/weekly-performance", { credentials: "include" }),
+      fetch("/api/weekly-benchmarks", { credentials: "include" }),
+    ])
+      .then(async ([response, benchmarkResponse]) => {
+        if (response.status === 401 || benchmarkResponse.status === 401) return window.location.reload();
+        if (!response.ok || !benchmarkResponse.ok) throw new Error("Unable to load weekly benchmark data.");
+        return Promise.all([response.json(), benchmarkResponse.json()]);
       })
-      .then((data) => {
-        setWeeklyRevenueData(mergeWeeklyRevenueBenchmarks(Array.isArray(data) ? data : []));
+      .then(([data, benchmarkData]) => {
+        setWeeklyRevenueData(mergeWeeklyRevenueBenchmarks(Array.isArray(data) ? data : [], benchmarkData));
+        setGuestWeeks(mergeWeeklyGuestBenchmarks(weeklyGuestData, benchmarkData));
         setRevenueStatus("ready");
       })
       .catch(() => {
         setWeeklyRevenueData([]);
+        setGuestWeeks(weeklyGuestData);
         setRevenueStatus("error");
       });
   }, []);
