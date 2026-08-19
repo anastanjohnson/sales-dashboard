@@ -55,7 +55,7 @@ export default function SalesPage() {
   const reset = () => setMetric("revenue");
 
   return <div className="dashboard sales-page">
-    <div className="dashboard__header"><div><h1>Sales</h1><p className="dashboard__subtitle">Monthly sales performance from the General Ledger.</p></div><div className="dashboard__header-actions"><button className="btn btn--ghost" onClick={reset}><RefreshCw size={15} />Refresh</button></div></div>
+    <div className="dashboard__header"><div><h1>Sales Revenue</h1><p className="dashboard__subtitle">Monthly sales performance from the General Ledger.</p></div><div className="dashboard__header-actions"><button className="btn btn--ghost" onClick={reset}><RefreshCw size={15} />Refresh</button></div></div>
 
     <div className="toolbar sales-toolbar"><div className="metric-switch sales-year-switch" aria-label="Current sales year"><Calendar size={14} /><button type="button" className="active" aria-pressed="true">2026</button></div><div className="toolbar__controls"><button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button><button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button></div></div>
 
