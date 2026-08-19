@@ -1,10 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Calendar, RefreshCw, Table2, Users } from "lucide-react";
+import { BarChart3, RefreshCw, Table2, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const shortCurrency = (value) => `€${Math.round(value / 1000)}k`;
 const monthLabel = (row) => `${row.month} ${row.year}`;
+const monthOrder = [
+  { short: "Jan", full: "January" },
+  { short: "Feb", full: "February" },
+  { short: "Mar", full: "March" },
+  { short: "Apr", full: "April" },
+  { short: "May", full: "May" },
+  { short: "Jun", full: "June" },
+  { short: "Jul", full: "July" },
+  { short: "Aug", full: "August" },
+  { short: "Sep", full: "September" },
+  { short: "Oct", full: "October" },
+  { short: "Nov", full: "November" },
+  { short: "Dec", full: "December" },
+];
 
 export default function SalaryPage() {
   const [salaryData, setSalaryData] = useState([]);
@@ -54,9 +68,18 @@ export default function SalaryPage() {
         <div><h1>Salary</h1><p className="dashboard__subtitle">Protected employee salary data from the 2026 monthly worksheets.</p></div>
         <div className="dashboard__header-actions"><button className="btn btn--ghost" onClick={reset}><RefreshCw size={15} />Reset</button></div>
       </div>
+
+      <div className="salary-month-picker" role="group" aria-label="Select salary month">
+        {monthOrder.map(({ short, full }) => {
+          const dataIndex = salaryData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === short.toLowerCase());
+          const available = dataIndex >= 0;
+          const selected = available && selectedMonth === dataIndex;
+          return <button type="button" key={short} className={`salary-month-button ${selected ? "salary-month-button--active" : ""}`} disabled={!available} aria-pressed={selected} title={available ? `${full} 2026` : `${full} 2026 — no data yet`} onClick={() => setSelectedMonth(dataIndex)}>{short}</button>;
+        })}
+      </div>
+
       <div className="toolbar salary-toolbar">
         <div className="toolbar__controls">
-          <label className="select-btn"><Calendar size={14} /><select value={selectedMonth} onChange={(event) => setSelectedMonth(Number(event.target.value))}>{salaryData.map((row, index) => <option key={monthLabel(row)} value={index}>{monthLabel(row)}</option>)}</select></label>
           <label className="select-btn"><Users size={14} /><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="All">All departments</option><option value="Kitchen">Kitchen</option><option value="Service">Service</option></select></label>
         </div>
         <div className="toolbar__controls">

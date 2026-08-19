@@ -376,6 +376,54 @@
 .legend-dot--warning { background: #ef8f8f; }
 .salary-panel .table-wrap { padding: 0; }
 .salary-toolbar { margin-top: 8px; }
+.salary-month-picker {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(60px, 1fr));
+    gap: 8px;
+    padding: 8px 10px;
+    margin: 8px 0 16px;
+    overflow-x: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.salary-month-button {
+    min-width: 60px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.salary-month-button:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.salary-month-button--active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 650;
+}
+
+.salary-month-button--active:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    filter: brightness(1.06);
+}
+
+.salary-month-button:disabled {
+    border-style: dashed;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: .48;
+}
 .btn--selected, .select-btn--active { border-color: var(--accent); color: var(--accent); background: var(--surface-hover); }
 .salary-filter-panel { display: flex; align-items: end; gap: 12px; padding: 14px; margin: -8px 0 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
 .salary-filter-panel label { display: flex; flex-direction: column; gap: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
