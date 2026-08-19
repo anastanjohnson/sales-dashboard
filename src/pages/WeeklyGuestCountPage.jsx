@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp, UserPlus, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
-import { getWeekTotals } from "../data/weeklyPerformanceUtils";
+import { getIsoWeekNumber, getWeekTotals } from "../data/weeklyPerformanceUtils";
 
 const number = new Intl.NumberFormat("de-DE");
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -44,11 +44,17 @@ export default function WeeklyGuestCountPage() {
   const [selectedWeekId, setSelectedWeekId] = useState(latestWeekId);
   const [view, setView] = useState("chart");
   const [weeklyRevenueData, setWeeklyRevenueData] = useState([]);
+  const [revenueStatus, setRevenueStatus] = useState("loading");
   const selectedWeek = weeklyGuestData.find((week) => week.id === selectedWeekId) || weeklyGuestData.find((week) => week.available);
   const rows = selectedWeek?.days || [];
   const difference = selectedWeek?.difference ?? 0;
   const change = selectedWeek?.yoy ?? null;
-  const selectedRevenueWeek = weeklyRevenueData.find((week) => week.id === selectedWeekId);
+  const selectedRevenueWeek = weeklyRevenueData.find((week) => {
+    const revenueWeekNumber = Number(week.weekNumber) || getIsoWeekNumber(week.startDate);
+    return week.id === selectedWeekId
+      || week.startDate === selectedWeek?.startDate
+      || revenueWeekNumber === selectedWeek?.weekNumber;
+  });
   const revenueTotals = useMemo(() => getWeekTotals(selectedRevenueWeek), [selectedRevenueWeek]);
   const averageGuestSpending = selectedRevenueWeek && selectedWeek?.currentCovers > 0
     ? revenueTotals.current / selectedWeek.currentCovers
@@ -61,8 +67,14 @@ export default function WeeklyGuestCountPage() {
         if (!response.ok) throw new Error("Unable to load weekly revenue data.");
         return response.json();
       })
-      .then((data) => setWeeklyRevenueData(Array.isArray(data) ? data : []))
-      .catch(() => setWeeklyRevenueData([]));
+      .then((data) => {
+        setWeeklyRevenueData(Array.isArray(data) ? data : []);
+        setRevenueStatus("ready");
+      })
+      .catch(() => {
+        setWeeklyRevenueData([]);
+        setRevenueStatus("error");
+      });
   }, []);
 
   return (
@@ -114,7 +126,7 @@ export default function WeeklyGuestCountPage() {
         <KpiCard icon={Users} label={`${weeklyGuestMeta.currentYear} Guest Count`} value={number.format(selectedWeek.currentCovers)} note={rangeLabel(selectedWeek)} />
         <KpiCard icon={CalendarDays} label={`${weeklyGuestMeta.comparisonYear} Same Weekdays`} value={number.format(selectedWeek.comparisonCovers)} note="Thursday to Monday comparison" />
         <KpiCard icon={difference >= 0 ? UserPlus : TrendingDown} label="Guest Difference" value={`${difference >= 0 ? "+" : ""}${number.format(difference)}${change == null ? "" : ` (${change >= 0 ? "+" : ""}${change.toFixed(1)}%)`}`} note={`${weeklyGuestMeta.currentYear} minus ${weeklyGuestMeta.comparisonYear}`} />
-        <KpiCard icon={Euro} label="Average Guest Spending" value={averageGuestSpending == null ? "—" : money.format(averageGuestSpending)} note={selectedRevenueWeek ? `${money.format(revenueTotals.current)} revenue ÷ ${number.format(selectedWeek.currentCovers)} guests` : "Loading weekly sales revenue…"} />
+        <KpiCard icon={Euro} label="Average Guest Spending" value={averageGuestSpending == null ? "—" : money.format(averageGuestSpending)} note={selectedRevenueWeek ? `${money.format(revenueTotals.current)} revenue ÷ ${number.format(selectedWeek.currentCovers)} guests` : revenueStatus === "loading" ? "Loading weekly sales revenue…" : "Weekly Performance revenue is not available for this week"} />
       </div>
 
       <div className="panel weekly-panel">
