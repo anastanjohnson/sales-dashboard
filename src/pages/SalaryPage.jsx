@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { salesData } from "../data/salesData";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const shortCurrency = (value) => `€${Math.round(value / 1000)}k`;
@@ -72,11 +73,28 @@ export default function SalaryPage() {
     return { kitchen, service, total: kitchen + service };
   }, [visibleEmployees]);
 
+  const selectedSalesRevenue = useMemo(() => {
+    const sales2026 = salesData.filter((row) => row.year === 2026);
+    if (selectedMonth === "all") {
+      const salaryMonths = new Set(salaryData.map((row) => String(row.month).slice(0, 3).toLowerCase()));
+      return sales2026
+        .filter((row) => salaryMonths.has(String(row.month).slice(0, 3).toLowerCase()))
+        .reduce((sum, row) => sum + row.revenue, 0);
+    }
+
+    const salaryMonth = salaryData[selectedMonth];
+    if (!salaryMonth) return 0;
+    const monthKey = String(salaryMonth.month).slice(0, 3).toLowerCase();
+    return sales2026.find((row) => String(row.month).slice(0, 3).toLowerCase() === monthKey)?.revenue || 0;
+  }, [salaryData, selectedMonth]);
+
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading secure salary data…</h3></div></div></div>;
   if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
 
   const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setView("chart"); };
   const selectionLabel = selectedMonth === "all" ? "All Time 2026" : monthLabel(monthData);
+  const salesScopeLabel = selectedMonth === "all" ? "of all-time sales" : `of ${monthData.month} sales`;
+  const salaryPercentage = (value) => selectedSalesRevenue > 0 ? `${((value / selectedSalesRevenue) * 100).toFixed(1)}%` : "—";
 
   return (
     <div className="dashboard salary-page">
@@ -105,9 +123,9 @@ export default function SalaryPage() {
         </div>
       </div>
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-card__label">Total Salary</div><div className="stat-card__value">{currency.format(totals.total)}</div></div>
-        <div className="stat-card"><div className="stat-card__label">Kitchen Salary</div><div className="stat-card__value">{currency.format(totals.kitchen)}</div></div>
-        <div className="stat-card"><div className="stat-card__label">Service Salary</div><div className="stat-card__value">{currency.format(totals.service)}</div></div>
+        <div className="stat-card"><div className="stat-card__label">Total Salary</div><div className="stat-card__value">{currency.format(totals.total)}</div><div className="sales-kpi-note">{salaryPercentage(totals.total)} {salesScopeLabel}</div></div>
+        <div className="stat-card"><div className="stat-card__label">Kitchen Salary</div><div className="stat-card__value">{currency.format(totals.kitchen)}</div><div className="sales-kpi-note">{salaryPercentage(totals.kitchen)} {salesScopeLabel}</div></div>
+        <div className="stat-card"><div className="stat-card__label">Service Salary</div><div className="stat-card__value">{currency.format(totals.service)}</div><div className="sales-kpi-note">{salaryPercentage(totals.service)} {salesScopeLabel}</div></div>
       </div>
       <div className="panel salary-panel">
         <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{selectionLabel} · {department === "All" ? "All departments" : department}</p></div></div>
