@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CalendarDays, ChartLine, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { buildWeekSlots, getWeekTotals, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
 
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -127,7 +127,7 @@ export default function WeeklyPerformancePage() {
       <div className="toolbar weekly-toolbar weekly-view-toolbar">
         <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedWeek)}</span></div>
         <div className="toolbar__controls">
-          <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
+          <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><ChartLine size={14} />Line Chart</button>
           <button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button>
         </div>
       </div>
@@ -153,15 +153,15 @@ export default function WeeklyPerformancePage() {
         ) : view === "chart" ? (
           <div className="sales-chart">
             <ResponsiveContainer width="100%" height={360}>
-              <BarChart data={rows} margin={{ top: 12, right: 18, left: 4, bottom: 8 }} barGap={4}>
+              <LineChart data={rows} margin={{ top: 12, right: 18, left: 4, bottom: 8 }}>
                 <CartesianGrid vertical={false} stroke="var(--grid)" />
                 <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
-                <YAxis tickFormatter={compactMoney.format} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} />
-                <Tooltip content={<WeeklyTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+                <YAxis domain={[0, "auto"]} tickFormatter={compactMoney.format} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} />
+                <Tooltip content={<WeeklyTooltip />} cursor={{ stroke: "var(--grid)", strokeWidth: 1 }} />
                 <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
-                <Bar dataKey="comparisonRevenue" name={String(comparisonYear)} fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38} />
-                <Bar dataKey="currentRevenue" name={String(currentYear)} fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38} />
-              </BarChart>
+                <Line type="monotone" dataKey="comparisonRevenue" name={String(comparisonYear)} stroke="var(--series-1)" strokeWidth={3} dot={{ r: 4, fill: "var(--surface)", strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} />
+                <Line type="monotone" dataKey="currentRevenue" name={String(currentYear)} stroke="var(--series-2)" strokeWidth={3} dot={{ r: 4, fill: "var(--surface)", strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
