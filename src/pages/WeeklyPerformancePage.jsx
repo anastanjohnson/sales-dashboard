@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { buildWeekSlots, getWeekTotals, percentageChange } from "../data/weeklyPerformanceUtils";
 
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
@@ -8,7 +9,6 @@ const shortDate = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "sho
 
 const dateLabel = (value) => value ? shortDate.format(new Date(`${value}T12:00:00`)) : "—";
 const rangeLabel = (week) => week ? `${dateLabel(week.startDate)} – ${dateLabel(week.endDate)}` : "Thursday – Monday";
-const percentageChange = (current, previous) => previous > 0 ? ((current - previous) / previous) * 100 : null;
 
 function KpiCard({ icon: Icon, label, value, note, change }) {
   return (
@@ -68,10 +68,8 @@ export default function WeeklyPerformancePage() {
   const currentYear = selectedWeek?.currentYear || 2026;
   const comparisonYear = selectedWeek?.comparisonYear || 2025;
 
-  const totals = useMemo(() => rows.reduce((result, row) => ({
-    current: result.current + (Number(row.currentRevenue) || 0),
-    comparison: result.comparison + (Number(row.comparisonRevenue) || 0),
-  }), { current: 0, comparison: 0 }), [rows]);
+  const totals = useMemo(() => getWeekTotals(selectedWeek), [selectedWeek]);
+  const weekSlots = useMemo(() => buildWeekSlots(weeklyData, currentYear), [weeklyData, currentYear]);
 
   const difference = totals.current - totals.comparison;
   const change = hasData ? percentageChange(totals.current, totals.comparison) : null;
@@ -85,15 +83,39 @@ export default function WeeklyPerformancePage() {
         <div><h1>Weekly Performance</h1><p className="dashboard__subtitle">Sales comparison for each Thursday-to-Monday operating week.</p></div>
       </div>
 
-      <div className="toolbar weekly-toolbar">
-        <label className="weekly-week-control">
-          <CalendarDays size={15} />
-          <span>Week</span>
-          <select value={selectedWeekId} onChange={(event) => setSelectedWeekId(event.target.value)} disabled={!weeklyData.length}>
-            {!weeklyData.length && <option value="">Waiting for weekly data</option>}
-            {weeklyData.map((week) => <option value={week.id} key={week.id}>{rangeLabel(week)}</option>)}
-          </select>
-        </label>
+      <div className="weekly-week-picker" aria-label="Select a reporting week">
+        <div className="weekly-week-picker__head">
+          <span><CalendarDays size={15} />Select week</span>
+          <span className="weekly-week-picker__legend"><i className="weekly-week-picker__dot weekly-week-picker__dot--up" />Positive <i className="weekly-week-picker__dot weekly-week-picker__dot--down" />Negative</span>
+        </div>
+        <div className="weekly-week-grid">
+          {weekSlots.map((slot) => {
+            const direction = slot.change == null ? "empty" : slot.change > 0 ? "up" : slot.change < 0 ? "down" : "neutral";
+            const isSelected = slot.week?.id === selectedWeekId;
+            const resultLabel = slot.change == null ? "No data yet" : `${slot.change >= 0 ? "+" : ""}${slot.change.toFixed(1)}% year on year`;
+            const accessibleLabel = `${slot.label}, ${rangeLabel(slot)}, ${resultLabel}`;
+
+            return (
+              <button
+                type="button"
+                className={`weekly-week-button weekly-week-button--${direction} ${isSelected ? "weekly-week-button--selected" : ""}`}
+                key={slot.number}
+                disabled={!slot.hasData}
+                aria-label={accessibleLabel}
+                aria-pressed={isSelected}
+                title={accessibleLabel}
+                onClick={() => slot.week && setSelectedWeekId(slot.week.id)}
+              >
+                <span>{slot.label}</span>
+                <small>{slot.change == null ? "—" : `${slot.change >= 0 ? "+" : ""}${slot.change.toFixed(0)}%`}</small>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="toolbar weekly-toolbar weekly-view-toolbar">
+        <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedWeek)}</span></div>
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button>
