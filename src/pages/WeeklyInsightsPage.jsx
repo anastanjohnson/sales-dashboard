@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   CalendarDays,
+  ChartLine,
   Euro,
   Lightbulb,
   Table2,
@@ -9,7 +10,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
 import { getIsoWeekNumber, getWeekTotals, mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
 
@@ -95,10 +96,30 @@ function CombinedTooltip({ active, payload, label, metric }) {
   );
 }
 
+function FullYearTooltip({ active, payload, label, metric }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  const formatValue = metric === "guests" ? (value) => `${number.format(value)} guests` : money.format;
+
+  return (
+    <div className="chart-tooltip">
+      <div className="chart-tooltip__label">{label} · {row?.range || "Thursday – Monday"}</div>
+      {payload.map((item) => (
+        <div className="chart-tooltip__row" key={item.name}>
+          <span className="chart-tooltip__swatch" style={{ background: item.color }} />
+          <span className="chart-tooltip__name">{item.name}</span>
+          <span className="chart-tooltip__value">{formatValue(item.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function WeeklyInsightsPage() {
   const [weeklyRevenueData, setWeeklyRevenueData] = useState([]);
   const [guestWeeks, setGuestWeeks] = useState(weeklyGuestData);
   const [selectedWeekId, setSelectedWeekId] = useState(latestWeekId);
+  const [yearMetric, setYearMetric] = useState("revenue");
   const [metric, setMetric] = useState("revenue");
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
@@ -173,6 +194,36 @@ export default function WeeklyInsightsPage() {
     };
   }), [selectedGuestWeek, selectedRevenueWeek]);
 
+  const fullYearRows = useMemo(() => guestWeeks.map((guestWeek) => {
+    const revenueWeek = findRevenueWeek(guestWeek, weeklyRevenueData);
+    const totals = getWeekTotals(revenueWeek);
+    const hasCurrentRevenue = Boolean(revenueWeek?.days?.some((row) => row.currentRevenue != null));
+    const hasComparisonRevenue = Boolean(revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
+    const currentWeekGuests = guestWeek.available && guestWeek.currentCovers != null ? Number(guestWeek.currentCovers) : null;
+    const comparisonWeekGuests = guestWeek.comparisonCovers == null ? null : Number(guestWeek.comparisonCovers);
+    const currentRevenue = hasCurrentRevenue ? totals.current : null;
+    const comparisonRevenue = hasComparisonRevenue ? totals.comparison : null;
+
+    return {
+      week: `W${String(guestWeek.weekNumber).padStart(2, "0")}`,
+      range: rangeLabel(guestWeek),
+      currentRevenue,
+      comparisonRevenue,
+      currentGuests: currentWeekGuests,
+      comparisonGuests: comparisonWeekGuests,
+      currentSpending: currentRevenue != null && currentWeekGuests > 0 ? currentRevenue / currentWeekGuests : null,
+      comparisonSpending: comparisonRevenue != null && !revenueWeek?.partialBenchmark && comparisonWeekGuests > 0
+        ? comparisonRevenue / comparisonWeekGuests
+        : null,
+    };
+  }), [guestWeeks, weeklyRevenueData]);
+
+  const fullYearMetricConfig = {
+    revenue: { title: "Weekly Sales Revenue", currentKey: "currentRevenue", comparisonKey: "comparisonRevenue", yAxis: compactMoney.format },
+    guests: { title: "Weekly Guest Count", currentKey: "currentGuests", comparisonKey: "comparisonGuests", yAxis: number.format },
+    spending: { title: "Weekly Average Guest Spending", currentKey: "currentSpending", comparisonKey: "comparisonSpending", yAxis: compactMoney.format },
+  }[yearMetric];
+
   const metricConfig = {
     revenue: { title: "Daily Sales Revenue", currentKey: "currentRevenue", comparisonKey: "comparisonRevenue", yAxis: compactMoney.format },
     guests: { title: "Daily Guest Count", currentKey: "currentGuests", comparisonKey: "comparisonGuests", yAxis: number.format },
@@ -186,6 +237,32 @@ export default function WeeklyInsightsPage() {
     <div className="dashboard weekly-performance-page">
       <div className="dashboard__header">
         <div><h1>Weekly Insights</h1><p className="dashboard__subtitle">See how guest volume and spending per guest combine to drive weekly sales revenue.</p></div>
+      </div>
+
+      <div className="panel weekly-panel weekly-year-panel">
+        <div className="panel__head sales-panel__head">
+          <div><h3>Full-Year Weekly Insights</h3><p>All 52 Thursday-to-Monday weeks · {currentYear} vs {comparisonYear}</p></div>
+          <div className="metric-switch weekly-insights-metric-switch" aria-label="Select a full-year insight metric">
+            <button className={yearMetric === "revenue" ? "active" : ""} onClick={() => setYearMetric("revenue")}>Revenue</button>
+            <button className={yearMetric === "guests" ? "active" : ""} onClick={() => setYearMetric("guests")}>Guests</button>
+            <button className={yearMetric === "spending" ? "active" : ""} onClick={() => setYearMetric("spending")}>Avg Spend</button>
+          </div>
+        </div>
+        <div className="sales-chart weekly-year-chart">
+          <ResponsiveContainer width="100%" height={360}>
+            <LineChart data={fullYearRows} margin={{ top: 12, right: 18, left: 4, bottom: 12 }}>
+              <CartesianGrid vertical={false} stroke="var(--grid)" />
+              <XAxis dataKey="week" interval={3} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <YAxis domain={[0, "auto"]} tickFormatter={fullYearMetricConfig.yAxis} allowDecimals={yearMetric !== "guests"} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} />
+              <Tooltip content={<FullYearTooltip metric={yearMetric} />} cursor={{ stroke: "var(--grid)", strokeWidth: 1 }} />
+              <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
+              <ReferenceLine x={`W${String(selectedGuestWeek?.weekNumber || 1).padStart(2, "0")}`} stroke="var(--accent)" strokeDasharray="4 4" />
+              <Line type="monotone" dataKey={fullYearMetricConfig.comparisonKey} name={String(comparisonYear)} stroke="var(--series-1)" strokeWidth={2.5} dot={{ r: 2, fill: "var(--surface)", strokeWidth: 1.5 }} activeDot={{ r: 5 }} connectNulls={false} />
+              <Line type="monotone" dataKey={fullYearMetricConfig.currentKey} name={String(currentYear)} stroke="var(--series-2)" strokeWidth={2.5} dot={{ r: 2, fill: "var(--surface)", strokeWidth: 1.5 }} activeDot={{ r: 5 }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="weekly-year-note"><ChartLine size={14} /><span>The {currentYear} line ends at the latest completed week. Future weeks continue with the aligned {comparisonYear} benchmark.</span></div>
       </div>
 
       <div className="weekly-week-picker" aria-label="Select a combined reporting week">
