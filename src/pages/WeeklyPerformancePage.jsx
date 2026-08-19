@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { mergeWeeklyRevenueBenchmarks } from "../data/weeklyBenchmarks";
-import { buildWeekSlots, getWeekTotals, percentageChange } from "../data/weeklyPerformanceUtils";
+import { buildWeekSlots, getWeekTotals, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
 
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
@@ -48,12 +47,15 @@ export default function WeeklyPerformancePage() {
   const loadWeeklyData = async () => {
     setStatus("loading");
     try {
-      const response = await fetch("/api/weekly-performance", { credentials: "include" });
-      if (response.status === 401) return window.location.reload();
-      if (!response.ok) throw new Error("Unable to load weekly performance data.");
-      const data = await response.json();
+      const [response, benchmarkResponse] = await Promise.all([
+        fetch("/api/weekly-performance", { credentials: "include" }),
+        fetch("/api/weekly-benchmarks", { credentials: "include" }),
+      ]);
+      if (response.status === 401 || benchmarkResponse.status === 401) return window.location.reload();
+      if (!response.ok || !benchmarkResponse.ok) throw new Error("Unable to load weekly performance data.");
+      const [data, benchmarkData] = await Promise.all([response.json(), benchmarkResponse.json()]);
       if (!Array.isArray(data)) throw new Error("Invalid weekly performance data.");
-      setWeeklyData(mergeWeeklyRevenueBenchmarks(data));
+      setWeeklyData(mergeWeeklyRevenueBenchmarks(data, benchmarkData));
       setSelectedWeekId(data.at(-1)?.id || "");
       setStatus("ready");
     } catch {
