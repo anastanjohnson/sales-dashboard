@@ -21,6 +21,22 @@ const monthOrder = [
   { short: "Dec", full: "December" },
 ];
 
+function SalaryTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const salary = payload[0];
+
+  return (
+    <div className="chart-tooltip">
+      <div className="chart-tooltip__label">{label}</div>
+      <div className="chart-tooltip__row">
+        <span className="chart-tooltip__swatch" style={{ background: salary.fill }} />
+        <span className="chart-tooltip__name">Salary</span>
+        <span className="chart-tooltip__value">{currency.format(salary.value)}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function SalaryPage() {
   const [salaryData, setSalaryData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(0);
@@ -130,7 +146,7 @@ export default function SalaryPage() {
       <div className="panel salary-panel">
         <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{selectionLabel} · {department === "All" ? "All departments" : department}</p></div></div>
         {view === "chart" ? <div className="salary-chart"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 16, right: 18, left: 4, bottom: 82 }}>
-          <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip formatter={(value) => [currency.format(value), "Salary"]} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38}>{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} />)}</Bar>
+          <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38}>{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} />)}</Bar>
         </BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>}
       </div>
     </div>
