@@ -8,6 +8,7 @@ import {
     ChevronRight,
     CalendarDays,
     Users,
+    Activity,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { icon: ShoppingCart, label: "Sales Revenue", page: "sales" },
   { icon: CalendarDays, label: "Weekly Performance", page: "weekly-performance" },
   { icon: Users, label: "Guest Count", page: "weekly-guests" },
+  { icon: Activity, label: "Weekly Insights", page: "weekly-insights" },
   { icon: Receipt, label: "Average Spending", page: "average-spending" },
   { icon: BarChart3, label: "Salary", page: "sales-salary" },
   { icon: Settings, label: "Setting", page: "settings" },
