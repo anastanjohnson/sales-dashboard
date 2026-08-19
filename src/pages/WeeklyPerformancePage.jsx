@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { weeklyPerformanceData } from "../data/weeklyPerformanceData";
 
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
@@ -40,10 +39,30 @@ function WeeklyTooltip({ active, payload, label }) {
 }
 
 export default function WeeklyPerformancePage() {
-  const [selectedWeekId, setSelectedWeekId] = useState(weeklyPerformanceData.at(-1)?.id || "");
+  const [weeklyData, setWeeklyData] = useState([]);
+  const [selectedWeekId, setSelectedWeekId] = useState("");
   const [view, setView] = useState("chart");
+  const [status, setStatus] = useState("loading");
 
-  const selectedWeek = weeklyPerformanceData.find((week) => week.id === selectedWeekId) || weeklyPerformanceData.at(-1) || null;
+  const loadWeeklyData = async () => {
+    setStatus("loading");
+    try {
+      const response = await fetch("/api/weekly-performance", { credentials: "include" });
+      if (response.status === 401) return window.location.reload();
+      if (!response.ok) throw new Error("Unable to load weekly performance data.");
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Invalid weekly performance data.");
+      setWeeklyData(data);
+      setSelectedWeekId(data.at(-1)?.id || "");
+      setStatus("ready");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  useEffect(() => { loadWeeklyData(); }, []);
+
+  const selectedWeek = weeklyData.find((week) => week.id === selectedWeekId) || weeklyData.at(-1) || null;
   const rows = selectedWeek?.days || [];
   const hasData = rows.length > 0;
   const currentYear = selectedWeek?.currentYear || 2026;
@@ -57,6 +76,9 @@ export default function WeeklyPerformancePage() {
   const difference = totals.current - totals.comparison;
   const change = hasData ? percentageChange(totals.current, totals.comparison) : null;
 
+  if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading weekly performance data…</h3></div></div></div>;
+  if (status === "error") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Weekly performance data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadWeeklyData}>Try again</button></div></div></div>;
+
   return (
     <div className="dashboard weekly-performance-page">
       <div className="dashboard__header">
@@ -67,9 +89,9 @@ export default function WeeklyPerformancePage() {
         <label className="weekly-week-control">
           <CalendarDays size={15} />
           <span>Week</span>
-          <select value={selectedWeekId} onChange={(event) => setSelectedWeekId(event.target.value)} disabled={!weeklyPerformanceData.length}>
-            {!weeklyPerformanceData.length && <option value="">Waiting for weekly data</option>}
-            {weeklyPerformanceData.map((week) => <option value={week.id} key={week.id}>{rangeLabel(week)}</option>)}
+          <select value={selectedWeekId} onChange={(event) => setSelectedWeekId(event.target.value)} disabled={!weeklyData.length}>
+            {!weeklyData.length && <option value="">Waiting for weekly data</option>}
+            {weeklyData.map((week) => <option value={week.id} key={week.id}>{rangeLabel(week)}</option>)}
           </select>
         </label>
         <div className="toolbar__controls">
