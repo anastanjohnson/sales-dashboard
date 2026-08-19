@@ -506,6 +506,7 @@
 .weekly-week-picker__dot { width: 7px; height: 7px; border-radius: 50%; }
 .weekly-week-picker__dot--up { background: var(--good); }
 .weekly-week-picker__dot--down { background: var(--bad); }
+.weekly-week-picker__dot--benchmark { background: var(--accent); }
 .weekly-week-grid {
     display: grid;
     grid-template-columns: repeat(13, minmax(52px, 1fr));
@@ -531,10 +532,12 @@
 .weekly-week-button small { font-size: 10px; font-weight: 650; opacity: .86; }
 .weekly-week-button--up { border-color: var(--good); background: var(--good-bg); color: var(--good); }
 .weekly-week-button--down { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+.weekly-week-button--benchmark { border-color: var(--accent); background: rgba(144, 133, 233, .12); color: var(--accent); }
 .weekly-week-button--neutral { color: var(--text-secondary); }
 .weekly-week-button:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.08); }
 .weekly-week-button--selected.weekly-week-button--up { background: var(--good); color: var(--good-contrast); box-shadow: 0 0 0 3px var(--good-bg); }
 .weekly-week-button--selected.weekly-week-button--down { background: var(--bad); color: var(--bad-contrast); box-shadow: 0 0 0 3px var(--bad-bg); }
+.weekly-week-button--selected.weekly-week-button--benchmark { background: var(--accent); color: var(--accent-contrast); box-shadow: 0 0 0 3px rgba(144, 133, 233, .2); }
 .weekly-week-button--selected.weekly-week-button--neutral { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(144, 133, 233, .2); }
 .weekly-week-button:disabled { border-style: dashed; background: transparent; color: var(--text-muted); cursor: not-allowed; opacity: .48; }
 .weekly-toolbar { margin-top: 4px; }
