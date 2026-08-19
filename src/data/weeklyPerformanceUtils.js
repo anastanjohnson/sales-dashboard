@@ -39,6 +39,57 @@ export const getWeekTotals = (week) =>
     { current: 0, comparison: 0 },
   );
 
+const getWeekNumber = (week) => Number(week?.weekNumber)
+  || Number(String(week?.id || "").match(/W(\d{1,2})$/)?.[1])
+  || getIsoWeekNumber(week?.startDate);
+
+const toRevenueBenchmark = (week) => ({
+  ...week,
+  currentYear: 2026,
+  comparisonYear: 2025,
+  benchmarkOnly: true,
+  partialBenchmark: week.days.some((row) => row.comparisonRevenue == null),
+  days: week.days.map((row) => ({
+    day: row.day,
+    currentDate: row.currentDate,
+    comparisonDate: row.comparisonDate,
+    currentRevenue: null,
+    comparisonRevenue: row.comparisonRevenue,
+  })),
+});
+
+const toGuestBenchmark = (week) => ({
+  ...week,
+  available: false,
+  benchmarkAvailable: true,
+  currentCovers: null,
+  comparisonCovers: week.days.reduce((sum, row) => sum + (Number(row.comparisonCovers) || 0), 0),
+  difference: null,
+  yoy: null,
+  days: week.days.map((row) => ({
+    day: row.day,
+    currentDate: row.currentDate,
+    comparisonDate: row.comparisonDate,
+    currentCovers: null,
+    comparisonCovers: row.comparisonCovers,
+  })),
+});
+
+export const mergeWeeklyRevenueBenchmarks = (weeklyData, benchmarkData) => {
+  const benchmarks = (benchmarkData?.weeks || []).map(toRevenueBenchmark);
+  const existingWeeks = new Set(weeklyData.map(getWeekNumber));
+  return [...weeklyData, ...benchmarks.filter((week) => !existingWeeks.has(getWeekNumber(week)))]
+    .sort((a, b) => getWeekNumber(a) - getWeekNumber(b));
+};
+
+export const mergeWeeklyGuestBenchmarks = (weeklyData, benchmarkData) => {
+  const benchmarks = new Map((benchmarkData?.weeks || []).map((week) => [getWeekNumber(week), toGuestBenchmark(week)]));
+  return weeklyData.map((week) => {
+    if (week.available) return week;
+    return benchmarks.get(getWeekNumber(week)) || week;
+  });
+};
+
 export const buildWeekSlots = (weeklyData, reportingYear = 2026, count = 52) => {
   const weeksByNumber = new Map();
 
