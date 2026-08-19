@@ -1,9 +1,6 @@
 import {
     LayoutGrid,
     ShoppingCart,
-    UtensilsCrossed,
-    BookOpen,
-    Users,
     Receipt,
     BarChart3,
     Settings,
@@ -14,16 +11,12 @@ import {
 import { useState } from "react";
 
 const NAV_ITEMS = [
-  { icon: LayoutGrid, label: "Overview", page: "overview" },
-  { icon: ShoppingCart, label: "Sales", page: "sales" },
-  { icon: CalendarDays, label: "Weekly Performance", page: "weekly-performance", child: true },
-  { icon: Receipt, label: "Orders" },
-  { icon: UtensilsCrossed, label: "Menu" },
-  { icon: BookOpen, label: "Reservations" },
-  { icon: Users, label: "Staff" },
-  { icon: ShoppingCart, label: "Billing" },
+  { icon: LayoutGrid, label: "Dashboard", page: "overview" },
+  { icon: ShoppingCart, label: "Sales Revenue", page: "sales" },
+  { icon: CalendarDays, label: "Weekly Performance", page: "weekly-performance" },
+  { icon: Receipt, label: "Average Spending", page: "average-spending" },
   { icon: BarChart3, label: "Salary", page: "sales-salary" },
-  { icon: Settings, label: "Settings" },
+  { icon: Settings, label: "Setting", page: "settings" },
   ];
 
 export default function Sidebar({ activePage, onNavigate }) {
@@ -39,11 +32,11 @@ export default function Sidebar({ activePage, onNavigate }) {
                 {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
               </button>
             <nav className="sidebar__nav">
-              {NAV_ITEMS.map(({ icon: Icon, label, page, child }) => (
+              {NAV_ITEMS.map(({ icon: Icon, label, page }) => (
                   <button
                                 key={label}
-                                className={`sidebar__item ${child ? "sidebar__item--child" : ""} ${page && activePage === page ? "sidebar__item--active" : ""}`}
-                                onClick={() => page && onNavigate(page)}
+                                className={`sidebar__item ${activePage === page ? "sidebar__item--active" : ""}`}
+                                onClick={() => onNavigate(page)}
                                 title={label}
                               >
                               <Icon size={18} />
