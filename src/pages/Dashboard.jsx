@@ -15,6 +15,7 @@ import SalaryPage from "./SalaryPage";
 import SalesPage from "./SalesPage";
 import WeeklyPerformancePage from "./WeeklyPerformancePage";
 import WeeklyGuestCountPage from "./WeeklyGuestCountPage";
+import WeeklyInsightsPage from "./WeeklyInsightsPage";
 import AverageSpendingPage from "./AverageSpendingPage";
 import SettingsPage from "./SettingsPage";
 import {
@@ -35,6 +36,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme }) {
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyPerformancePage />;
   if (activePage === "weekly-guests") return <WeeklyGuestCountPage />;
+  if (activePage === "weekly-insights") return <WeeklyInsightsPage />;
   if (activePage === "average-spending") return <AverageSpendingPage />;
   if (activePage === "settings") return <SettingsPage theme={theme} onToggleTheme={onToggleTheme} />;
 
