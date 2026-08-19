@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks } from "../data/weeklyBenchmarks";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
 import { getIsoWeekNumber, getWeekTotals, percentageChange } from "../data/weeklyPerformanceUtils";
 
@@ -17,7 +18,8 @@ const number = new Intl.NumberFormat("de-DE");
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
 const shortDate = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
-const latestWeekId = weeklyGuestData.filter((week) => week.available).at(-1)?.id || "";
+const guestWeeks = mergeWeeklyGuestBenchmarks(weeklyGuestData);
+const latestWeekId = guestWeeks.filter((week) => week.available).at(-1)?.id || "";
 
 const dateLabel = (value) => value ? shortDate.format(new Date(`${value}T12:00:00`)) : "—";
 const rangeLabel = (week) => week ? `${dateLabel(week.startDate)} – ${dateLabel(week.endDate)}` : "Thursday – Monday";
@@ -110,8 +112,9 @@ export default function WeeklyInsightsPage() {
       if (!response.ok) throw new Error("Unable to load weekly performance data.");
       const data = await response.json();
       if (!Array.isArray(data)) throw new Error("Invalid weekly performance data.");
-      setWeeklyRevenueData(data);
-      const latestCombinedWeek = [...weeklyGuestData].reverse().find((week) => week.available && findRevenueWeek(week, data));
+      const mergedData = mergeWeeklyRevenueBenchmarks(data);
+      setWeeklyRevenueData(mergedData);
+      const latestCombinedWeek = [...guestWeeks].reverse().find((week) => week.available && findRevenueWeek(week, mergedData));
       setSelectedWeekId(latestCombinedWeek?.id || latestWeekId);
       setStatus("ready");
     } catch {
@@ -121,28 +124,37 @@ export default function WeeklyInsightsPage() {
 
   useEffect(() => { loadWeeklyData(); }, []);
 
-  const selectedGuestWeek = weeklyGuestData.find((week) => week.id === selectedWeekId) || null;
+  const selectedGuestWeek = guestWeeks.find((week) => week.id === selectedWeekId) || null;
   const selectedRevenueWeek = findRevenueWeek(selectedGuestWeek, weeklyRevenueData) || null;
   const currentYear = selectedRevenueWeek?.currentYear || weeklyGuestMeta.currentYear;
   const comparisonYear = selectedRevenueWeek?.comparisonYear || weeklyGuestMeta.comparisonYear;
   const revenueTotals = useMemo(() => getWeekTotals(selectedRevenueWeek), [selectedRevenueWeek]);
-  const currentGuests = Number(selectedGuestWeek?.currentCovers) || 0;
-  const comparisonGuests = Number(selectedGuestWeek?.comparisonCovers) || 0;
-  const currentSpending = currentGuests > 0 ? revenueTotals.current / currentGuests : null;
-  const comparisonSpending = comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
-  const revenueChange = percentageChange(revenueTotals.current, revenueTotals.comparison);
-  const guestChange = percentageChange(currentGuests, comparisonGuests);
+  const currentGuests = selectedGuestWeek?.currentCovers == null ? null : Number(selectedGuestWeek.currentCovers);
+  const comparisonGuests = selectedGuestWeek?.comparisonCovers == null ? null : Number(selectedGuestWeek.comparisonCovers);
+  const hasCurrentData = Boolean(selectedGuestWeek?.available && selectedRevenueWeek?.days?.some((row) => row.currentRevenue != null));
+  const hasBenchmark = Boolean(comparisonGuests != null && selectedRevenueWeek?.days?.some((row) => row.comparisonRevenue != null));
+  const currentSpending = hasCurrentData && currentGuests > 0 ? revenueTotals.current / currentGuests : null;
+  const comparisonSpending = hasBenchmark && !selectedRevenueWeek?.partialBenchmark && comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
+  const revenueChange = hasCurrentData ? percentageChange(revenueTotals.current, revenueTotals.comparison) : null;
+  const guestChange = hasCurrentData ? percentageChange(currentGuests, comparisonGuests) : null;
   const spendingChange = currentSpending != null && comparisonSpending != null
     ? percentageChange(currentSpending, comparisonSpending)
     : null;
-  const insight = buildGrowthInsight(revenueChange, guestChange, spendingChange);
+  const insight = hasCurrentData
+    ? buildGrowthInsight(revenueChange, guestChange, spendingChange)
+    : {
+      label: "Benchmark ready",
+      text: hasBenchmark
+        ? `${comparisonYear} benchmark: ${selectedRevenueWeek?.partialBenchmark ? "partial " : ""}${money.format(revenueTotals.comparison)} revenue, ${number.format(comparisonGuests)} guests${comparisonSpending == null ? "" : ` and ${money.format(comparisonSpending)} spending per guest`}. ${currentYear} results will appear after the week is completed.`
+        : "The previous-year revenue and guest benchmark is not available for this week.",
+    };
 
   const combinedRows = useMemo(() => (selectedGuestWeek?.days || []).map((guestRow) => {
     const revenueRow = (selectedRevenueWeek?.days || []).find((row) => row.day === guestRow.day || row.currentDate === guestRow.currentDate);
-    const currentRevenue = Number(revenueRow?.currentRevenue) || 0;
-    const comparisonRevenue = Number(revenueRow?.comparisonRevenue) || 0;
-    const currentDayGuests = Number(guestRow.currentCovers) || 0;
-    const comparisonDayGuests = Number(guestRow.comparisonCovers) || 0;
+    const currentRevenue = revenueRow?.currentRevenue == null ? null : Number(revenueRow.currentRevenue);
+    const comparisonRevenue = revenueRow?.comparisonRevenue == null ? null : Number(revenueRow.comparisonRevenue);
+    const currentDayGuests = guestRow.currentCovers == null ? null : Number(guestRow.currentCovers);
+    const comparisonDayGuests = guestRow.comparisonCovers == null ? null : Number(guestRow.comparisonCovers);
 
     return {
       day: guestRow.day,
@@ -152,8 +164,8 @@ export default function WeeklyInsightsPage() {
       comparisonRevenue,
       currentGuests: currentDayGuests,
       comparisonGuests: comparisonDayGuests,
-      currentSpending: currentDayGuests > 0 ? currentRevenue / currentDayGuests : 0,
-      comparisonSpending: comparisonDayGuests > 0 ? comparisonRevenue / comparisonDayGuests : 0,
+      currentSpending: currentRevenue != null && currentDayGuests > 0 ? currentRevenue / currentDayGuests : null,
+      comparisonSpending: comparisonRevenue != null && comparisonDayGuests > 0 ? comparisonRevenue / comparisonDayGuests : null,
     };
   }), [selectedGuestWeek, selectedRevenueWeek]);
 
@@ -175,17 +187,21 @@ export default function WeeklyInsightsPage() {
       <div className="weekly-week-picker" aria-label="Select a combined reporting week">
         <div className="weekly-week-picker__head">
           <span><CalendarDays size={15} />Select week</span>
-          <span className="weekly-week-picker__legend"><i className="weekly-week-picker__dot weekly-week-picker__dot--up" />Revenue positive <i className="weekly-week-picker__dot weekly-week-picker__dot--down" />Revenue negative</span>
+          <span className="weekly-week-picker__legend"><i className="weekly-week-picker__dot weekly-week-picker__dot--up" />Revenue positive <i className="weekly-week-picker__dot weekly-week-picker__dot--down" />Revenue negative <i className="weekly-week-picker__dot weekly-week-picker__dot--benchmark" />2025 benchmark</span>
         </div>
         <div className="weekly-week-grid">
-          {weeklyGuestData.map((guestWeek) => {
+          {guestWeeks.map((guestWeek) => {
             const revenueWeek = findRevenueWeek(guestWeek, weeklyRevenueData);
             const totals = getWeekTotals(revenueWeek);
-            const hasData = Boolean(guestWeek.available && revenueWeek?.days?.length);
-            const change = hasData ? percentageChange(totals.current, totals.comparison) : null;
-            const direction = change == null ? "empty" : change > 0 ? "up" : change < 0 ? "down" : "neutral";
+            const hasCurrentWeekData = Boolean(guestWeek.available && revenueWeek?.days?.some((row) => row.currentRevenue != null));
+            const hasBenchmarkData = Boolean(guestWeek.comparisonCovers != null && revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
+            const hasData = hasCurrentWeekData || hasBenchmarkData;
+            const change = hasCurrentWeekData ? percentageChange(totals.current, totals.comparison) : null;
+            const direction = !hasCurrentWeekData && hasBenchmarkData ? "benchmark" : change == null ? "empty" : change > 0 ? "up" : change < 0 ? "down" : "neutral";
             const isSelected = guestWeek.id === selectedWeekId;
-            const resultLabel = change == null ? "Combined data not available" : `${signedPercentage(change)} revenue year on year`;
+            const resultLabel = !hasCurrentWeekData && hasBenchmarkData
+              ? `${money.format(totals.comparison)} revenue and ${number.format(guestWeek.comparisonCovers)} guest benchmark from 2025`
+              : change == null ? "Combined data not available" : `${signedPercentage(change)} revenue year on year`;
             const accessibleLabel = `W${String(guestWeek.weekNumber).padStart(2, "0")}, ${rangeLabel(guestWeek)}, ${resultLabel}`;
 
             return (
@@ -200,7 +216,7 @@ export default function WeeklyInsightsPage() {
                 onClick={() => setSelectedWeekId(guestWeek.id)}
               >
                 <span>W{String(guestWeek.weekNumber).padStart(2, "0")}</span>
-                <small>{change == null ? "—" : `${change >= 0 ? "+" : ""}${change.toFixed(0)}%`}</small>
+                <small>{!hasCurrentWeekData && hasBenchmarkData ? "2025" : change == null ? "—" : `${change >= 0 ? "+" : ""}${change.toFixed(0)}%`}</small>
               </button>
             );
           })}
@@ -216,10 +232,17 @@ export default function WeeklyInsightsPage() {
       </div>
 
       <div className="stat-grid weekly-summary">
-        <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} note={`${signedPercentage(revenueChange)} vs ${comparisonYear}`} change={revenueChange} />
-        <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} note={`${signedPercentage(guestChange)} vs ${comparisonYear}`} change={guestChange} />
-        <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} note={`${comparisonYear}: ${comparisonSpending == null ? "—" : money.format(comparisonSpending)} · ${signedPercentage(spendingChange)}`} change={spendingChange} />
-        <KpiCard icon={Lightbulb} label="Growth Driver" value={insight.label} note={`${signedPercentage(revenueChange)} revenue change`} />
+        {hasCurrentData ? <>
+          <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} note={`${signedPercentage(revenueChange)} vs ${comparisonYear}`} change={revenueChange} />
+          <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} note={`${signedPercentage(guestChange)} vs ${comparisonYear}`} change={guestChange} />
+          <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} note={`${comparisonYear}: ${comparisonSpending == null ? "—" : money.format(comparisonSpending)} · ${signedPercentage(spendingChange)}`} change={spendingChange} />
+          <KpiCard icon={Lightbulb} label="Growth Driver" value={insight.label} note={`${signedPercentage(revenueChange)} revenue change`} />
+        </> : <>
+          <KpiCard icon={Euro} label={`${comparisonYear} Revenue Benchmark`} value={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} note={selectedRevenueWeek?.partialBenchmark ? "Partial — one source day is not recorded" : "Thursday to Monday benchmark"} />
+          <KpiCard icon={Users} label={`${comparisonYear} Guest Benchmark`} value={comparisonGuests == null ? "—" : number.format(comparisonGuests)} note="OpenTable seated covers" />
+          <KpiCard icon={Euro} label={`${comparisonYear} Average Guest Spending`} value={comparisonSpending == null ? "—" : money.format(comparisonSpending)} note={comparisonSpending == null ? "Unavailable because the revenue benchmark is partial" : "Benchmark revenue ÷ benchmark guests"} />
+          <KpiCard icon={CalendarDays} label={`${currentYear} Results`} value="Pending" note="Comparison activates after this week is completed" />
+        </>}
       </div>
 
       <div className={`weekly-insight-banner ${revenueChange != null && revenueChange < 0 ? "weekly-insight-banner--down" : ""}`}>
@@ -258,8 +281,8 @@ export default function WeeklyInsightsPage() {
               <tbody>{combinedRows.map((row) => (
                 <tr key={`${row.day}-${row.currentDate}`}>
                   <td>{row.day}<small>{dateLabel(row.currentDate)}</small></td>
-                  <td>{money.format(row.currentRevenue)}</td><td>{number.format(row.currentGuests)}</td><td>{money.format(row.currentSpending)}</td>
-                  <td>{money.format(row.comparisonRevenue)}</td><td>{number.format(row.comparisonGuests)}</td><td>{money.format(row.comparisonSpending)}</td>
+                  <td>{row.currentRevenue == null ? "Pending" : money.format(row.currentRevenue)}</td><td>{row.currentGuests == null ? "Pending" : number.format(row.currentGuests)}</td><td>{row.currentSpending == null ? "—" : money.format(row.currentSpending)}</td>
+                  <td>{row.comparisonRevenue == null ? "Not recorded" : money.format(row.comparisonRevenue)}</td><td>{row.comparisonGuests == null ? "—" : number.format(row.comparisonGuests)}</td><td>{row.comparisonSpending == null ? "—" : money.format(row.comparisonSpending)}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -267,7 +290,7 @@ export default function WeeklyInsightsPage() {
         )}
       </div>
 
-      <div className="source-note"><strong>Sources:</strong> General Ledger weekly sales revenue and OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; the {comparisonYear} comparison uses the same weekdays.</div>
+      <div className="source-note"><strong>Sources:</strong> General Ledger weekly sales revenue and OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; future weeks show aligned {comparisonYear} revenue, guest and spending benchmarks until {currentYear} results become available. W36 and W39 have one unrecorded revenue day and are marked partial.</div>
     </div>
   );
 }
