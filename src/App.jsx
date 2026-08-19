@@ -7,7 +7,7 @@ import "./theme.css";
 import "./layout.css";
 
 export default function App() {
-  const [activePage, setActivePage] = useState("sales-salary");
+  const [activePage, setActivePage] = useState("overview");
   const [authState, setAuthState] = useState("checking");
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined" && window.matchMedia) {
@@ -32,6 +32,8 @@ export default function App() {
     setAuthState("guest");
   };
 
+  const toggleTheme = () => setTheme((value) => value === "dark" ? "light" : "dark");
+
   if (authState === "checking") return <div className="app-loading">Loading secure dashboard…</div>;
   if (authState !== "authenticated") return <AuthGate onAuthenticated={() => setAuthState("authenticated")} />;
 
@@ -39,8 +41,8 @@ export default function App() {
     <div className="app-shell">
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
       <div className="app-main">
-        <Topbar theme={theme} onToggleTheme={() => setTheme((value) => value === "dark" ? "light" : "dark")} onLogout={logout} />
-        <main className="app-content"><Dashboard activePage={activePage} /></main>
+        <Topbar theme={theme} onToggleTheme={toggleTheme} onLogout={logout} />
+        <main className="app-content"><Dashboard activePage={activePage} theme={theme} onToggleTheme={toggleTheme} /></main>
       </div>
     </div>
   );
