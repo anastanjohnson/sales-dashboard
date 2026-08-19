@@ -378,7 +378,7 @@
 .salary-toolbar { margin-top: 8px; }
 .salary-month-picker {
     display: grid;
-    grid-template-columns: repeat(12, minmax(60px, 1fr));
+    grid-template-columns: minmax(82px, 1.25fr) repeat(12, minmax(60px, 1fr));
     gap: 8px;
     padding: 8px 10px;
     margin: 8px 0 16px;
@@ -397,6 +397,10 @@
     color: var(--text-secondary);
     font-size: 13px;
     cursor: pointer;
+}
+
+.salary-month-button--all {
+    min-width: 82px;
 }
 
 .salary-month-button:hover:not(:disabled) {

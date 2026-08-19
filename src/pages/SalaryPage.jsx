@@ -44,23 +44,39 @@ export default function SalaryPage() {
 
   useEffect(() => { loadSalaryData(); }, []);
 
-  const monthData = salaryData[selectedMonth];
-  const visibleEmployees = useMemo(() => {
-    if (!monthData) return [];
-    return monthData.employees.filter((employee) => department === "All" || employee.department === department);
-  }, [monthData, department]);
+  const monthData = selectedMonth === "all" ? null : salaryData[selectedMonth];
+  const selectedEmployees = useMemo(() => {
+    if (selectedMonth !== "all") return salaryData[selectedMonth]?.employees || [];
+
+    const combined = new Map();
+    salaryData.forEach((row) => {
+      row.employees.forEach((employee) => {
+        const name = String(employee.name).trim();
+        const key = `${employee.department}::${name}`;
+        const existing = combined.get(key) || { name, department: employee.department, salary: 0 };
+        existing.salary += Number(employee.salary) || 0;
+        combined.set(key, existing);
+      });
+    });
+    return Array.from(combined.values()).sort((a, b) => b.salary - a.salary);
+  }, [salaryData, selectedMonth]);
+
+  const visibleEmployees = useMemo(
+    () => selectedEmployees.filter((employee) => department === "All" || employee.department === department),
+    [selectedEmployees, department],
+  );
 
   const totals = useMemo(() => {
-    if (!monthData) return { kitchen: 0, service: 0, total: 0 };
-    const kitchen = monthData.employees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
-    const service = monthData.employees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + employee.salary, 0);
+    const kitchen = visibleEmployees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
+    const service = visibleEmployees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + employee.salary, 0);
     return { kitchen, service, total: kitchen + service };
-  }, [monthData]);
+  }, [visibleEmployees]);
 
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading secure salary data…</h3></div></div></div>;
-  if (status === "error" || !monthData) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
+  if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
 
   const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setView("chart"); };
+  const selectionLabel = selectedMonth === "all" ? "All Time 2026" : monthLabel(monthData);
 
   return (
     <div className="dashboard salary-page">
@@ -70,6 +86,7 @@ export default function SalaryPage() {
       </div>
 
       <div className="salary-month-picker" role="group" aria-label="Select salary month">
+        <button type="button" className={`salary-month-button salary-month-button--all ${selectedMonth === "all" ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === "all"} onClick={() => setSelectedMonth("all")}>All Time</button>
         {monthOrder.map(({ short, full }) => {
           const dataIndex = salaryData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === short.toLowerCase());
           const available = dataIndex >= 0;
@@ -93,7 +110,7 @@ export default function SalaryPage() {
         <div className="stat-card"><div className="stat-card__label">Service Salary</div><div className="stat-card__value">{currency.format(totals.service)}</div></div>
       </div>
       <div className="panel salary-panel">
-        <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{monthLabel(monthData)} · {department === "All" ? "All departments" : department}</p></div></div>
+        <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{selectionLabel} · {department === "All" ? "All departments" : department}</p></div></div>
         {view === "chart" ? <div className="salary-chart"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 16, right: 18, left: 4, bottom: 82 }}>
           <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip formatter={(value) => [currency.format(value), "Salary"]} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38}>{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} />)}</Bar>
         </BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>}
