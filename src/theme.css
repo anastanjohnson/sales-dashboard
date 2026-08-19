@@ -19,8 +19,10 @@
 
   --good: #006300;
     --good-bg: rgba(12, 163, 12, 0.12);
+    --good-contrast: #ffffff;
     --bad: #d03b3b;
     --bad-bg: rgba(208, 59, 59, 0.12);
+    --bad-contrast: #ffffff;
 
   --accent: #4a3aa7;
     --accent-contrast: #ffffff;
@@ -47,8 +49,10 @@
 
   --good: #0ca30c;
     --good-bg: rgba(12, 163, 12, 0.18);
+    --good-contrast: #0b0b0b;
     --bad: #e66767;
     --bad-bg: rgba(230, 103, 103, 0.18);
+    --bad-contrast: #0b0b0b;
 
   --accent: #9085e9;
     --accent-contrast: #0b0b0b;
