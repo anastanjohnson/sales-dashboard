@@ -5,7 +5,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
-const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON"];
+const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON", "WEEKLY_BENCHMARKS_DATA_JSON"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
   console.error(`Missing required environment variables: ${missing.join(", ")}`);
@@ -17,6 +17,7 @@ const port = Number(process.env.PORT || 10000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const salaryData = JSON.parse(process.env.SALARY_DATA_JSON);
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
+const weeklyBenchmarksData = JSON.parse(process.env.WEEKLY_BENCHMARKS_DATA_JSON);
 const cookieName = "kk_management_session";
 const sessionDurationSeconds = 8 * 60 * 60;
 
@@ -116,6 +117,7 @@ app.post("/api/logout", (_req, res) => {
 
 app.get("/api/salary", requireAuth, (_req, res) => res.json(salaryData));
 app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(weeklyPerformanceData));
+app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
 
 app.use(express.static(path.join(__dirname, "dist"), {
   index: false,
