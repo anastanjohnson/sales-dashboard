@@ -582,6 +582,17 @@
 .weekly-insight-banner p { margin: 0; font-size: 13px; line-height: 1.5; }
 .weekly-insights-table td:first-child { font-weight: 650; }
 .weekly-insights-table td:first-child small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 10px; font-weight: 500; }
+.weekly-year-chart { padding-bottom: 6px; }
+.weekly-year-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px 13px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+.weekly-year-note svg { flex-shrink: 0; color: var(--accent); }
 .salary-table { font-variant-numeric: tabular-nums; }
 .salary-table thead th { padding: 12px 16px; background: var(--surface-2); color: var(--text-secondary); font-weight: 650; white-space: nowrap; }
 .salary-table thead th:not(:first-child), .salary-table tbody td:not(:first-child) { text-align: right; }
