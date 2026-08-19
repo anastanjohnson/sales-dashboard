@@ -477,6 +477,12 @@
 .status-pill--partial { background: rgba(237, 161, 0, .14); color: #b87900; }
 .source-note { padding: 13px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--text-secondary); font-size: 12px; }
 
+.settings-panel { padding: 20px 22px; }
+.settings-panel__row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.settings-panel__row h3 { margin: 0 0 6px; font-size: 15px; }
+.settings-panel__row p { margin: 0; color: var(--text-secondary); font-size: 13px; }
+.settings-panel__security-icon { flex-shrink: 0; color: var(--good); }
+
 .weekly-week-picker {
     margin: 4px 0 16px;
     padding: 12px;
@@ -729,6 +735,7 @@ tbody tr:last-child td {
     .salary-filter-panel { align-items: stretch; flex-direction: column; }
     .salary-filter-panel select { width: 100%; }
     .sales-panel__head { align-items: flex-start; flex-direction: column; }
+    .settings-panel__row { align-items: flex-start; flex-direction: column; }
     .weekly-week-grid { grid-template-columns: repeat(4, minmax(52px, 1fr)); }
     .weekly-week-picker__head { align-items: flex-start; flex-direction: column; }
     .weekly-view-toolbar { align-items: stretch; flex-direction: column; }
