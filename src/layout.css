@@ -559,6 +559,25 @@
 .weekly-table { font-variant-numeric: tabular-nums; }
 .weekly-table th, .weekly-table td { padding: 12px 16px; white-space: nowrap; }
 .weekly-table th:not(:first-child), .weekly-table td:not(:first-child) { text-align: right; }
+.weekly-insight-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px 17px;
+    margin: -4px 0 24px;
+    border: 1px solid var(--good);
+    border-left-width: 4px;
+    border-radius: 11px;
+    background: var(--good-bg);
+    color: var(--text-secondary);
+}
+.weekly-insight-banner--down { border-color: var(--bad); background: var(--bad-bg); }
+.weekly-insight-banner > svg { flex-shrink: 0; margin-top: 1px; color: var(--good); }
+.weekly-insight-banner--down > svg { color: var(--bad); }
+.weekly-insight-banner strong { display: block; margin-bottom: 3px; color: var(--text-primary); font-size: 13px; }
+.weekly-insight-banner p { margin: 0; font-size: 13px; line-height: 1.5; }
+.weekly-insights-table td:first-child { font-weight: 650; }
+.weekly-insights-table td:first-child small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 10px; font-weight: 500; }
 .salary-table { font-variant-numeric: tabular-nums; }
 .salary-table thead th { padding: 12px 16px; background: var(--surface-2); color: var(--text-secondary); font-weight: 650; white-space: nowrap; }
 .salary-table thead th:not(:first-child), .salary-table tbody td:not(:first-child) { text-align: right; }
@@ -739,6 +758,8 @@ tbody tr:last-child td {
     .weekly-week-grid { grid-template-columns: repeat(4, minmax(52px, 1fr)); }
     .weekly-week-picker__head { align-items: flex-start; flex-direction: column; }
     .weekly-view-toolbar { align-items: stretch; flex-direction: column; }
+    .weekly-insights-metric-switch { width: 100%; }
+    .weekly-insights-metric-switch button { flex: 1; }
 }
 
 @media (min-width: 721px) and (max-width: 1100px) {
