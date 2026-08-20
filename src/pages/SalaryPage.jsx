@@ -79,7 +79,7 @@ export default function SalaryPage() {
   }, [salaryData, selectedMonth]);
 
   const visibleEmployees = useMemo(
-    () => selectedEmployees.filter((employee) => department === "All" || employee.department === department),
+    () => selectedEmployees.filter((employee) => department === "All" || employee.department === department).filter((employee) => Number(employee.salary) > 0),
     [selectedEmployees, department],
   );
 
