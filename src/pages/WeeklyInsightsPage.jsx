@@ -9,7 +9,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
 import { getIsoWeekNumber, getWeekTotals, mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
 
@@ -92,6 +92,25 @@ function CombinedTooltip({ active, payload, label, metric }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function BarValueLabel({ x = 0, y = 0, width = 0, value, metric, align, color }) {
+  if (value == null) return null;
+  const formattedValue = metric === "guests" ? number.format(value) : money.format(value);
+  const isComparison = align === "end";
+
+  return (
+    <text
+      x={x + (width / 2) + (isComparison ? 6 : -6)}
+      y={Math.max(y - 8, 12)}
+      textAnchor={align}
+      fill={color}
+      fontSize={10}
+      fontWeight={700}
+    >
+      {formattedValue}
+    </text>
   );
 }
 
@@ -267,14 +286,18 @@ export default function WeeklyInsightsPage() {
         {view === "chart" ? (
           <div className="sales-chart">
             <ResponsiveContainer width="100%" height={360}>
-              <BarChart data={combinedRows} margin={{ top: 12, right: 18, left: 4, bottom: 8 }} barGap={4}>
+              <BarChart data={combinedRows} margin={{ top: 32, right: 18, left: 4, bottom: 8 }} barGap={4}>
                 <CartesianGrid vertical={false} stroke="var(--grid)" />
                 <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
                 <YAxis tickFormatter={metricConfig.yAxis} allowDecimals={metric !== "guests"} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} />
                 <Tooltip content={<CombinedTooltip metric={metric} />} cursor={{ fill: "var(--surface-hover)" }} />
                 <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
-                <Bar dataKey={metricConfig.comparisonKey} name={String(comparisonYear)} fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38} />
-                <Bar dataKey={metricConfig.currentKey} name={String(currentYear)} fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38} />
+                <Bar dataKey={metricConfig.comparisonKey} name={String(comparisonYear)} fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38}>
+                  <LabelList dataKey={metricConfig.comparisonKey} content={<BarValueLabel metric={metric} align="end" color="var(--series-1)" />} />
+                </Bar>
+                <Bar dataKey={metricConfig.currentKey} name={String(currentYear)} fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38}>
+                  <LabelList dataKey={metricConfig.currentKey} content={<BarValueLabel metric={metric} align="start" color="var(--series-2)" />} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
