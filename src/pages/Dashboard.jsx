@@ -95,14 +95,7 @@ export default function Dashboard({ activePage }) {
           deltaPct={stats.orders.deltaPct}
           direction={stats.orders.direction}
         />
-        <StatCard
-          icon={BarChart2}
-          label="Average Order"
-          value={`$${stats.avgOrder.value.toFixed(2)}`}
-          deltaPct={stats.avgOrder.deltaPct}
-          direction={stats.avgOrder.direction}
-        />
-          </div>
+</div>
 
 
 
