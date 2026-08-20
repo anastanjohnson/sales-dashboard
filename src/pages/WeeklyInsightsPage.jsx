@@ -200,6 +200,7 @@ export default function WeeklyInsightsPage() {
             const hasCurrentWeekData = Boolean(guestWeek.available && revenueWeek?.days?.some((row) => row.currentRevenue != null));
             const hasBenchmarkData = Boolean(guestWeek.comparisonCovers != null && revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
             const hasData = hasCurrentWeekData || hasBenchmarkData;
+            const isDisabled = Number(guestWeek.weekNumber) >= 34 || !hasData;
             const change = hasCurrentWeekData ? percentageChange(totals.current, totals.comparison) : null;
             const direction = !hasCurrentWeekData && hasBenchmarkData ? "benchmark" : change == null ? "empty" : change > 0 ? "up" : change < 0 ? "down" : "neutral";
             const isSelected = guestWeek.id === selectedWeekId;
@@ -213,7 +214,7 @@ export default function WeeklyInsightsPage() {
                 type="button"
                 className={`weekly-week-button weekly-week-button--${direction} ${isSelected ? "weekly-week-button--selected" : ""}`}
                 key={guestWeek.id}
-                disabled={!hasData}
+                disabled={isDisabled}
                 aria-label={accessibleLabel}
                 aria-pressed={isSelected}
                 title={accessibleLabel}
