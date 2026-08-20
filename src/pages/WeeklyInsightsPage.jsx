@@ -241,7 +241,6 @@ export default function WeeklyInsightsPage() {
           <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} note={`${signedPercentage(revenueChange)} vs ${comparisonYear}`} change={revenueChange} />
           <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} note={`${signedPercentage(guestChange)} vs ${comparisonYear}`} change={guestChange} />
           <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} note={`${comparisonYear}: ${comparisonSpending == null ? "—" : money.format(comparisonSpending)} · ${signedPercentage(spendingChange)}`} change={spendingChange} />
-          <KpiCard icon={Lightbulb} label="Growth Driver" value={insight.label} note={`${signedPercentage(revenueChange)} revenue change`} />
         </> : <>
           <KpiCard icon={Euro} label={`${comparisonYear} Revenue Benchmark`} value={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} note={selectedRevenueWeek?.partialBenchmark ? "Partial — one source day is not recorded" : "Thursday to Monday benchmark"} />
           <KpiCard icon={Users} label={`${comparisonYear} Guest Benchmark`} value={comparisonGuests == null ? "—" : number.format(comparisonGuests)} note="OpenTable seated covers" />
