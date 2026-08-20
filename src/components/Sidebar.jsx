@@ -1,7 +1,6 @@
 import {
     LayoutGrid,
     ShoppingCart,
-    Receipt,
     BarChart3,
     Settings,
     ChevronLeft,
@@ -18,7 +17,6 @@ const NAV_ITEMS = [
   { icon: CalendarDays, label: "Weekly Performance", page: "weekly-performance" },
   { icon: Users, label: "Guest Count", page: "weekly-guests" },
   { icon: Activity, label: "Weekly Insights", page: "weekly-insights" },
-  { icon: Receipt, label: "Average Spending", page: "average-spending" },
   { icon: BarChart3, label: "Salary", page: "sales-salary" },
   { icon: Settings, label: "Setting", page: "settings" },
   ];
