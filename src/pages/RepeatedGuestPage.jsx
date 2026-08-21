@@ -101,7 +101,7 @@ export default function RepeatedGuestPage() {
                     <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
                     <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
                     <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32}>
+                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
                       {visitorTypeSplit.map((entry, index) => (
                                 <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
                               ))}
@@ -121,7 +121,7 @@ export default function RepeatedGuestPage() {
                     <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
                     <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
                     <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32}>
+                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
                       {gapBucketPercentages.map((entry, index) => (
                                 <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
                               ))}
