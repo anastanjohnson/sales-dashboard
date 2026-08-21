@@ -18,8 +18,8 @@ const NAV_ITEMS = [
     { icon: Activity, label: "Weekly Insights", page: "weekly-insights", group: "weekly" },
     { icon: CalendarDays, label: "Weekly Revenue", page: "weekly-performance", group: "weekly" },
     { icon: Users, label: "Weekly Guest count", page: "weekly-guests", group: "weekly" },
-    { icon: Repeat, label: "Repeated Guest Analysis", page: "repeated-guests", group: "weekly" },
-  { icon: BarChart3, label: "Salary", page: "sales-salary" },
+    { icon: Repeat, label: "Repeated Guest Analysis", page: "repeated-guests" },
+    { icon: BarChart3, label: "Salary", page: "sales-salary" },
   { icon: Settings, label: "Setting", page: "settings" },
   ];
 
