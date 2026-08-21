@@ -89,7 +89,7 @@ export default function RepeatedGuestPage() {
               <div className="sales-chart">
                 <ResponsiveContainer width="100%" height={340}>
                   <PieChart>
-                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110}>
+                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} isAnimationActive={false}>
                       {visitorTypeSplit.map((entry, index) => (
                                 <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
                               ))}
@@ -106,7 +106,7 @@ export default function RepeatedGuestPage() {
               <div className="sales-chart">
                 <ResponsiveContainer width="100%" height={340}>
                   <PieChart>
-                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110}>
+                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} isAnimationActive={false}>
                       {gapBucketPercentages.map((entry, index) => (
                                 <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
                               ))}
