@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Repeat, UserX } from "lucide-react";
+import { UserX } from "lucide-react";
 import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 
 const number = new Intl.NumberFormat("de-DE");
@@ -71,11 +71,6 @@ export default function RepeatedGuestPage() {
     const oneTime25 = oneTimeVisitorByYear["2025"];
     const oneTime26 = oneTimeVisitorByYear["2026"];
 
-    const repeatSharePct = visitorTypeSplit.find((entry) => entry.name === "Repeat visitors")?.value ?? 0;
-    const repeatGuestCount = visitGapStats.totalGuestsAnalyzed * (repeatSharePct / 100);
-    const avgReturnVisitsPerGuest = repeatGuestCount ? visitGapStats.totalReturnVisitsAnalyzed / repeatGuestCount : 0;
-    const avgTotalVisitsPerGuest = avgReturnVisitsPerGuest + 1;
-
     return (
           <div className="dashboard">
             <div className="dashboard__header">
@@ -109,17 +104,6 @@ export default function RepeatedGuestPage() {
                   <div className="stat-card__head"><UserX size={16} className="stat-card__icon" /><span className="stat-card__label">2026 - One-Time Visitors</span></div>
                   <div className="stat-card__value">{decimal.format(oneTime26.pct)}%</div>
                   <div className="sales-kpi-note">{number.format(oneTime26.oneTimeGuests)} of {number.format(oneTime26.totalGuests)} guests so far - {note2026.toLowerCase()}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="panel">
-              <div className="panel__head"><div><h3>Guest Loyalty Depth</h3><p>On average, how many times a guest who returns at least once ends up visiting in total</p></div></div>
-              <div className="stat-grid">
-                <div className="stat-card">
-                  <div className="stat-card__head"><Repeat size={16} className="stat-card__icon" /><span className="stat-card__label">Avg Visits per Repeat Guest</span></div>
-                  <div className="stat-card__value">{decimal.format(avgTotalVisitsPerGuest)}</div>
-                  <div className="sales-kpi-note">total visits, once a guest returns at least once</div>
                 </div>
               </div>
             </div>
