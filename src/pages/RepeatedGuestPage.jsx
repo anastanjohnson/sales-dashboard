@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { UserX } from "lucide-react";
 import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 
 const number = new Intl.NumberFormat("de-DE");
-const decimal = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
 const pct = (value, total) => (total ? ((value / total) * 100).toFixed(1) : "0.0");
@@ -104,13 +102,11 @@ function GapBucketChart({ data, height = 280 }) {
 
 export default function RepeatedGuestPage() {
     const {
-      yearlyRepeatCounts, visitorTypeSplitByYear, oneTimeVisitorByYear,
-      gapBucketPercentagesByYear, visitGapStatsByYear, totalTrackedGuests, note2026,
+      yearlyRepeatCounts, visitorTypeSplitByYear,
+      gapBucketPercentagesByYear, visitGapStatsByYear, totalTrackedGuests,
     } = repeatGuestData;
     const y25 = yearlyRepeatCounts["2025"];
     const y26 = yearlyRepeatCounts["2026"];
-    const oneTime25 = oneTimeVisitorByYear["2025"];
-    const oneTime26 = oneTimeVisitorByYear["2026"];
     const gapStats25 = visitGapStatsByYear["2025"];
     const gapStats26 = visitGapStatsByYear["2026"];
 
@@ -133,22 +129,6 @@ export default function RepeatedGuestPage() {
               <div className="stat-card"><div className="stat-card__label">2026 - 3-4 visits</div><div className="stat-card__value">{number.format(y26.threeOrMore - y26.fiveOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.threeOrMore - y26.fiveOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.fiveOrMore - y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-            </div>
-
-            <div className="panel">
-              <div className="panel__head"><div><h3>First-Time Visitors Who Haven't Returned</h3><p>Guests whose only tracked visit was in that year - shown separately for 2025 and 2026</p></div></div>
-              <div className="stat-grid">
-                <div className="stat-card">
-                  <div className="stat-card__head"><UserX size={16} className="stat-card__icon" /><span className="stat-card__label">2025 - One-Time Visitors</span></div>
-                  <div className="stat-card__value">{decimal.format(oneTime25.pct)}%</div>
-                  <div className="sales-kpi-note">{number.format(oneTime25.oneTimeGuests)} of {number.format(oneTime25.totalGuests)} guests that year</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card__head"><UserX size={16} className="stat-card__icon" /><span className="stat-card__label">2026 - One-Time Visitors</span></div>
-                  <div className="stat-card__value">{decimal.format(oneTime26.pct)}%</div>
-                  <div className="sales-kpi-note">{number.format(oneTime26.oneTimeGuests)} of {number.format(oneTime26.totalGuests)} guests so far - {note2026.toLowerCase()}</div>
-                </div>
-              </div>
             </div>
 
             <GuestListPanel title="2025 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].fiveToNine} />
