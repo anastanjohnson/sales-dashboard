@@ -5,6 +5,7 @@ import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 const number = new Intl.NumberFormat("de-DE");
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
+const pct = (value, total) => (total ? ((value / total) * 100).toFixed(1) : "0.0");
 
 const VISITOR_TYPE_COLORS = ["var(--series-1)", "var(--series-2)"];
 const GAP_BUCKET_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--text-muted)"];
@@ -76,15 +77,15 @@ export default function RepeatedGuestPage() {
             </div>
 
             <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2025 - 3-4 visits</div><div className="stat-card__value">{number.format(y25.threeOrMore - y25.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-              <div className="stat-card"><div className="stat-card__label">2025 - 5-9 visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore - y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-              <div className="stat-card"><div className="stat-card__label">2025 - 10+ visits</div><div className="stat-card__value">{number.format(y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
+              <div className="stat-card"><div className="stat-card__label">2025 - 3-4 visits</div><div className="stat-card__value">{number.format(y25.threeOrMore - y25.fiveOrMore)}</div><div className="sales-kpi-note">{pct(y25.threeOrMore - y25.fiveOrMore, y25.totalGuests)}% of {number.format(y25.totalGuests)} guests that year</div></div>
+              <div className="stat-card"><div className="stat-card__label">2025 - 5-9 visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore - y25.tenOrMore)}</div><div className="sales-kpi-note">{pct(y25.fiveOrMore - y25.tenOrMore, y25.totalGuests)}% of {number.format(y25.totalGuests)} guests that year</div></div>
+              <div className="stat-card"><div className="stat-card__label">2025 - 10+ visits</div><div className="stat-card__value">{number.format(y25.tenOrMore)}</div><div className="sales-kpi-note">{pct(y25.tenOrMore, y25.totalGuests)}% of {number.format(y25.totalGuests)} guests that year</div></div>
             </div>
 
             <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2026 - 3-4 visits</div><div className="stat-card__value">{number.format(y26.threeOrMore - y26.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-              <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-              <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
+              <div className="stat-card"><div className="stat-card__label">2026 - 3-4 visits</div><div className="stat-card__value">{number.format(y26.threeOrMore - y26.fiveOrMore)}</div><div className="sales-kpi-note">{pct(y26.threeOrMore - y26.fiveOrMore, y26.totalGuests)}% of {number.format(y26.totalGuests)} guests so far</div></div>
+              <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)}</div><div className="sales-kpi-note">{pct(y26.fiveOrMore - y26.tenOrMore, y26.totalGuests)}% of {number.format(y26.totalGuests)} guests so far</div></div>
+              <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)}</div><div className="sales-kpi-note">{pct(y26.tenOrMore, y26.totalGuests)}% of {number.format(y26.totalGuests)} guests so far</div></div>
             </div>
 
             <GuestListPanel title="2025 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].fiveToNine} />
