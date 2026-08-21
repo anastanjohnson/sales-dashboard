@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 
@@ -22,25 +23,31 @@ function ChartTooltip({ active, payload, label }) {
   }
 
 function GuestListPanel({ title, subtitle, guests }) {
+    const [open, setOpen] = useState(false);
     return (
           <div className="panel">
-            <div className="panel__head"><div><h3>{title}</h3><p>{subtitle}</p></div></div>
-            <div className="table-wrap">
-              <table className="salary-table">
-                <thead>
-                  <tr><th>Guest</th><th>Last visit</th><th>Total visits</th></tr>
-                </thead>
-                <tbody>
-                  {guests.map((guest) => (
-                            <tr key={guest.name + guest.lastVisit}>
-                              <td className="salary-table__month">{guest.name}</td>
-                              <td>{formatDate(guest.lastVisit)}</td>
-                              <td>{guest.totalVisits}</td>
-                            </tr>
-                          ))}
-                </tbody>
-              </table>
+            <div className="panel__head">
+              <div><h3>{title}</h3><p>{subtitle}</p></div>
+              <button className="select-btn" onClick={() => setOpen((v) => !v)}>{open ? "Hide guests" : `View guests (${guests.length})`}</button>
             </div>
+            {open && (
+                      <div className="table-wrap">
+                        <table className="salary-table">
+                          <thead>
+                            <tr><th>Guest</th><th>Last visit</th><th>Total visits</th></tr>
+                          </thead>
+                          <tbody>
+                            {guests.map((guest) => (
+                                      <tr key={guest.name + guest.lastVisit}>
+                                        <td className="salary-table__month">{guest.name}</td>
+                                        <td>{formatDate(guest.lastVisit)}</td>
+                                        <td>{guest.totalVisits}</td>
+                                      </tr>
+                                    ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
           </div>
         );
   }
@@ -61,19 +68,19 @@ export default function RepeatedGuestPage() {
 
             <div className="stat-grid">
               <div className="stat-card"><div className="stat-card__label">2025 - 3+ visits</div><div className="stat-card__value">{number.format(y25.threeOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-              <div className="stat-card"><div className="stat-card__label">2025 - 5+ visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
+              <div className="stat-card"><div className="stat-card__label">2025 - 5-9 visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore - y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
               <div className="stat-card"><div className="stat-card__label">2025 - 10+ visits</div><div className="stat-card__value">{number.format(y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
             </div>
 
             <div className="stat-grid">
               <div className="stat-card"><div className="stat-card__label">2026 - 3+ visits</div><div className="stat-card__value">{number.format(y26.threeOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-              <div className="stat-card"><div className="stat-card__label">2026 - 5+ visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
+              <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
             </div>
 
-            <GuestListPanel title="2025 - 5+ visits" subtitle="Guests who visited 5 or more times in 2025" guests={repeatGuestLists["2025"].fiveOrMore} />
-            <GuestListPanel title="2025 - 10+ visits" subtitle="Guests who visited 10 or more times in 2025" guests={repeatGuestLists["2025"].tenOrMore} />
-            <GuestListPanel title="2026 - 5+ visits" subtitle="Guests who visited 5 or more times in 2026" guests={repeatGuestLists["2026"].fiveOrMore} />
+            <GuestListPanel title="2025 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].fiveToNine} />
+            <GuestListPanel title="2025 - 10+ visits" subtitle="Guests who visited 10 or more times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].tenOrMore} />
+            <GuestListPanel title="2026 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2026" guests={repeatGuestLists["2026"].fiveToNine} />
             <GuestListPanel title="2026 - 10+ visits" subtitle="Guests who visited 10 or more times in 2026" guests={repeatGuestLists["2026"].tenOrMore} />
 
             <div className="panel">
