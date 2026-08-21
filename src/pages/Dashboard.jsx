@@ -16,6 +16,7 @@ import SalesPage from "./SalesPage";
 import WeeklyPerformancePage from "./WeeklyPerformancePage";
 import WeeklyGuestCountPage from "./WeeklyGuestCountPage";
 import WeeklyInsightsPage from "./WeeklyInsightsPage";
+import RepeatedGuestPage from "./RepeatedGuestPage";
 import SettingsPage from "./SettingsPage";
 import {
     salesByDay,
@@ -36,6 +37,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme }) {
   if (activePage === "weekly-performance") return <WeeklyPerformancePage />;
   if (activePage === "weekly-guests") return <WeeklyGuestCountPage />;
   if (activePage === "weekly-insights") return <WeeklyInsightsPage />;
+    if (activePage === "repeated-guests") return <RepeatedGuestPage />;
   if (activePage === "settings") return <SettingsPage theme={theme} onToggleTheme={onToggleTheme} />;
 
   return (
