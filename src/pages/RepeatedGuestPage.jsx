@@ -6,8 +6,8 @@ const number = new Intl.NumberFormat("de-DE");
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
 
-const VISITOR_TYPE_COLORS = ["var(--bad)", "var(--good)"];
-const GAP_BUCKET_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--bad)"];
+const VISITOR_TYPE_COLORS = ["var(--series-1)", "var(--series-2)"];
+const GAP_BUCKET_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--text-muted)"];
 
 function PieTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
@@ -21,10 +21,6 @@ function PieTooltip({ active, payload }) {
             </div>
           </div>
         );
-  }
-
-function pieLabel({ name, value }) {
-    return `${name}: ${value}%`;
   }
 
 function GuestListPanel({ title, subtitle, guests }) {
@@ -93,7 +89,7 @@ export default function RepeatedGuestPage() {
               <div className="sales-chart">
                 <ResponsiveContainer width="100%" height={340}>
                   <PieChart>
-                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label={pieLabel}>
+                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110}>
                       {visitorTypeSplit.map((entry, index) => (
                                 <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
                               ))}
@@ -110,7 +106,7 @@ export default function RepeatedGuestPage() {
               <div className="sales-chart">
                 <ResponsiveContainer width="100%" height={340}>
                   <PieChart>
-                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label={pieLabel}>
+                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110}>
                       {gapBucketPercentages.map((entry, index) => (
                                 <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
                               ))}
