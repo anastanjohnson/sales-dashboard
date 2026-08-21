@@ -4,12 +4,16 @@ export const repeatGuestData = {
           "2026": { threeOrMore: 39, fiveOrMore: 6, tenOrMore: 1, totalGuests: 1538 },
         },
     note2026: "2026 figures are partial-year, through mid-August.",
-    visitGapPercentages: [
-          { range: "Within 30 days", pct: 20.6 },
-          { range: "Within 60 days", pct: 33.6 },
-          { range: "Within 90 days", pct: 48.0 },
-          { range: "Within 180 days", pct: 73.8 },
-          { range: "One visit only", pct: 84.9 },
+    visitorTypeSplit: [
+          { name: "One-time visitors", value: 84.9 },
+          { name: "Repeat visitors", value: 15.1 },
+        ],
+    gapBucketPercentages: [
+          { name: "Within 30 days", value: 20.6 },
+          { name: "31-60 days", value: 13.0 },
+          { name: "61-90 days", value: 14.4 },
+          { name: "91-180 days", value: 25.8 },
+          { name: "180+ days", value: 26.2 },
         ],
     visitGapStats: { medianDays: 95, meanDays: 130.8, totalReturnVisitsAnalyzed: 1173, totalGuestsAnalyzed: 4627 },
     totalTrackedGuests: 4627,
