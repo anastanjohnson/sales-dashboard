@@ -8,6 +8,16 @@ export const repeatGuestData = {
     { name: "One-time visitors", value: 84.9 },
     { name: "Repeat visitors", value: 15.1 },
   ],
+  visitorTypeSplitByYear: {
+    "2025": [
+      { name: "One-time visitors", value: 81.8 },
+      { name: "Repeat visitors", value: 18.2 },
+    ],
+    "2026": [
+      { name: "One-time visitors", value: 72.9 },
+      { name: "Repeat visitors", value: 27.1 },
+    ],
+  },
   oneTimeVisitorByYear: {
     "2025": { oneTimeGuests: 2804, totalGuests: 3427, pct: 81.8 },
     "2026": { oneTimeGuests: 1121, totalGuests: 1538, pct: 72.9 },
@@ -19,7 +29,27 @@ export const repeatGuestData = {
     { name: "91-180 days", value: 25.8 },
     { name: "180+ days", value: 26.2 },
   ],
+  gapBucketPercentagesByYear: {
+    "2025": [
+      { name: "Within 30 days", value: 25.7 },
+      { name: "31-60 days", value: 14.2 },
+      { name: "61-90 days", value: 17.3 },
+      { name: "91-180 days", value: 27.2 },
+      { name: "180+ days", value: 15.6 },
+    ],
+    "2026": [
+      { name: "Within 30 days", value: 15.0 },
+      { name: "31-60 days", value: 11.6 },
+      { name: "61-90 days", value: 11.3 },
+      { name: "91-180 days", value: 24.3 },
+      { name: "180+ days", value: 37.7 },
+    ],
+  },
   visitGapStats: { medianDays: 95, meanDays: 130.8, totalReturnVisitsAnalyzed: 1173, totalGuestsAnalyzed: 4627 },
+  visitGapStatsByYear: {
+    "2025": { medianDays: 78, meanDays: 97.1, totalReturnVisitsAnalyzed: 614 },
+    "2026": { medianDays: 128, meanDays: 167.7, totalReturnVisitsAnalyzed: 559 },
+  },
   totalTrackedGuests: 4627,
 };
 
