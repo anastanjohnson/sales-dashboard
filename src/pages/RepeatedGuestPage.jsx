@@ -22,6 +22,22 @@ function ChartTooltip({ active, payload, label }) {
         );
   }
 
+function PercentTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null;
+    return (
+          <div className="chart-tooltip">
+            <div className="chart-tooltip__label">{label}</div>
+            {payload.map((item) => (
+                      <div className="chart-tooltip__row" key={item.name}>
+                        <span className="chart-tooltip__swatch" style={{ background: item.color || item.fill }} />
+                        <span className="chart-tooltip__name">{item.name}</span>
+                        <span className="chart-tooltip__value">{item.value}%</span>
+                      </div>
+                    ))}
+          </div>
+        );
+  }
+
 function GuestListPanel({ title, subtitle, guests }) {
     const [open, setOpen] = useState(false);
     return (
@@ -53,7 +69,7 @@ function GuestListPanel({ title, subtitle, guests }) {
   }
 
 export default function RepeatedGuestPage() {
-    const { yearlyRepeatCounts, visitGapDistribution, visitGapStats, totalTrackedGuests, note2026 } = repeatGuestData;
+    const { yearlyRepeatCounts, visitGapPercentages, visitGapStats, totalTrackedGuests, note2026 } = repeatGuestData;
     const y25 = yearlyRepeatCounts["2025"];
     const y26 = yearlyRepeatCounts["2026"];
 
@@ -67,13 +83,13 @@ export default function RepeatedGuestPage() {
             </div>
 
             <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2025 - 3+ visits</div><div className="stat-card__value">{number.format(y25.threeOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
+              <div className="stat-card"><div className="stat-card__label">2025 - 3-4 visits</div><div className="stat-card__value">{number.format(y25.threeOrMore - y25.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
               <div className="stat-card"><div className="stat-card__label">2025 - 5-9 visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore - y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
               <div className="stat-card"><div className="stat-card__label">2025 - 10+ visits</div><div className="stat-card__value">{number.format(y25.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
             </div>
 
             <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2026 - 3+ visits</div><div className="stat-card__value">{number.format(y26.threeOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
+              <div className="stat-card"><div className="stat-card__label">2026 - 3-4 visits</div><div className="stat-card__value">{number.format(y26.threeOrMore - y26.fiveOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)}</div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
             </div>
@@ -84,15 +100,15 @@ export default function RepeatedGuestPage() {
             <GuestListPanel title="2026 - 10+ visits" subtitle="Guests who visited 10 or more times in 2026" guests={repeatGuestLists["2026"].tenOrMore} />
 
             <div className="panel">
-              <div className="panel__head"><div><h3>Gap Between Visits</h3><p>Days between a guest's visit and their next one - median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+              <div className="panel__head"><div><h3>Gap Between Visits</h3><p>Share of return visits within each gap window (median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed); one-time visitors as a share of all {number.format(visitGapStats.totalGuestsAnalyzed)} tracked guests</p></div></div>
         <div className="sales-chart">
           <ResponsiveContainer width="100%" height={340}>
-            <BarChart data={visitGapDistribution} margin={{ top: 16, right: 18, left: 4, bottom: 8 }}>
+            <BarChart data={visitGapPercentages} margin={{ top: 16, right: 18, left: 4, bottom: 8 }}>
               <CartesianGrid vertical={false} stroke="var(--grid)" />
               <XAxis dataKey="range" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={44} allowDecimals={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-              <Bar dataKey="count" name="Return visits" fill="var(--series-3)" radius={[5, 5, 0, 0]} maxBarSize={54} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={44} allowDecimals={false} unit="%" />
+              <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+              <Bar dataKey="pct" name="Share" fill="var(--series-3)" radius={[5, 5, 0, 0]} maxBarSize={54} />
             </BarChart>
           </ResponsiveContainer>
         </div>
