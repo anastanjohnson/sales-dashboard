@@ -8,6 +8,7 @@ import {
     CalendarDays,
     Users,
     Activity,
+    Repeat,
 } from "lucide-react";
 import { Fragment, useState } from "react";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
     { icon: Activity, label: "Weekly Insights", page: "weekly-insights", group: "weekly" },
     { icon: CalendarDays, label: "Weekly Revenue", page: "weekly-performance", group: "weekly" },
     { icon: Users, label: "Weekly Guest count", page: "weekly-guests", group: "weekly" },
+    { icon: Repeat, label: "Repeated Guest Analysis", page: "repeated-guests", group: "weekly" },
   { icon: BarChart3, label: "Salary", page: "sales-salary" },
   { icon: Settings, label: "Setting", page: "settings" },
   ];
@@ -35,7 +37,7 @@ export default function Sidebar({ activePage, onNavigate }) {
               </button>
             <nav className="sidebar__nav">
                 {NAV_ITEMS.map(({ icon: Icon, label, page, group }, idx) => (<Fragment key={label}>
-                    {group === "weekly" && (idx === 0 || NAV_ITEMS[idx - 1].group !== "weekly") && !collapsed && <div className="sidebar__section-label">Weekly Performance</div>
+                    {group === "weekly" && (idx === 0 || NAV_ITEMS[idx - 1].group !== "weekly") && !collapsed && <div className="sidebar__section-label">Weekly Performance</div>}
                   
                   <button
                                 key={label}
