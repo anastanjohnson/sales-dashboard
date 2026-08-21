@@ -51,6 +51,16 @@ export const repeatGuestData = {
     "2026": { medianDays: 128, meanDays: 167.7, totalReturnVisitsAnalyzed: 559 },
   },
   totalTrackedGuests: 4627,
+  partySizeDistribution: [
+    { label: "1 Guest", size: 1, count: 202, pct: 2.5 },
+    { label: "2 Guests", size: 2, count: 4053, pct: 50.0 },
+    { label: "3 Guests", size: 3, count: 1219, pct: 15.0 },
+    { label: "4 Guests", size: 4, count: 1412, pct: 17.4 },
+    { label: "5 Guests", size: 5, count: 451, pct: 5.6 },
+    { label: "6 Guests", size: 6, count: 313, pct: 3.9 },
+    { label: "6+ Guests", size: "6+", count: 764, pct: 9.4 },
+  ],
+  totalReservationsAnalyzed: 8101,
 };
 
 export const repeatGuestLists = {
