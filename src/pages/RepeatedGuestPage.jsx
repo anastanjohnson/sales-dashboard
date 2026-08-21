@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 
 const number = new Intl.NumberFormat("de-DE");
@@ -9,17 +9,25 @@ const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
 const VISITOR_TYPE_COLORS = ["var(--series-1)", "var(--series-2)"];
 const GAP_BUCKET_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--text-muted)"];
 
-function PieTooltip({ active, payload }) {
+function PercentTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
     const item = payload[0];
     return (
           <div className="chart-tooltip">
             <div className="chart-tooltip__row">
               <span className="chart-tooltip__swatch" style={{ background: item.color || item.payload.fill }} />
-              <span className="chart-tooltip__name">{item.name}</span>
+              <span className="chart-tooltip__name">{item.payload.name}</span>
               <span className="chart-tooltip__value">{item.value}%</span>
             </div>
           </div>
+        );
+  }
+
+function PercentBarLabel({ x, y, width, height, value }) {
+    return (
+          <text x={x + width + 8} y={y + height / 2} dy={4} fill="var(--text-muted)" fontSize={12}>
+            {value}%
+          </text>
         );
   }
 
@@ -87,16 +95,19 @@ export default function RepeatedGuestPage() {
             <div className="panel">
               <div className="panel__head"><div><h3>One-Time vs Repeat Visitors</h3><p>Share of all {number.format(visitGapStats.totalGuestsAnalyzed)} tracked guests who never returned versus those who did</p></div></div>
               <div className="sales-chart">
-                <ResponsiveContainer width="100%" height={340}>
-                  <PieChart>
-                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} isAnimationActive={false}>
+                <ResponsiveContainer width="100%" height={140}>
+                  <BarChart data={visitorTypeSplit} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="var(--grid)" />
+                    <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
+                    <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+                    <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32}>
                       {visitorTypeSplit.map((entry, index) => (
                                 <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
                               ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} />
-                  </PieChart>
+                      <LabelList dataKey="value" content={<PercentBarLabel />} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -104,16 +115,19 @@ export default function RepeatedGuestPage() {
             <div className="panel">
               <div className="panel__head"><div><h3>Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one - median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
               <div className="sales-chart">
-                <ResponsiveContainer width="100%" height={340}>
-                  <PieChart>
-                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} isAnimationActive={false}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={gapBucketPercentages} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="var(--grid)" />
+                    <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
+                    <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+                    <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32}>
                       {gapBucketPercentages.map((entry, index) => (
                                 <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
                               ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} />
-                  </PieChart>
+                      <LabelList dataKey="value" content={<PercentBarLabel />} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
