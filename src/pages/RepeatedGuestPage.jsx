@@ -64,12 +64,55 @@ function GuestListPanel({ title, subtitle, guests }) {
         );
   }
 
+function VisitorTypeChart({ data, height = 140 }) {
+    return (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+              <CartesianGrid horizontal={false} stroke="var(--grid)" />
+              <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
+              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+              <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+              <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
+                {data.map((entry, index) => (
+                          <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
+                        ))}
+                <LabelList dataKey="value" content={<PercentBarLabel />} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        );
+  }
+
+function GapBucketChart({ data, height = 280 }) {
+    return (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+              <CartesianGrid horizontal={false} stroke="var(--grid)" />
+              <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
+              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+              <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+              <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
+                {data.map((entry, index) => (
+                          <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
+                        ))}
+                <LabelList dataKey="value" content={<PercentBarLabel />} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        );
+  }
+
 export default function RepeatedGuestPage() {
-    const { yearlyRepeatCounts, visitorTypeSplit, oneTimeVisitorByYear, gapBucketPercentages, visitGapStats, totalTrackedGuests, note2026 } = repeatGuestData;
+    const {
+      yearlyRepeatCounts, visitorTypeSplitByYear, oneTimeVisitorByYear,
+      gapBucketPercentagesByYear, visitGapStatsByYear, totalTrackedGuests, note2026,
+    } = repeatGuestData;
     const y25 = yearlyRepeatCounts["2025"];
     const y26 = yearlyRepeatCounts["2026"];
     const oneTime25 = oneTimeVisitorByYear["2025"];
     const oneTime26 = oneTimeVisitorByYear["2026"];
+    const gapStats25 = visitGapStatsByYear["2025"];
+    const gapStats26 = visitGapStatsByYear["2026"];
 
     return (
           <div className="dashboard">
@@ -113,43 +156,33 @@ export default function RepeatedGuestPage() {
             <GuestListPanel title="2026 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2026" guests={repeatGuestLists["2026"].fiveToNine} />
             <GuestListPanel title="2026 - 10+ visits" subtitle="Guests who visited 10 or more times in 2026" guests={repeatGuestLists["2026"].tenOrMore} />
 
-            <div className="panel">
-              <div className="panel__head"><div><h3>One-Time vs Repeat Visitors</h3><p>Share of all {number.format(visitGapStats.totalGuestsAnalyzed)} tracked guests who never returned versus those who did</p></div></div>
-              <div className="sales-chart">
-                <ResponsiveContainer width="100%" height={140}>
-                  <BarChart data={visitorTypeSplit} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
-                    <CartesianGrid horizontal={false} stroke="var(--grid)" />
-                    <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
-                    <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
-                    <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
-                      {visitorTypeSplit.map((entry, index) => (
-                                <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
-                              ))}
-                      <LabelList dataKey="value" content={<PercentBarLabel />} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="panel-row">
+              <div className="panel panel--half">
+                <div className="panel__head"><div><h3>2025 - One-Time vs Repeat Visitors</h3><p>Share of {number.format(y25.totalGuests)} guests tracked in 2025 who never returned versus those who did</p></div></div>
+                <div className="sales-chart">
+                  <VisitorTypeChart data={visitorTypeSplitByYear["2025"]} />
+                </div>
+              </div>
+              <div className="panel panel--half">
+                <div className="panel__head"><div><h3>2026 - One-Time vs Repeat Visitors</h3><p>Share of {number.format(y26.totalGuests)} guests tracked in 2026 so far who never returned versus those who did</p></div></div>
+                <div className="sales-chart">
+                  <VisitorTypeChart data={visitorTypeSplitByYear["2026"]} />
+                </div>
               </div>
             </div>
 
-            <div className="panel">
-              <div className="panel__head"><div><h3>Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one - median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
-              <div className="sales-chart">
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={gapBucketPercentages} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
-                    <CartesianGrid horizontal={false} stroke="var(--grid)" />
-                    <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
-                    <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
-                    <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-                    <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
-                      {gapBucketPercentages.map((entry, index) => (
-                                <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
-                              ))}
-                      <LabelList dataKey="value" content={<PercentBarLabel />} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="panel-row">
+              <div className="panel panel--half">
+                <div className="panel__head"><div><h3>2025 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2025 - median {gapStats25.medianDays} days, mean {gapStats25.meanDays} days, {number.format(gapStats25.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+                <div className="sales-chart">
+                  <GapBucketChart data={gapBucketPercentagesByYear["2025"]} />
+                </div>
+              </div>
+              <div className="panel panel--half">
+                <div className="panel__head"><div><h3>2026 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2026 - median {gapStats26.medianDays} days, mean {gapStats26.meanDays} days, {number.format(gapStats26.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+                <div className="sales-chart">
+                  <GapBucketChart data={gapBucketPercentagesByYear["2026"]} />
+                </div>
               </div>
             </div>
 
