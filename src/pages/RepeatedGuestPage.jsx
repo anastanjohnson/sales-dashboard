@@ -1,41 +1,30 @@
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
 
 const number = new Intl.NumberFormat("de-DE");
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
 
-function ChartTooltip({ active, payload, label }) {
+const VISITOR_TYPE_COLORS = ["var(--bad)", "var(--good)"];
+const GAP_BUCKET_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--bad)"];
+
+function PieTooltip({ active, payload }) {
     if (!active || !payload?.length) return null;
+    const item = payload[0];
     return (
           <div className="chart-tooltip">
-            <div className="chart-tooltip__label">{label}</div>
-            {payload.map((item) => (
-                      <div className="chart-tooltip__row" key={item.name}>
-                        <span className="chart-tooltip__swatch" style={{ background: item.color || item.fill }} />
-                        <span className="chart-tooltip__name">{item.name}</span>
-                        <span className="chart-tooltip__value">{number.format(item.value)}</span>
-                      </div>
-                    ))}
+            <div className="chart-tooltip__row">
+              <span className="chart-tooltip__swatch" style={{ background: item.color || item.payload.fill }} />
+              <span className="chart-tooltip__name">{item.name}</span>
+              <span className="chart-tooltip__value">{item.value}%</span>
+            </div>
           </div>
         );
   }
 
-function PercentTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-    return (
-          <div className="chart-tooltip">
-            <div className="chart-tooltip__label">{label}</div>
-            {payload.map((item) => (
-                      <div className="chart-tooltip__row" key={item.name}>
-                        <span className="chart-tooltip__swatch" style={{ background: item.color || item.fill }} />
-                        <span className="chart-tooltip__name">{item.name}</span>
-                        <span className="chart-tooltip__value">{item.value}%</span>
-                      </div>
-                    ))}
-          </div>
-        );
+function pieLabel({ name, value }) {
+    return `${name}: ${value}%`;
   }
 
 function GuestListPanel({ title, subtitle, guests }) {
@@ -69,7 +58,7 @@ function GuestListPanel({ title, subtitle, guests }) {
   }
 
 export default function RepeatedGuestPage() {
-    const { yearlyRepeatCounts, visitGapPercentages, visitGapStats, totalTrackedGuests, note2026 } = repeatGuestData;
+    const { yearlyRepeatCounts, visitorTypeSplit, gapBucketPercentages, visitGapStats, totalTrackedGuests, note2026 } = repeatGuestData;
     const y25 = yearlyRepeatCounts["2025"];
     const y26 = yearlyRepeatCounts["2026"];
 
@@ -100,19 +89,38 @@ export default function RepeatedGuestPage() {
             <GuestListPanel title="2026 - 10+ visits" subtitle="Guests who visited 10 or more times in 2026" guests={repeatGuestLists["2026"].tenOrMore} />
 
             <div className="panel">
-              <div className="panel__head"><div><h3>Gap Between Visits</h3><p>Share of return visits within each gap window (median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed); one-time visitors as a share of all {number.format(visitGapStats.totalGuestsAnalyzed)} tracked guests</p></div></div>
-        <div className="sales-chart">
-          <ResponsiveContainer width="100%" height={340}>
-            <BarChart data={visitGapPercentages} margin={{ top: 16, right: 18, left: 4, bottom: 8 }}>
-              <CartesianGrid vertical={false} stroke="var(--grid)" />
-              <XAxis dataKey="range" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={44} allowDecimals={false} unit="%" />
-              <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-              <Bar dataKey="pct" name="Share" fill="var(--series-3)" radius={[5, 5, 0, 0]} maxBarSize={54} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+              <div className="panel__head"><div><h3>One-Time vs Repeat Visitors</h3><p>Share of all {number.format(visitGapStats.totalGuestsAnalyzed)} tracked guests who never returned versus those who did</p></div></div>
+              <div className="sales-chart">
+                <ResponsiveContainer width="100%" height={340}>
+                  <PieChart>
+                    <Pie data={visitorTypeSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label={pieLabel}>
+                      {visitorTypeSplit.map((entry, index) => (
+                                <Cell key={entry.name} fill={VISITOR_TYPE_COLORS[index % VISITOR_TYPE_COLORS.length]} />
+                              ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltip />} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel__head"><div><h3>Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one - median {visitGapStats.medianDays} days, mean {visitGapStats.meanDays} days, {number.format(visitGapStats.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+              <div className="sales-chart">
+                <ResponsiveContainer width="100%" height={340}>
+                  <PieChart>
+                    <Pie data={gapBucketPercentages} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label={pieLabel}>
+                      {gapBucketPercentages.map((entry, index) => (
+                                <Cell key={entry.name} fill={GAP_BUCKET_COLORS[index % GAP_BUCKET_COLORS.length]} />
+                              ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltip />} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
       <div className="source-note"><strong>Source:</strong> GuestCenter reservation export, completed visits only, guests identified by phone number or email. Walk-ins without contact details cannot be tracked across visits and are excluded.</div>
     </div>
