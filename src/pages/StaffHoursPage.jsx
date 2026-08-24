@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Clock3, RefreshCw, Table2, TriangleAlert, Users } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DEFAULT_HOURS_LIMIT = 43;
@@ -70,9 +70,6 @@ export default function StaffHoursPage() {
         regularHours: hoursLimit == null ? workingHours : Math.min(workingHours, hoursLimit),
         extraHours: hoursLimit == null ? 0 : Math.max(0, workingHours - hoursLimit),
         remainingTo43: hoursLimit === DEFAULT_HOURS_LIMIT ? Math.max(0, DEFAULT_HOURS_LIMIT - workingHours) : 0,
-        regularTotalLabel: workingHours <= (hoursLimit ?? workingHours) ? `Total ${hours.format(workingHours)} h` : "",
-        extraTotalLabel: hoursLimit != null && workingHours > hoursLimit ? `Total ${hours.format(workingHours)} h` : "",
-        limitHoursLabel: hoursLimit == null ? "No limit" : `Limit ${hours.format(hoursLimit)} h`,
       };
     })
     .sort((a, b) => {
@@ -128,21 +125,27 @@ export default function StaffHoursPage() {
       <div className="panel staff-hours-panel">
         <div className="panel__head salary-panel__head"><div><h3>Monthly Service Staff Hours</h3><p>{monthData.month} {monthData.year} · Sorted by worked hours, highest to lowest · Red sections show hours above each employee’s limit</p></div></div>
         {view === "chart" ? (
-          <div className="staff-hours-chart"><ResponsiveContainer width="100%" height={440}><BarChart data={staff} margin={{ top: 20, right: 24, left: 4, bottom: 88 }}>
-            <CartesianGrid vertical={false} stroke="var(--grid)" />
-            <XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={96} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-            <YAxis unit=" h" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={56} />
-            <Tooltip content={<HoursTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-            <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
-            <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42}>
-              <LabelList dataKey="regularTotalLabel" position="top" fill="var(--text)" fontSize={10} fontWeight={700} />
-              <LabelList dataKey="limitHoursLabel" position="insideBottom" fill="var(--text)" fontSize={9} fontWeight={700} />
-            </Bar>
-            <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42}>
-              <LabelList dataKey="extraTotalLabel" position="top" fill="var(--text)" fontSize={10} fontWeight={700} />
-            </Bar>
-            <Bar dataKey="remainingTo43" name="Remaining to 43 hours" stackId="hours" fill="transparent" stroke="var(--text-muted)" strokeWidth={1.5} strokeDasharray="4 4" radius={[4, 4, 0, 0]} maxBarSize={42} />
-          </BarChart></ResponsiveContainer></div>
+          <div className="staff-hours-chart-layout">
+            <div className="staff-hours-chart"><ResponsiveContainer width="100%" height={440}><BarChart data={staff} margin={{ top: 20, right: 24, left: 4, bottom: 88 }}>
+              <CartesianGrid vertical={false} stroke="var(--grid)" />
+              <XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={96} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <YAxis unit=" h" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={56} />
+              <Tooltip content={<HoursTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+              <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
+              <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42} />
+              <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42} />
+              <Bar dataKey="remainingTo43" name="Remaining to 43 hours" stackId="hours" fill="transparent" stroke="var(--text-muted)" strokeWidth={1.5} strokeDasharray="4 4" radius={[4, 4, 0, 0]} maxBarSize={42} />
+            </BarChart></ResponsiveContainer></div>
+            <aside className="staff-hours-values" aria-label="Worked and limit hours">
+              <div className="staff-hours-values__head"><span>Employee</span><span>Total / Limit</span></div>
+              {staff.map((employee) => (
+                <div className="staff-hours-values__row" key={employee.name}>
+                  <span className="staff-hours-values__name">{employee.name}</span>
+                  <span className="staff-hours-values__hours"><strong>{hours.format(employee.workingHours)} h</strong><span>/</span><span>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</span></span>
+                </div>
+              ))}
+            </aside>
+          </div>
         ) : (
           <div className="table-wrap"><table className="staff-hours-table"><thead><tr><th>Employee</th><th>Worked Hours</th><th>Monthly Limit</th><th>Extra Hours</th><th>Status</th></tr></thead><tbody>{staff.map((employee) => <tr key={employee.name}><td className="salary-table__month">{employee.name}</td><td>{hours.format(employee.workingHours)} h</td><td>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</td><td className={employee.extraHours > 0 ? "staff-hours-extra" : ""}>{employee.extraHours > 0 ? "+" : ""}{hours.format(employee.extraHours)} h</td><td><span className={"status-pill " + (employee.extraHours > 0 ? "status-pill--over" : "")}>{employee.hoursLimit == null ? "No limit" : employee.extraHours > 0 ? `Above ${hours.format(employee.hoursLimit)} h` : `Within ${hours.format(employee.hoursLimit)} h`}</span></td></tr>)}</tbody></table></div>
         )}
