@@ -28,6 +28,7 @@ function HoursTooltip({ active, payload, label }) {
       <div className="chart-tooltip__label">{label}</div>
       <div className="chart-tooltip__row"><span className="chart-tooltip__swatch" style={{ background: "var(--series-2)" }} /><span className="chart-tooltip__name">Within limit</span><span className="chart-tooltip__value">{hours.format(row.regularHours)} h</span></div>
       <div className="chart-tooltip__row"><span className="chart-tooltip__swatch" style={{ background: "var(--bad)" }} /><span className="chart-tooltip__name">Above limit</span><span className="chart-tooltip__value">{hours.format(row.extraHours)} h</span></div>
+      {row.remainingTo43 > 0 && <div className="chart-tooltip__row"><span className="chart-tooltip__swatch staff-hours-dotted-swatch" /><span className="chart-tooltip__name">Remaining to 43 hours</span><span className="chart-tooltip__value">{hours.format(row.remainingTo43)} h</span></div>}
       <div className="chart-tooltip__row"><span className="chart-tooltip__name">Monthly limit</span><span className="chart-tooltip__value">{row.hoursLimit == null ? "No limit" : `${hours.format(row.hoursLimit)} h`}</span></div>
       <div className="chart-tooltip__row"><span className="chart-tooltip__name">Total worked</span><span className="chart-tooltip__value">{hours.format(row.workingHours)} h</span></div>
     </div>
@@ -68,6 +69,7 @@ export default function StaffHoursPage() {
         hoursLimit,
         regularHours: hoursLimit == null ? workingHours : Math.min(workingHours, hoursLimit),
         extraHours: hoursLimit == null ? 0 : Math.max(0, workingHours - hoursLimit),
+        remainingTo43: hoursLimit === DEFAULT_HOURS_LIMIT ? Math.max(0, DEFAULT_HOURS_LIMIT - workingHours) : 0,
       };
     })
     .sort((a, b) => b.workingHours - a.workingHours), [monthData]);
@@ -123,6 +125,7 @@ export default function StaffHoursPage() {
             <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
             <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42} />
             <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42} />
+            <Bar dataKey="remainingTo43" name="Remaining to 43 hours" stackId="hours" fill="transparent" stroke="var(--text-muted)" strokeWidth={1.5} strokeDasharray="4 4" radius={[4, 4, 0, 0]} maxBarSize={42} />
           </BarChart></ResponsiveContainer></div>
         ) : (
           <div className="table-wrap"><table className="staff-hours-table"><thead><tr><th>Employee</th><th>Worked Hours</th><th>Monthly Limit</th><th>Extra Hours</th><th>Status</th></tr></thead><tbody>{staff.map((employee) => <tr key={employee.name}><td className="salary-table__month">{employee.name}</td><td>{hours.format(employee.workingHours)} h</td><td>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</td><td className={employee.extraHours > 0 ? "staff-hours-extra" : ""}>{employee.extraHours > 0 ? "+" : ""}{hours.format(employee.extraHours)} h</td><td><span className={"status-pill " + (employee.extraHours > 0 ? "status-pill--over" : "")}>{employee.hoursLimit == null ? "No limit" : employee.extraHours > 0 ? `Above ${hours.format(employee.hoursLimit)} h` : `Within ${hours.format(employee.hoursLimit)} h`}</span></td></tr>)}</tbody></table></div>
