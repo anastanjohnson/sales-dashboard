@@ -10,6 +10,7 @@ import {
     Activity,
     Repeat,
     Clock3,
+    Globe2,
 } from "lucide-react";
 import { Fragment, useState } from "react";
 
