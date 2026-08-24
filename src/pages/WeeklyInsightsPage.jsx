@@ -198,13 +198,13 @@ export default function WeeklyInsightsPage() {
     spending: { title: "Daily Average Guest Spending", currentKey: "currentSpending", comparisonKey: "comparisonSpending", yAxis: compactMoney.format },
   }[metric];
 
-  if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading weekly insights…</h3></div></div></div>;
-  if (status === "error") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Weekly insights could not be loaded.</h3><button className="btn btn--ghost" onClick={loadWeeklyData}>Try again</button></div></div></div>;
+  if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading weekly performance…</h3></div></div></div>;
+  if (status === "error") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Weekly performance could not be loaded.</h3><button className="btn btn--ghost" onClick={loadWeeklyData}>Try again</button></div></div></div>;
 
   return (
     <div className="dashboard weekly-performance-page">
       <div className="dashboard__header">
-        <div><h1>Weekly Insights</h1><p className="dashboard__subtitle">See how guest volume and spending per guest combine to drive weekly sales revenue.</p></div>
+        <div><h1>Weekly Performance</h1><p className="dashboard__subtitle">Weekly revenue, guest count, average spending and performance insights in one report.</p></div>
       </div>
 
       <div className="weekly-week-picker" aria-label="Select a combined reporting week">
