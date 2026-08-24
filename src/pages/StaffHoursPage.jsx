@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Clock3, RefreshCw, Table2, TriangleAlert, Users } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DEFAULT_HOURS_LIMIT = 43;
@@ -70,6 +70,9 @@ export default function StaffHoursPage() {
         regularHours: hoursLimit == null ? workingHours : Math.min(workingHours, hoursLimit),
         extraHours: hoursLimit == null ? 0 : Math.max(0, workingHours - hoursLimit),
         remainingTo43: hoursLimit === DEFAULT_HOURS_LIMIT ? Math.max(0, DEFAULT_HOURS_LIMIT - workingHours) : 0,
+        regularTotalLabel: workingHours <= (hoursLimit ?? workingHours) ? `Total ${hours.format(workingHours)} h` : "",
+        extraTotalLabel: hoursLimit != null && workingHours > hoursLimit ? `Total ${hours.format(workingHours)} h` : "",
+        limitHoursLabel: hoursLimit == null ? "No limit" : `Limit ${hours.format(hoursLimit)} h`,
       };
     })
     .sort((a, b) => {
@@ -131,8 +134,13 @@ export default function StaffHoursPage() {
             <YAxis unit=" h" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={56} />
             <Tooltip content={<HoursTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
             <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
-            <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42} />
-            <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42} />
+            <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42}>
+              <LabelList dataKey="regularTotalLabel" position="top" fill="var(--text)" fontSize={10} fontWeight={700} />
+              <LabelList dataKey="limitHoursLabel" position="insideBottom" fill="var(--text)" fontSize={9} fontWeight={700} />
+            </Bar>
+            <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42}>
+              <LabelList dataKey="extraTotalLabel" position="top" fill="var(--text)" fontSize={10} fontWeight={700} />
+            </Bar>
             <Bar dataKey="remainingTo43" name="Remaining to 43 hours" stackId="hours" fill="transparent" stroke="var(--text-muted)" strokeWidth={1.5} strokeDasharray="4 4" radius={[4, 4, 0, 0]} maxBarSize={42} />
           </BarChart></ResponsiveContainer></div>
         ) : (
