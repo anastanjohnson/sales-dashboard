@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { BarChart3, Calendar, Euro, ReceiptText, RefreshCw, Table2, TrendingDown, TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -18,6 +18,23 @@ function Change({ value }) {
   if (value === null) return <span className="sales-change sales-change--neutral">—</span>;
   const up = value >= 0;
   return <span className={`sales-change ${up ? "sales-change--up" : "sales-change--down"}`}>{up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{up ? "+" : ""}{value.toFixed(1)}%</span>;
+}
+
+function SalesBarValueLabel({ x = 0, y = 0, width = 0, value, align, color, formatter }) {
+  if (value == null) return null;
+  const isComparison = align === "end";
+  return (
+    <text
+      x={x + (width / 2) + (isComparison ? 6 : -6)}
+      y={Math.max(y - 8, 12)}
+      textAnchor={align}
+      fill={color}
+      fontSize={10}
+      fontWeight={700}
+    >
+      {formatter(value)}
+    </text>
+  );
 }
 
 export default function SalesPage() {
@@ -63,7 +80,7 @@ export default function SalesPage() {
     <div className="stat-grid sales-summary"><KpiCard icon={Euro} label="Total Revenue" value={money.format(totals.revenue)} note={`${rows.length} selected months`} /><KpiCard icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completeRows.length} completed months`} /><KpiCard icon={ReceiptText} label="Tips" value={money.format(totals.tips)} note={`${((totals.tips / Math.max(totals.revenue, 1)) * 100).toFixed(1)}% of revenue`} /><KpiCard icon={TrendingUp} label="Best Full Month" value={bestMonth ? money.format(bestMonth.revenue) : "—"} note={bestMonth ? fullLabel(bestMonth) : "No complete month selected"} /></div>
 
     <div className="panel sales-panel"><div className="panel__head sales-panel__head"><div><h3>{metricConfig.label} Trend</h3></div><div className="metric-switch"><button className={metric === "revenue" ? "active" : ""} onClick={() => setMetric("revenue")}>Revenue</button><button className={metric === "tips" ? "active" : ""} onClick={() => setMetric("tips")}>Tips</button></div></div>
-      {view === "chart" ? <div className="sales-chart"><ResponsiveContainer width="100%" height={360}><BarChart data={comparisonData} margin={{ top: 12, right: 18, left: 4, bottom: 8 }} barGap={4}><CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} /><YAxis tickFormatter={metricConfig.short} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} /><Tooltip formatter={(value, year, item) => [metricConfig.formatter(value), `${year}${year === "2026" && item.payload.partial2026 ? " (MTD)" : ""}`]} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} /><Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />{metric === "revenue" && <ReferenceLine y={revenueReference} stroke="var(--series-4)" strokeWidth={2} strokeDasharray="6 4" label={{ value: "€57,000", position: "insideTopRight", fill: "var(--series-4)", fontSize: 12, fontWeight: 700 }} />}<Bar dataKey="2025" name="2025 comparison" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={32} /><Bar dataKey="2026" name="2026" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={32} /></BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="sales-table"><thead><tr><th>Month</th><th>Revenue</th><th>Orders</th><th>Average Order</th><th>Tips</th><th>YoY Revenue</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={label(row)}><td>{fullLabel(row)}</td><td>{money.format(row.revenue)}</td><td>{row.orders.toLocaleString()}</td><td>{money.format(row.averageOrder)}</td><td>{money.format(row.tips)}</td><td><Change value={row.yoy} /></td><td>{row.partial ? <span className="status-pill status-pill--partial">Partial{row.asOf ? ` · ${row.asOf}` : ""}</span> : <span className="status-pill">Complete</span>}</td></tr>)}</tbody></table></div>}
+      {view === "chart" ? <div className="sales-chart"><ResponsiveContainer width="100%" height={360}><BarChart data={comparisonData} margin={{ top: 36, right: 18, left: 4, bottom: 8 }} barGap={4}><CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} /><YAxis tickFormatter={metricConfig.short} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} /><Tooltip formatter={(value, year, item) => [metricConfig.formatter(value), `${year}${year === "2026" && item.payload.partial2026 ? " (MTD)" : ""}`]} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} /><Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />{metric === "revenue" && <ReferenceLine y={revenueReference} stroke="var(--series-4)" strokeWidth={2} strokeDasharray="6 4" label={{ value: "€57,000", position: "insideTopRight", fill: "var(--series-4)", fontSize: 12, fontWeight: 700 }} />}<Bar dataKey="2025" name="2025 comparison" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={32}><LabelList dataKey="2025" content={<SalesBarValueLabel align="end" color="var(--series-1)" formatter={metricConfig.formatter} />} /></Bar><Bar dataKey="2026" name="2026" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={32}><LabelList dataKey="2026" content={<SalesBarValueLabel align="start" color="var(--series-2)" formatter={metricConfig.formatter} />} /></Bar></BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="sales-table"><thead><tr><th>Month</th><th>Revenue</th><th>Orders</th><th>Average Order</th><th>Tips</th><th>YoY Revenue</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={label(row)}><td>{fullLabel(row)}</td><td>{money.format(row.revenue)}</td><td>{row.orders.toLocaleString()}</td><td>{money.format(row.averageOrder)}</td><td>{money.format(row.tips)}</td><td><Change value={row.yoy} /></td><td>{row.partial ? <span className="status-pill status-pill--partial">Partial{row.asOf ? ` · ${row.asOf}` : ""}</span> : <span className="status-pill">Complete</span>}</td></tr>)}</tbody></table></div>}
     </div>
 
     {latest?.partial && <div className="source-note"><strong>{fullLabel(latest)} is month-to-date.</strong> The General Ledger contains data through {latest.asOf || "the latest recorded date"}; it is excluded from the “Average Monthly Revenue” and “Best Full Month” KPIs.</div>}
