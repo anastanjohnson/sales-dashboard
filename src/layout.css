@@ -858,3 +858,77 @@ tbody tr:last-child td {
 .website-chart-row .panel__head p,.website-channel-table .panel__head p{margin:5px 0 0;color:var(--text-muted);font-size:12px}.website-channel-table{padding:0;overflow:hidden}.website-channel-table .panel__head{padding:20px 22px 14px}
 .website-channel-table th,.website-channel-table td{padding:12px 16px;white-space:nowrap;text-align:right}.website-channel-table th:first-child,.website-channel-table td:first-child{text-align:left;font-weight:650}.website-channel-dot{display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%}
 @media(max-width:1050px){.website-chart-row{grid-template-columns:1fr}}@media(max-width:720px){.website-toolbar{align-items:stretch;flex-direction:column}.website-month{justify-content:space-between}}
+
+
+/* Horizontal staff hours chart */
+.staff-hours-horizontal { padding: 14px 20px 22px; }
+.staff-hours-horizontal__legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 18px;
+    margin-bottom: 18px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+}
+.staff-hours-horizontal__legend span { display: inline-flex; align-items: center; gap: 7px; }
+.staff-hours-horizontal__key { width: 18px; height: 8px; border-radius: 3px; }
+.staff-hours-horizontal__key--worked { background: var(--series-2); }
+.staff-hours-horizontal__key--extra { background: var(--bad); }
+.staff-hours-horizontal__key--remaining { background: transparent; border: 1px dashed var(--text-muted); }
+.staff-hours-horizontal__rows { display: grid; gap: 14px; }
+.staff-hours-horizontal__row {
+    display: grid;
+    grid-template-columns: minmax(130px, 190px) minmax(260px, 1fr) minmax(120px, auto);
+    gap: 16px;
+    align-items: center;
+}
+.staff-hours-horizontal__name {
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.staff-hours-horizontal__track {
+    display: flex;
+    height: 20px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--surface-hover);
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+.staff-hours-horizontal__worked { background: var(--series-2); }
+.staff-hours-horizontal__extra { background: var(--bad); }
+.staff-hours-horizontal__remaining {
+    background: transparent;
+    border: 1.5px dashed var(--text-muted);
+    border-left: 0;
+}
+.staff-hours-horizontal__value {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 1px 9px;
+    align-items: baseline;
+    color: var(--text-secondary);
+    font-size: 11px;
+    white-space: nowrap;
+}
+.staff-hours-horizontal__value strong { color: var(--text-primary); font-size: 13px; }
+.staff-hours-horizontal__value em {
+    grid-column: 1 / -1;
+    color: var(--bad);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+}
+@media (max-width: 850px) {
+    .staff-hours-horizontal__row { grid-template-columns: minmax(100px, 140px) minmax(180px, 1fr); gap: 10px; }
+    .staff-hours-horizontal__value { grid-column: 2; }
+}
+@media (max-width: 580px) {
+    .staff-hours-horizontal { padding: 12px; overflow-x: auto; }
+    .staff-hours-horizontal__row { min-width: 560px; }
+}
