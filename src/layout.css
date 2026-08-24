@@ -801,7 +801,48 @@ tbody tr:last-child td {
 }
 .staff-hours-threshold svg { color: var(--accent); }
 .staff-hours-panel { padding: 0; overflow: hidden; }
-.staff-hours-chart { padding: 8px 18px 18px 8px; }
+.staff-hours-chart-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+    gap: 18px;
+    align-items: start;
+    padding: 8px 18px 18px 8px;
+}
+.staff-hours-chart { min-width: 0; }
+.staff-hours-values {
+    margin-top: 42px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+.staff-hours-values__head,
+.staff-hours-values__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+}
+.staff-hours-values__head {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.staff-hours-values__row { border-top: 1px solid var(--border); font-size: 12px; }
+.staff-hours-values__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; color: var(--text-primary); }
+.staff-hours-values__hours { display: inline-flex; gap: 5px; align-items: baseline; white-space: nowrap; color: var(--text-secondary); }
+.staff-hours-values__hours strong { color: var(--text-primary); font-size: 13px; }
+@media (max-width: 1050px) {
+    .staff-hours-chart-layout { grid-template-columns: 1fr; padding-right: 8px; }
+    .staff-hours-values { margin: 0 10px 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .staff-hours-values__head { grid-column: 1 / -1; }
+}
 .staff-hours-extra { color: var(--bad); font-weight: 700; }
 .staff-hours-table { font-variant-numeric: tabular-nums; }
 .staff-hours-table th,
