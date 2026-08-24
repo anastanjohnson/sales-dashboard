@@ -176,7 +176,7 @@ export default function WeeklyGuestCountPage() {
         )}
       </div>
 
-      <div className="source-note"><strong>Source:</strong> OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; future weeks show the aligned 2025 guest benchmark until 2026 results become available. Current data through 17 Aug 2026.</div>
+      <div className="source-note"><strong>Source:</strong> OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; future weeks show the aligned 2025 guest benchmark until 2026 results become available. Current data through 24 Aug 2026; W34 is partial.</div>
     </div>
   );
 }
