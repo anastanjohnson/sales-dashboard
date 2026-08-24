@@ -32,6 +32,20 @@ const normalizedStaffHoursData = staffHoursData.map((period) => {
   };
 });
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
+const weeklyPerformanceOverrides = JSON.parse(process.env.WEEKLY_PERFORMANCE_OVERRIDES_JSON || "[]");
+const normalizedWeeklyPerformanceData = weeklyPerformanceData.map((week) => {
+  const override = weeklyPerformanceOverrides.find((entry) => entry.id === week.id || Number(entry.weekNumber) === Number(week.weekNumber));
+  if (!override) return week;
+  const overrideDays = Array.isArray(override.days) ? override.days : [];
+  return {
+    ...week,
+    ...override,
+    days: (week.days || []).map((day) => ({
+      ...day,
+      ...(overrideDays.find((entry) => entry.currentDate === day.currentDate || entry.day === day.day) || {}),
+    })),
+  };
+});
 const weeklyBenchmarksData = JSON.parse(process.env.WEEKLY_BENCHMARKS_DATA_JSON);
 const cookieName = "kk_management_session";
 const sessionDurationSeconds = 8 * 60 * 60;
@@ -132,7 +146,7 @@ app.post("/api/logout", (_req, res) => {
 
 app.get("/api/salary", requireAuth, (_req, res) => res.json(salaryData));
 app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(normalizedStaffHoursData));
-app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(weeklyPerformanceData));
+app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(normalizedWeeklyPerformanceData));
 app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
 
 app.use(express.static(path.join(__dirname, "dist"), {
