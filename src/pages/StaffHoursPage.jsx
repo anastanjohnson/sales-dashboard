@@ -72,7 +72,15 @@ export default function StaffHoursPage() {
         remainingTo43: hoursLimit === DEFAULT_HOURS_LIMIT ? Math.max(0, DEFAULT_HOURS_LIMIT - workingHours) : 0,
       };
     })
-    .sort((a, b) => b.workingHours - a.workingHours), [monthData]);
+    .sort((a, b) => {
+      const workedDifference = b.workingHours - a.workingHours;
+      if (workedDifference !== 0) return workedDifference;
+      const aLimit = a.hoursLimit == null ? Number.POSITIVE_INFINITY : a.hoursLimit;
+      const bLimit = b.hoursLimit == null ? Number.POSITIVE_INFINITY : b.hoursLimit;
+      const limitDifference = bLimit - aLimit;
+      if (limitDifference !== 0) return limitDifference;
+      return String(a.name).localeCompare(String(b.name));
+    }), [monthData]);
 
   const summary = useMemo(() => ({
     totalHours: staff.reduce((sum, employee) => sum + employee.workingHours, 0),
@@ -115,7 +123,7 @@ export default function StaffHoursPage() {
       </div>
 
       <div className="panel staff-hours-panel">
-        <div className="panel__head salary-panel__head"><div><h3>Monthly Service Staff Hours</h3><p>{monthData.month} {monthData.year} · Red sections show hours above each employee’s limit</p></div></div>
+        <div className="panel__head salary-panel__head"><div><h3>Monthly Service Staff Hours</h3><p>{monthData.month} {monthData.year} · Sorted by worked hours, highest to lowest · Red sections show hours above each employee’s limit</p></div></div>
         {view === "chart" ? (
           <div className="staff-hours-chart"><ResponsiveContainer width="100%" height={440}><BarChart data={staff} margin={{ top: 20, right: 24, left: 4, bottom: 88 }}>
             <CartesianGrid vertical={false} stroke="var(--grid)" />
