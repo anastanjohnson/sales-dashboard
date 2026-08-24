@@ -858,3 +858,21 @@ tbody tr:last-child td {
 .website-chart-row .panel__head p,.website-channel-table .panel__head p{margin:5px 0 0;color:var(--text-muted);font-size:12px}.website-channel-table{padding:0;overflow:hidden}.website-channel-table .panel__head{padding:20px 22px 14px}
 .website-channel-table th,.website-channel-table td{padding:12px 16px;white-space:nowrap;text-align:right}.website-channel-table th:first-child,.website-channel-table td:first-child{text-align:left;font-weight:650}.website-channel-dot{display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%}
 @media(max-width:1050px){.website-chart-row{grid-template-columns:1fr}}@media(max-width:720px){.website-toolbar{align-items:stretch;flex-direction:column}.website-month{justify-content:space-between}}
+
+
+/* Labels positioned beside staff bars */
+.staff-hours-chart {
+    min-width: 0;
+    padding: 8px 10px 18px 8px;
+    color: var(--text-primary);
+}
+.staff-hours-bar-label {
+    fill: var(--text-primary);
+    font-size: 11px;
+    font-weight: 800;
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+.staff-hours-bar-label--limit { font-size: 10px; }
