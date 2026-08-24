@@ -1,22 +1,22 @@
 import {
     LayoutGrid,
-    ShoppingCart,
-    BarChart3,
+    Euro,
+    ChartLine,
+    Users,
+    Banknote,
+    Clock3,
     Settings,
     ChevronLeft,
     ChevronRight,
-    Activity,
-    Repeat,
-    Clock3,
 } from "lucide-react";
 import { useState } from "react";
 
 const NAV_ITEMS = [
     { icon: LayoutGrid, label: "Dashboard", page: "overview" },
-  { icon: ShoppingCart, label: "Sales Revenue", page: "sales" },
-    { icon: Activity, label: "Weekly Performance", page: "weekly-performance" },
-    { icon: Repeat, label: "Repeated Guest Analysis", page: "repeated-guests" },
-    { icon: BarChart3, label: "Salary", page: "sales-salary" },
+  { icon: Euro, label: "Sales Revenue", page: "sales" },
+    { icon: ChartLine, label: "Weekly Performance", page: "weekly-performance" },
+    { icon: Users, label: "Repeated Guest Analysis", page: "repeated-guests" },
+    { icon: Banknote, label: "Salary", page: "sales-salary" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
   { icon: Settings, label: "Setting", page: "settings" },
   ];
