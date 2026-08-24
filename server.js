@@ -17,6 +17,20 @@ const port = Number(process.env.PORT || 10000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const salaryData = JSON.parse(process.env.SALARY_DATA_JSON);
 const staffHoursData = JSON.parse(process.env.STAFF_HOURS_DATA_JSON);
+const staffHoursExclusions = JSON.parse(process.env.STAFF_HOURS_EXCLUSIONS_JSON || "[]");
+
+const normalizedStaffHoursData = staffHoursData.map((period) => {
+  const exclusion = staffHoursExclusions.find((rule) =>
+    Number(rule.year) === Number(period.year)
+    && String(rule.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
+  );
+  if (!exclusion || !Array.isArray(period.employees)) return period;
+  const excludedNames = new Set((exclusion.names || []).map((name) => String(name).trim().toLowerCase()));
+  return {
+    ...period,
+    employees: period.employees.filter((employee) => !excludedNames.has(String(employee.name || "").trim().toLowerCase())),
+  };
+});
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
 const weeklyBenchmarksData = JSON.parse(process.env.WEEKLY_BENCHMARKS_DATA_JSON);
 const cookieName = "kk_management_session";
@@ -117,7 +131,7 @@ app.post("/api/logout", (_req, res) => {
 });
 
 app.get("/api/salary", requireAuth, (_req, res) => res.json(salaryData));
-app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(staffHoursData));
+app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(normalizedStaffHoursData));
 app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(weeklyPerformanceData));
 app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
 
