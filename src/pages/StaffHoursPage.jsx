@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Clock3, RefreshCw, Table2, TriangleAlert, Users } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DEFAULT_HOURS_LIMIT = 43;
@@ -18,22 +17,6 @@ function getHoursLimit(name) {
   return matchedName ? STAFF_HOURS_LIMITS[matchedName] : DEFAULT_HOURS_LIMIT;
 }
 const hours = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-
-function HoursTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload;
-  if (!row) return null;
-  return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip__label">{label}</div>
-      <div className="chart-tooltip__row"><span className="chart-tooltip__swatch" style={{ background: "var(--series-2)" }} /><span className="chart-tooltip__name">Within limit</span><span className="chart-tooltip__value">{hours.format(row.regularHours)} h</span></div>
-      <div className="chart-tooltip__row"><span className="chart-tooltip__swatch" style={{ background: "var(--bad)" }} /><span className="chart-tooltip__name">Above limit</span><span className="chart-tooltip__value">{hours.format(row.extraHours)} h</span></div>
-      {row.remainingTo43 > 0 && <div className="chart-tooltip__row"><span className="chart-tooltip__swatch staff-hours-dotted-swatch" /><span className="chart-tooltip__name">Remaining to 43 hours</span><span className="chart-tooltip__value">{hours.format(row.remainingTo43)} h</span></div>}
-      <div className="chart-tooltip__row"><span className="chart-tooltip__name">Monthly limit</span><span className="chart-tooltip__value">{row.hoursLimit == null ? "No limit" : `${hours.format(row.hoursLimit)} h`}</span></div>
-      <div className="chart-tooltip__row"><span className="chart-tooltip__name">Total worked</span><span className="chart-tooltip__value">{hours.format(row.workingHours)} h</span></div>
-    </div>
-  );
-}
 
 export default function StaffHoursPage() {
   const [staffHoursData, setStaffHoursData] = useState([]);
@@ -82,6 +65,8 @@ export default function StaffHoursPage() {
       return String(a.name).localeCompare(String(b.name));
     }), [monthData]);
 
+  const maxChartHours = useMemo(() => Math.max(DEFAULT_HOURS_LIMIT, ...staff.map((employee) => Math.max(employee.workingHours, employee.hoursLimit || 0))), [staff]);
+
   const summary = useMemo(() => ({
     totalHours: staff.reduce((sum, employee) => sum + employee.workingHours, 0),
     extraHours: staff.reduce((sum, employee) => sum + employee.extraHours, 0),
@@ -125,26 +110,34 @@ export default function StaffHoursPage() {
       <div className="panel staff-hours-panel">
         <div className="panel__head salary-panel__head"><div><h3>Monthly Service Staff Hours</h3><p>{monthData.month} {monthData.year} · Sorted by worked hours, highest to lowest · Red sections show hours above each employee’s limit</p></div></div>
         {view === "chart" ? (
-          <div className="staff-hours-chart-layout">
-            <div className="staff-hours-chart"><ResponsiveContainer width="100%" height={440}><BarChart data={staff} margin={{ top: 20, right: 24, left: 4, bottom: 88 }}>
-              <CartesianGrid vertical={false} stroke="var(--grid)" />
-              <XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={96} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
-              <YAxis unit=" h" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={56} />
-              <Tooltip content={<HoursTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-              <Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />
-              <Bar dataKey="regularHours" name="Within monthly limit" stackId="hours" fill="var(--series-2)" maxBarSize={42} />
-              <Bar dataKey="extraHours" name="Above monthly limit" stackId="hours" fill="var(--bad)" radius={[4, 4, 0, 0]} maxBarSize={42} />
-              <Bar dataKey="remainingTo43" name="Remaining to 43 hours" stackId="hours" fill="transparent" stroke="var(--text-muted)" strokeWidth={1.5} strokeDasharray="4 4" radius={[4, 4, 0, 0]} maxBarSize={42} />
-            </BarChart></ResponsiveContainer></div>
-            <aside className="staff-hours-values" aria-label="Worked and limit hours">
-              <div className="staff-hours-values__head"><span>Employee</span><span>Total / Limit</span></div>
-              {staff.map((employee) => (
-                <div className="staff-hours-values__row" key={employee.name}>
-                  <span className="staff-hours-values__name">{employee.name}</span>
-                  <span className="staff-hours-values__hours"><strong>{hours.format(employee.workingHours)} h</strong><span>/</span><span>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</span></span>
-                </div>
-              ))}
-            </aside>
+          <div className="staff-hours-horizontal" role="img" aria-label="Service staff worked hours and monthly limits">
+            <div className="staff-hours-horizontal__legend">
+              <span><i className="staff-hours-horizontal__key staff-hours-horizontal__key--worked" />Within limit</span>
+              <span><i className="staff-hours-horizontal__key staff-hours-horizontal__key--extra" />Above limit</span>
+              <span><i className="staff-hours-horizontal__key staff-hours-horizontal__key--remaining" />Remaining to 43 h</span>
+            </div>
+            <div className="staff-hours-horizontal__rows">
+              {staff.map((employee) => {
+                const regularWidth = (employee.regularHours / maxChartHours) * 100;
+                const extraWidth = (employee.extraHours / maxChartHours) * 100;
+                const remainingWidth = (employee.remainingTo43 / maxChartHours) * 100;
+                return (
+                  <div className="staff-hours-horizontal__row" key={employee.name}>
+                    <div className="staff-hours-horizontal__name">{employee.name}</div>
+                    <div className="staff-hours-horizontal__track" aria-label={`${employee.name}: ${hours.format(employee.workingHours)} hours worked; ${employee.hoursLimit == null ? "no limit" : `${hours.format(employee.hoursLimit)} hour limit`}`}>
+                      <span className="staff-hours-horizontal__worked" style={{ width: `${regularWidth}%` }} />
+                      {employee.extraHours > 0 && <span className="staff-hours-horizontal__extra" style={{ width: `${extraWidth}%` }} />}
+                      {employee.remainingTo43 > 0 && <span className="staff-hours-horizontal__remaining" style={{ width: `${remainingWidth}%` }} />}
+                    </div>
+                    <div className="staff-hours-horizontal__value">
+                      <strong>{hours.format(employee.workingHours)} h</strong>
+                      <span>{employee.hoursLimit == null ? "No limit" : `Limit ${hours.format(employee.hoursLimit)} h`}</span>
+                      {employee.extraHours > 0 && <em>+{hours.format(employee.extraHours)} h</em>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="table-wrap"><table className="staff-hours-table"><thead><tr><th>Employee</th><th>Worked Hours</th><th>Monthly Limit</th><th>Extra Hours</th><th>Status</th></tr></thead><tbody>{staff.map((employee) => <tr key={employee.name}><td className="salary-table__month">{employee.name}</td><td>{hours.format(employee.workingHours)} h</td><td>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</td><td className={employee.extraHours > 0 ? "staff-hours-extra" : ""}>{employee.extraHours > 0 ? "+" : ""}{hours.format(employee.extraHours)} h</td><td><span className={"status-pill " + (employee.extraHours > 0 ? "status-pill--over" : "")}>{employee.hoursLimit == null ? "No limit" : employee.extraHours > 0 ? `Above ${hours.format(employee.hoursLimit)} h` : `Within ${hours.format(employee.hoursLimit)} h`}</span></td></tr>)}</tbody></table></div>
