@@ -16,6 +16,7 @@ import {
 import StatCard from "../components/StatCard";
 import SalesChart from "../components/SalesChart";
 import SalaryPage from "./SalaryPage";
+import StaffHoursPage from "./StaffHoursPage";
 import SalesPage from "./SalesPage";
 import WeeklyPerformancePage from "./WeeklyPerformancePage";
 import WeeklyGuestCountPage from "./WeeklyGuestCountPage";
@@ -41,6 +42,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme }) {
   const [showTable, setShowTable] = useState(false);
 
   if (activePage === "sales-salary") return <SalaryPage />;
+  if (activePage === "staff-hours") return <StaffHoursPage />;
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyPerformancePage />;
   if (activePage === "weekly-guests") return <WeeklyGuestCountPage />;
