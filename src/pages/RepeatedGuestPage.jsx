@@ -115,13 +115,13 @@ export default function RepeatedGuestPage() {
 
             <div className="panel-row">
               <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2025 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2025 - median {gapStats25.medianDays} days, mean {gapStats25.meanDays} days, {number.format(gapStats25.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+                <div className="panel__head"><div><h3>2025 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2025.</p></div></div>
                 <div className="sales-chart">
                   <GapBucketChart data={gapBucketPercentagesByYear["2025"]} />
                 </div>
               </div>
               <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2026 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2026 - median {gapStats26.medianDays} days, mean {gapStats26.meanDays} days, {number.format(gapStats26.totalReturnVisitsAnalyzed)} return visits analyzed</p></div></div>
+                <div className="panel__head"><div><h3>2026 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2026.</p></div></div>
                 <div className="sales-chart">
                   <GapBucketChart data={gapBucketPercentagesByYear["2026"]} />
                 </div>
