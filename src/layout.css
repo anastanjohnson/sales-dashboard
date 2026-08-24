@@ -809,3 +809,11 @@ tbody tr:last-child td {
 .staff-hours-table th:not(:first-child),
 .staff-hours-table td:not(:first-child) { text-align: right; }
 .status-pill--over { background: var(--bad-bg); color: var(--bad); }
+
+/* Website visits */
+.website-toolbar{padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.website-month{display:inline-flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}.website-month svg{color:var(--accent)}.website-month strong{color:var(--text-primary)}
+.website-summary{margin-top:20px}.website-chart-row{grid-template-columns:minmax(0,1.55fr) minmax(340px,.85fr);margin-bottom:24px}.website-chart-row .panel{min-width:0;margin-bottom:0}.website-trend,.website-channels-chart{padding-bottom:18px}
+.website-chart-row .panel__head p,.website-channel-table .panel__head p{margin:5px 0 0;color:var(--text-muted);font-size:12px}.website-channel-table{padding:0;overflow:hidden}.website-channel-table .panel__head{padding:20px 22px 14px}
+.website-channel-table th,.website-channel-table td{padding:12px 16px;white-space:nowrap;text-align:right}.website-channel-table th:first-child,.website-channel-table td:first-child{text-align:left;font-weight:650}.website-channel-dot{display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%}
+@media(max-width:1050px){.website-chart-row{grid-template-columns:1fr}}@media(max-width:720px){.website-toolbar{align-items:stretch;flex-direction:column}.website-month{justify-content:space-between}}
