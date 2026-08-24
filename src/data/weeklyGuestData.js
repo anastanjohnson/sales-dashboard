@@ -1,6 +1,6 @@
 export const weeklyGuestMeta = {
   "source": "OpenTable seated covers (aggregate reservations)",
-  "generatedAt": "2026-08-19",
+  "generatedAt": "2026-08-24",
   "currentYear": 2026,
   "comparisonYear": 2025,
   "window": "Thursday–Monday",
@@ -1665,46 +1665,48 @@ export const weeklyGuestData = [
     "endDate": "2026-08-24",
     "comparisonStartDate": "2025-08-21",
     "comparisonEndDate": "2025-08-25",
-    "available": false,
-    "currentCovers": null,
-    "comparisonCovers": null,
-    "difference": null,
-    "yoy": null,
+    "available": true,
+    "partial": true,
+    "asOf": "2026-08-24",
+    "currentCovers": 258,
+    "comparisonCovers": 331,
+    "difference": -73,
+    "yoy": -22.05438066465257,
     "days": [
       {
         "day": "Thursday",
         "currentDate": "2026-08-20",
-        "currentCovers": null,
+        "currentCovers": 26,
         "comparisonDate": "2025-08-21",
-        "comparisonCovers": null
+        "comparisonCovers": 36
       },
       {
         "day": "Friday",
         "currentDate": "2026-08-21",
-        "currentCovers": null,
+        "currentCovers": 65,
         "comparisonDate": "2025-08-22",
-        "comparisonCovers": null
+        "comparisonCovers": 58
       },
       {
         "day": "Saturday",
         "currentDate": "2026-08-22",
-        "currentCovers": null,
+        "currentCovers": 87,
         "comparisonDate": "2025-08-23",
-        "comparisonCovers": null
+        "comparisonCovers": 118
       },
       {
         "day": "Sunday",
         "currentDate": "2026-08-23",
-        "currentCovers": null,
+        "currentCovers": 80,
         "comparisonDate": "2025-08-24",
-        "comparisonCovers": null
+        "comparisonCovers": 99
       },
       {
         "day": "Monday",
         "currentDate": "2026-08-24",
-        "currentCovers": null,
+        "currentCovers": 0,
         "comparisonDate": "2025-08-25",
-        "comparisonCovers": null
+        "comparisonCovers": 20
       }
     ]
   },
