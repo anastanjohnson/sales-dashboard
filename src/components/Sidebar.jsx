@@ -9,6 +9,7 @@ import {
     Users,
     Activity,
     Repeat,
+    Clock3,
 } from "lucide-react";
 import { Fragment, useState } from "react";
 
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
     { icon: Users, label: "Weekly Guest count", page: "weekly-guests", group: "weekly" },
     { icon: Repeat, label: "Repeated Guest Analysis", page: "repeated-guests" },
     { icon: BarChart3, label: "Salary", page: "sales-salary" },
+    { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
   { icon: Settings, label: "Setting", page: "settings" },
   ];
 
