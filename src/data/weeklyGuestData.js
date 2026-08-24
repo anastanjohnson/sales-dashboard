@@ -1667,7 +1667,7 @@ export const weeklyGuestData = [
     "comparisonEndDate": "2025-08-25",
     "available": true,
     "partial": true,
-    "asOf": "2026-08-24",
+    "asOf": "2026-08-23",
     "currentCovers": 258,
     "comparisonCovers": 331,
     "difference": -73,
@@ -1704,7 +1704,7 @@ export const weeklyGuestData = [
       {
         "day": "Monday",
         "currentDate": "2026-08-24",
-        "currentCovers": 0,
+        "currentCovers": null,
         "comparisonDate": "2025-08-25",
         "comparisonCovers": 20
       }
