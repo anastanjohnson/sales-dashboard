@@ -21,7 +21,7 @@ function HoursTooltip({ active, payload, label }) {
 }
 
 export default function StaffHoursPage() {
-  const [salaryData, setSalaryData] = useState([]);
+  const [staffHoursData, setStaffHoursData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
@@ -29,11 +29,11 @@ export default function StaffHoursPage() {
   const loadData = async () => {
     setStatus("loading");
     try {
-      const response = await fetch("/api/salary", { credentials: "include" });
+      const response = await fetch("/api/staff-hours", { credentials: "include" });
       if (response.status === 401) return window.location.reload();
       if (!response.ok) throw new Error("Unable to load staff hours.");
       const data = await response.json();
-      setSalaryData(data);
+      setStaffHoursData(data);
       setSelectedMonth(Math.max(0, data.length - 1));
       setStatus("ready");
     } catch {
@@ -43,9 +43,8 @@ export default function StaffHoursPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  const monthData = salaryData[selectedMonth];
+  const monthData = staffHoursData[selectedMonth];
   const staff = useMemo(() => (monthData?.employees || [])
-    .filter((employee) => employee.department === "Service")
     .map((employee) => {
       const workingHours = Math.max(0, Number(employee.workingHours) || 0);
       return {
@@ -64,7 +63,7 @@ export default function StaffHoursPage() {
   }), [staff]);
 
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading staff hours…</h3></div></div></div>;
-  if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Staff hours could not be loaded.</h3><button className="btn btn--ghost" onClick={loadData}>Try again</button></div></div></div>;
+  if (status === "error" || !staffHoursData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Staff hours could not be loaded.</h3><button className="btn btn--ghost" onClick={loadData}>Try again</button></div></div></div>;
 
   return (
     <div className="dashboard staff-hours-page">
@@ -75,7 +74,7 @@ export default function StaffHoursPage() {
 
       <div className="salary-month-picker" role="group" aria-label="Select staff hours month">
         {MONTHS.map((month) => {
-          const dataIndex = salaryData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === month.toLowerCase());
+          const dataIndex = staffHoursData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === month.toLowerCase());
           const available = dataIndex >= 0;
           const selected = available && selectedMonth === dataIndex;
           return <button type="button" key={month} className={"salary-month-button " + (selected ? "salary-month-button--active" : "")} disabled={!available} aria-pressed={selected} onClick={() => setSelectedMonth(dataIndex)}>{month}</button>;
