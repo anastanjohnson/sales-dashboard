@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { repeatGuestData, repeatGuestLists } from "../data/repeatGuestData";
+import { repeatGuestData } from "../data/repeatGuestData";
 
 const number = new Intl.NumberFormat("de-DE");
-const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-const formatDate = (value) => dateFormat.format(new Date(`${value}T12:00:00`));
 const pct = (value, total) => (total ? ((value / total) * 100).toFixed(1) : "0.0");
 
 const VISITOR_TYPE_COLORS = ["var(--series-1)", "var(--series-2)"];
@@ -29,36 +26,6 @@ function PercentBarLabel({ x, y, width, height, value }) {
           <text x={x + width + 8} y={y + height / 2} dy={4} fill="var(--text-muted)" fontSize={12}>
             {value}%
           </text>
-        );
-  }
-
-function GuestListPanel({ title, subtitle, guests }) {
-    const [open, setOpen] = useState(false);
-    return (
-          <div className="panel">
-            <div className="panel__head">
-              <div><h3>{title}</h3><p>{subtitle}</p></div>
-              <button className="select-btn" onClick={() => setOpen((v) => !v)}>{open ? "Hide guests" : `View guests (${guests.length})`}</button>
-            </div>
-            {open && (
-                      <div className="table-wrap">
-                        <table className="salary-table">
-                          <thead>
-                            <tr><th>Guest</th><th>Last visit</th><th>Total visits</th></tr>
-                          </thead>
-                          <tbody>
-                            {guests.map((guest) => (
-                                      <tr key={guest.name + guest.lastVisit}>
-                                        <td className="salary-table__month">{guest.name}</td>
-                                        <td>{formatDate(guest.lastVisit)}</td>
-                                        <td>{guest.totalVisits}</td>
-                                      </tr>
-                                    ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-          </div>
         );
   }
 
@@ -130,11 +97,6 @@ export default function RepeatedGuestPage() {
               <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.fiveOrMore - y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
               <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
             </div>
-
-            <GuestListPanel title="2025 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].fiveToNine} />
-            <GuestListPanel title="2025 - 10+ visits" subtitle="Guests who visited 10 or more times in 2025 (most recent visit shown, even if in 2026)" guests={repeatGuestLists["2025"].tenOrMore} />
-            <GuestListPanel title="2026 - 5-9 visits" subtitle="Guests who visited 5 to 9 times in 2026" guests={repeatGuestLists["2026"].fiveToNine} />
-            <GuestListPanel title="2026 - 10+ visits" subtitle="Guests who visited 10 or more times in 2026" guests={repeatGuestLists["2026"].tenOrMore} />
 
             <div className="panel-row">
               <div className="panel panel--half">
