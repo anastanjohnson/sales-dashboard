@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, BarChart3, RefreshCw, Table2 } from "lucide-react";
+import { BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
@@ -85,10 +85,25 @@ export default function SalaryPage() {
     [selectedEmployees, department],
   );
 
+  const employeePickerOptions = useMemo(() => {
+    const employees = new Map();
+    salaryData.filter((row) => row.year === 2026).forEach((row) => {
+      (row.employees || []).forEach((employee) => {
+        if (department !== "All" && employee.department !== department) return;
+        const name = String(employee.name).trim();
+        const key = `${employee.department}::${name.toLowerCase()}`;
+        if (!employees.has(key)) employees.set(key, { name, department: employee.department });
+      });
+    });
+    return Array.from(employees.values()).sort((a, b) =>
+      a.department.localeCompare(b.department) || a.name.localeCompare(b.name)
+    );
+  }, [salaryData, department]);
+
   const employeeMonthlyHistory = useMemo(() => {
     if (!selectedEmployee) return [];
     const targetName = String(selectedEmployee.name).trim().toLowerCase();
-    return salaryData.map((row) => {
+    return salaryData.filter((row) => row.year === 2026).map((row) => {
       const employee = (row.employees || []).find((item) =>
         item.department === selectedEmployee.department
         && String(item.name).trim().toLowerCase() === targetName
@@ -98,7 +113,7 @@ export default function SalaryPage() {
         salary: Number(employee?.salary) || 0,
         department: selectedEmployee.department,
       };
-    }).filter((row) => row.salary > 0);
+    });
   }, [salaryData, selectedEmployee]);
 
   const totals = useMemo(() => {
@@ -207,11 +222,18 @@ export default function SalaryPage() {
             <p>{selectedEmployee ? `${selectedEmployee.department} · 2026 monthly history` : `${selectionLabel} · ${department === "All" ? "All departments" : department} · Click a staff bar to view monthly salary`}</p>
           </div>
           <div className="salary-employee-chart-actions">
-            {!selectedEmployee && <div className="metric-switch salary-department-switch" role="group" aria-label="Filter employee salary chart by department">
+            <div className="metric-switch salary-department-switch" role="group" aria-label="Filter employee salary chart by department">
               {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => selectDepartment(option)}>{option}</button>)}
-            </div>}
-            {selectedEmployee && <button type="button" className="btn btn--ghost salary-employee-back" onClick={() => setSelectedEmployee(null)}><ArrowLeft size={14} />Back to {department === "All" ? "all staff" : department}</button>}
+            </div>
           </div>
+        </div>
+        <div className="salary-employee-picker" role="group" aria-label="Select staff member">
+          <button type="button" className={!selectedEmployee ? "active" : ""} aria-pressed={!selectedEmployee} onClick={() => setSelectedEmployee(null)}>All staff</button>
+          {employeePickerOptions.map((employee) => {
+            const selected = selectedEmployee?.department === employee.department
+              && String(selectedEmployee?.name).trim().toLowerCase() === employee.name.toLowerCase();
+            return <button type="button" key={`${employee.department}-${employee.name}`} className={selected ? "active" : ""} aria-pressed={selected} onClick={() => selectEmployee(employee)}>{employee.name}</button>;
+          })}
         </div>
         {selectedEmployee ? (
           <div className="salary-chart salary-employee-history">
