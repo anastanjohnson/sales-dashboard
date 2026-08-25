@@ -195,26 +195,6 @@ export default function SalaryPage() {
         <div className="stat-card"><div className="stat-card__label">Kitchen Salary</div><div className="stat-card__value">{currency.format(totals.kitchen)}</div><div className="sales-kpi-note">{salaryPercentage(totals.kitchen)} {salesScopeLabel}</div></div>
         <div className="stat-card"><div className="stat-card__label">Service Salary</div><div className="stat-card__value">{currency.format(totals.service)}</div><div className="sales-kpi-note">{salaryPercentage(totals.service)} {salesScopeLabel}</div></div>
       </div>
-      <div className="panel salary-trend-panel">
-        <div className="panel__head salary-panel__head">
-          <div><h3>Monthly Salary as Percentage of Sales</h3><p>Salary total ÷ monthly sales revenue · * Month-to-date</p></div>
-          <div className="metric-switch salary-trend-switch" role="group" aria-label="Select salary percentage department">
-            {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={trendDepartment === option ? "active" : ""} aria-pressed={trendDepartment === option} onClick={() => setTrendDepartment(option)}>{option}</button>)}
-          </div>
-        </div>
-        <div className="salary-trend-chart">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={salarySalesTrend} margin={{ top: 34, right: 24, left: 6, bottom: 8 }} barGap={5}>
-              <CartesianGrid vertical={false} stroke="var(--grid)" />
-              <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
-              <YAxis domain={[0, "auto"]} tickFormatter={(value) => `${value.toFixed(0)}%`} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={48} />
-              <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, `${name} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} cursor={{ fill: "var(--surface-hover)" }} />
-              {(trendDepartment === "All" || trendDepartment === "Kitchen") && <Bar dataKey="kitchenPercentage" name="Kitchen" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="kitchenPercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-1)" fontSize={11} fontWeight={700} /></Bar>}
-              {(trendDepartment === "All" || trendDepartment === "Service") && <Bar dataKey="servicePercentage" name="Service" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="servicePercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-2)" fontSize={11} fontWeight={700} /></Bar>}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
       <div className="panel salary-panel">
         <div className="panel__head salary-panel__head">
           <div>
@@ -256,6 +236,26 @@ export default function SalaryPage() {
         ) : (
           <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`} className="salary-employee-table-row" onClick={() => selectEmployee(employee)}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>
         )}
+      </div>
+      <div className="panel salary-trend-panel">
+        <div className="panel__head salary-panel__head">
+          <div><h3>Monthly Salary as Percentage of Sales</h3><p>Salary total ÷ monthly sales revenue · * Month-to-date</p></div>
+          <div className="metric-switch salary-trend-switch" role="group" aria-label="Select salary percentage department">
+            {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={trendDepartment === option ? "active" : ""} aria-pressed={trendDepartment === option} onClick={() => setTrendDepartment(option)}>{option}</button>)}
+          </div>
+        </div>
+        <div className="salary-trend-chart">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={salarySalesTrend} margin={{ top: 34, right: 24, left: 6, bottom: 8 }} barGap={5}>
+              <CartesianGrid vertical={false} stroke="var(--grid)" />
+              <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
+              <YAxis domain={[0, "auto"]} tickFormatter={(value) => `${value.toFixed(0)}%`} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={48} />
+              <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, `${name} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} cursor={{ fill: "var(--surface-hover)" }} />
+              {(trendDepartment === "All" || trendDepartment === "Kitchen") && <Bar dataKey="kitchenPercentage" name="Kitchen" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="kitchenPercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-1)" fontSize={11} fontWeight={700} /></Bar>}
+              {(trendDepartment === "All" || trendDepartment === "Service") && <Bar dataKey="servicePercentage" name="Service" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="servicePercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-2)" fontSize={11} fontWeight={700} /></Bar>}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
