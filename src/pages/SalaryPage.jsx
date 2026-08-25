@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Table2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -41,6 +41,7 @@ export default function SalaryPage() {
   const [salaryData, setSalaryData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [department, setDepartment] = useState("All");
+  const [trendDepartment, setTrendDepartment] = useState("All");
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
 
@@ -89,6 +90,25 @@ export default function SalaryPage() {
     return { kitchen, service, total: kitchen + service };
   }, [visibleEmployees]);
 
+  const salarySalesTrend = useMemo(() => salaryData
+    .filter((row) => row.year === 2026)
+    .map((row) => {
+      const monthKey = String(row.month).slice(0, 3).toLowerCase();
+      const sales = salesData.find((item) => item.year === 2026 && String(item.month).slice(0, 3).toLowerCase() === monthKey);
+      const employees = row.employees || [];
+      const kitchenSalary = employees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
+      const serviceSalary = employees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
+      const salary = trendDepartment === "Kitchen" ? kitchenSalary : trendDepartment === "Service" ? serviceSalary : kitchenSalary + serviceSalary;
+      return {
+        month: `${String(row.month).slice(0, 3)}${sales?.partial ? "*" : ""}`,
+        salary,
+        revenue: Number(sales?.revenue) || 0,
+        percentage: sales?.revenue > 0 ? (salary / sales.revenue) * 100 : null,
+        partial: Boolean(sales?.partial),
+      };
+    })
+    .filter((row) => row.percentage != null), [salaryData, trendDepartment]);
+
   const selectedSalesRevenue = useMemo(() => {
     const sales2026 = salesData.filter((row) => row.year === 2026);
     if (selectedMonth === "all") {
@@ -107,7 +127,7 @@ export default function SalaryPage() {
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading secure salary data…</h3></div></div></div>;
   if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
 
-  const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setView("chart"); };
+  const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setTrendDepartment("All"); setView("chart"); };
   const selectionLabel = selectedMonth === "all" ? "All Time 2026" : monthLabel(monthData);
   const salesScopeLabel = selectedMonth === "all" ? "of all-time sales" : `of ${monthData.month} sales`;
   const salaryPercentage = (value) => selectedSalesRevenue > 0 ? `${((value / selectedSalesRevenue) * 100).toFixed(1)}%` : "—";
@@ -142,6 +162,27 @@ export default function SalaryPage() {
         <div className="stat-card"><div className="stat-card__label">Total Salary</div><div className="stat-card__value">{currency.format(totals.total)}</div><div className="sales-kpi-note">{salaryPercentage(totals.total)} {salesScopeLabel}</div></div>
         <div className="stat-card"><div className="stat-card__label">Kitchen Salary</div><div className="stat-card__value">{currency.format(totals.kitchen)}</div><div className="sales-kpi-note">{salaryPercentage(totals.kitchen)} {salesScopeLabel}</div></div>
         <div className="stat-card"><div className="stat-card__label">Service Salary</div><div className="stat-card__value">{currency.format(totals.service)}</div><div className="sales-kpi-note">{salaryPercentage(totals.service)} {salesScopeLabel}</div></div>
+      </div>
+      <div className="panel salary-trend-panel">
+        <div className="panel__head salary-panel__head">
+          <div><h3>Monthly Salary as Percentage of Sales</h3><p>Salary total ÷ monthly sales revenue · * Month-to-date</p></div>
+          <div className="metric-switch salary-trend-switch" role="group" aria-label="Select salary percentage department">
+            {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={trendDepartment === option ? "active" : ""} aria-pressed={trendDepartment === option} onClick={() => setTrendDepartment(option)}>{option}</button>)}
+          </div>
+        </div>
+        <div className="salary-trend-chart">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={salarySalesTrend} margin={{ top: 30, right: 24, left: 6, bottom: 8 }}>
+              <CartesianGrid vertical={false} stroke="var(--grid)" />
+              <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
+              <YAxis domain={[0, "auto"]} tickFormatter={(value) => `${value.toFixed(0)}%`} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={48} />
+              <Tooltip formatter={(value, _name, item) => [`${Number(value).toFixed(1)}%`, `${trendDepartment} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} />
+              <Line type="monotone" dataKey="percentage" name="Salary % of Sales" stroke={trendDepartment === "Kitchen" ? "var(--series-1)" : trendDepartment === "Service" ? "var(--series-2)" : "var(--series-4)"} strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: "var(--surface)" }} activeDot={{ r: 6 }}>
+                <LabelList dataKey="percentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--text-primary)" fontSize={11} fontWeight={700} />
+              </Line>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <div className="panel salary-panel">
         <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{selectionLabel} · {department === "All" ? "All departments" : department}</p></div></div>
