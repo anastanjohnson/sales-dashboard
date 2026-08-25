@@ -414,6 +414,8 @@
 .salary-employee-back { white-space: nowrap; }
 .salary-employee-history { padding-top: 6px; }
 .salary-toolbar { margin-top: 8px; }
+.salary-toolbar--view-only { justify-content: flex-end; }
+.salary-employee-chart-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .salary-month-picker {
     display: grid;
     grid-template-columns: minmax(82px, 1.25fr) repeat(12, minmax(60px, 1fr));
