@@ -5,6 +5,7 @@ import { salesData } from "../data/salesData";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const shortCurrency = (value) => `€${Math.round(value / 1000)}k`;
+const barCurrency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const monthLabel = (row) => `${row.month} ${row.year}`;
 const monthOrder = [
   { short: "Jan", full: "January" },
@@ -230,8 +231,8 @@ export default function SalaryPage() {
             </ResponsiveContainer>
           </div>
         ) : view === "chart" ? (
-          <div className="salary-chart salary-employee-overview"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 16, right: 18, left: 4, bottom: 82 }}>
-            <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38} onClick={selectEmployee} className="salary-employee-clickable">{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} cursor="pointer" />)}</Bar>
+          <div className="salary-chart salary-employee-overview"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 38, right: 18, left: 4, bottom: 82 }}>
+            <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38} onClick={selectEmployee} className="salary-employee-clickable">{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} cursor="pointer" />)}<LabelList dataKey="salary" position="top" formatter={(value) => barCurrency.format(value)} fill="var(--text-primary)" fontSize={10} fontWeight={700} /></Bar>
           </BarChart></ResponsiveContainer></div>
         ) : (
           <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`} className="salary-employee-table-row" onClick={() => selectEmployee(employee)}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>
