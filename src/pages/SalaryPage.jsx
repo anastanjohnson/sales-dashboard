@@ -102,10 +102,11 @@ export default function SalaryPage() {
   }, [salaryData, selectedEmployee]);
 
   const totals = useMemo(() => {
-    const kitchen = visibleEmployees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
-    const service = visibleEmployees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + employee.salary, 0);
+    const salariedEmployees = selectedEmployees.filter((employee) => Number(employee.salary) > 0);
+    const kitchen = salariedEmployees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
+    const service = salariedEmployees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + employee.salary, 0);
     return { kitchen, service, total: kitchen + service };
-  }, [visibleEmployees]);
+  }, [selectedEmployees]);
 
   const salarySalesTrend = useMemo(() => salaryData
     .filter((row) => row.year === 2026)
@@ -168,10 +169,7 @@ export default function SalaryPage() {
         })}
       </div>
 
-      <div className="toolbar salary-toolbar">
-        <div className="metric-switch salary-department-switch" role="group" aria-label="Filter by department">
-          {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => selectDepartment(option)}>{option}</button>)}
-        </div>
+      <div className="toolbar salary-toolbar salary-toolbar--view-only">
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button>
@@ -208,7 +206,12 @@ export default function SalaryPage() {
             <h3>{selectedEmployee ? `${selectedEmployee.name} · Monthly Salary` : "Employee Salaries"}</h3>
             <p>{selectedEmployee ? `${selectedEmployee.department} · 2026 monthly history` : `${selectionLabel} · ${department === "All" ? "All departments" : department} · Click a staff bar to view monthly salary`}</p>
           </div>
-          {selectedEmployee && <button type="button" className="btn btn--ghost salary-employee-back" onClick={() => setSelectedEmployee(null)}><ArrowLeft size={14} />Back to {department === "All" ? "all staff" : department}</button>}
+          <div className="salary-employee-chart-actions">
+            {!selectedEmployee && <div className="metric-switch salary-department-switch" role="group" aria-label="Filter employee salary chart by department">
+              {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => selectDepartment(option)}>{option}</button>)}
+            </div>}
+            {selectedEmployee && <button type="button" className="btn btn--ghost salary-employee-back" onClick={() => setSelectedEmployee(null)}><ArrowLeft size={14} />Back to {department === "All" ? "all staff" : department}</button>}
+          </div>
         </div>
         {selectedEmployee ? (
           <div className="salary-chart salary-employee-history">
