@@ -1,10 +1,10 @@
 export const weeklyGuestMeta = {
   "source": "OpenTable seated covers (aggregate reservations)",
-  "generatedAt": "2026-08-24",
+  "generatedAt": "2026-08-25",
   "currentYear": 2026,
   "comparisonYear": 2025,
   "window": "Thursday–Monday",
-  "latestCompletedWeek": 33
+  "latestCompletedWeek": 34
 };
 
 export const weeklyGuestData = [
@@ -1666,12 +1666,11 @@ export const weeklyGuestData = [
     "comparisonStartDate": "2025-08-21",
     "comparisonEndDate": "2025-08-25",
     "available": true,
-    "partial": true,
-    "asOf": "2026-08-23",
-    "currentCovers": 258,
+    "asOf": "2026-08-24",
+    "currentCovers": 276,
     "comparisonCovers": 331,
-    "difference": -73,
-    "yoy": -22.05438066465257,
+    "difference": -55,
+    "yoy": -16.61631419939577,
     "days": [
       {
         "day": "Thursday",
@@ -1704,7 +1703,7 @@ export const weeklyGuestData = [
       {
         "day": "Monday",
         "currentDate": "2026-08-24",
-        "currentCovers": null,
+        "currentCovers": 18,
         "comparisonDate": "2025-08-25",
         "comparisonCovers": 20
       }
