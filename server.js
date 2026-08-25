@@ -16,10 +16,27 @@ const app = express();
 const port = Number(process.env.PORT || 10000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const salaryData = JSON.parse(process.env.SALARY_DATA_JSON);
-const staffHoursData = JSON.parse(process.env.STAFF_HOURS_DATA_JSON);
-const staffHoursExclusions = JSON.parse(process.env.STAFF_HOURS_EXCLUSIONS_JSON || "[]");
+const salaryDataOverrides = JSON.parse(process.env.SALARY_DATA_OVERRIDES_JSON || "[]");
+const normalizedSalaryData = salaryData.map((period) => {
+  const override = salaryDataOverrides.find((entry) =>
+    Number(entry.year) === Number(period.year)
+    && String(entry.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
+  );
+  return override ? { ...period, ...override } : period;
+});
 
-const normalizedStaffHoursData = staffHoursData.map((period) => {
+const staffHoursData = JSON.parse(process.env.STAFF_HOURS_DATA_JSON);
+const staffHoursOverrides = JSON.parse(process.env.STAFF_HOURS_OVERRIDES_JSON || "[]");
+const staffHoursExclusions = JSON.parse(process.env.STAFF_HOURS_EXCLUSIONS_JSON || "[]");
+const overriddenStaffHoursData = staffHoursData.map((period) => {
+  const override = staffHoursOverrides.find((entry) =>
+    Number(entry.year) === Number(period.year)
+    && String(entry.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
+  );
+  return override ? { ...period, ...override } : period;
+});
+
+const normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
   const exclusion = staffHoursExclusions.find((rule) =>
     Number(rule.year) === Number(period.year)
     && String(rule.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
@@ -144,7 +161,7 @@ app.post("/api/logout", (_req, res) => {
   res.json({ authenticated: false });
 });
 
-app.get("/api/salary", requireAuth, (_req, res) => res.json(salaryData));
+app.get("/api/salary", requireAuth, (_req, res) => res.json(normalizedSalaryData));
 app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(normalizedStaffHoursData));
 app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(normalizedWeeklyPerformanceData));
 app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
