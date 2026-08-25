@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, RefreshCw, Table2 } from "lucide-react";
+import { ArrowLeft, BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
@@ -42,6 +42,7 @@ export default function SalaryPage() {
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [department, setDepartment] = useState("All");
   const [trendDepartment, setTrendDepartment] = useState("All");
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
 
@@ -83,6 +84,22 @@ export default function SalaryPage() {
     () => selectedEmployees.filter((employee) => department === "All" || employee.department === department).filter((employee) => Number(employee.salary) > 0),
     [selectedEmployees, department],
   );
+
+  const employeeMonthlyHistory = useMemo(() => {
+    if (!selectedEmployee) return [];
+    const targetName = String(selectedEmployee.name).trim().toLowerCase();
+    return salaryData.map((row) => {
+      const employee = (row.employees || []).find((item) =>
+        item.department === selectedEmployee.department
+        && String(item.name).trim().toLowerCase() === targetName
+      );
+      return {
+        month: String(row.month).slice(0, 3),
+        salary: Number(employee?.salary) || 0,
+        department: selectedEmployee.department,
+      };
+    }).filter((row) => row.salary > 0);
+  }, [salaryData, selectedEmployee]);
 
   const totals = useMemo(() => {
     const kitchen = visibleEmployees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
@@ -127,7 +144,9 @@ export default function SalaryPage() {
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading secure salary data…</h3></div></div></div>;
   if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
 
-  const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setTrendDepartment("All"); setView("chart"); };
+  const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setTrendDepartment("All"); setSelectedEmployee(null); setView("chart"); };
+  const selectDepartment = (option) => { setDepartment(option); setSelectedEmployee(null); };
+  const selectEmployee = (employee) => { setSelectedEmployee({ name: employee.name, department: employee.department }); setView("chart"); };
   const selectionLabel = selectedMonth === "all" ? "All Time 2026" : monthLabel(monthData);
   const salesScopeLabel = selectedMonth === "all" ? "of all-time sales" : `of ${monthData.month} sales`;
   const salaryPercentage = (value) => selectedSalesRevenue > 0 ? `${((value / selectedSalesRevenue) * 100).toFixed(1)}%` : "—";
@@ -151,7 +170,7 @@ export default function SalaryPage() {
 
       <div className="toolbar salary-toolbar">
         <div className="metric-switch salary-department-switch" role="group" aria-label="Filter by department">
-          {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => setDepartment(option)}>{option}</button>)}
+          {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} aria-pressed={department === option} onClick={() => selectDepartment(option)}>{option}</button>)}
         </div>
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
@@ -184,10 +203,34 @@ export default function SalaryPage() {
         </div>
       </div>
       <div className="panel salary-panel">
-        <div className="panel__head salary-panel__head"><div><h3>Employee Salaries</h3><p>{selectionLabel} · {department === "All" ? "All departments" : department}</p></div></div>
-        {view === "chart" ? <div className="salary-chart"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 16, right: 18, left: 4, bottom: 82 }}>
-          <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38}>{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} />)}</Bar>
-        </BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>}
+        <div className="panel__head salary-panel__head">
+          <div>
+            <h3>{selectedEmployee ? `${selectedEmployee.name} · Monthly Salary` : "Employee Salaries"}</h3>
+            <p>{selectedEmployee ? `${selectedEmployee.department} · 2026 monthly history` : `${selectionLabel} · ${department === "All" ? "All departments" : department} · Click a staff bar to view monthly salary`}</p>
+          </div>
+          {selectedEmployee && <button type="button" className="btn btn--ghost salary-employee-back" onClick={() => setSelectedEmployee(null)}><ArrowLeft size={14} />Back to {department === "All" ? "all staff" : department}</button>}
+        </div>
+        {selectedEmployee ? (
+          <div className="salary-chart salary-employee-history">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={employeeMonthlyHistory} margin={{ top: 30, right: 20, left: 4, bottom: 10 }}>
+                <CartesianGrid vertical={false} stroke="var(--grid)" />
+                <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
+                <YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} />
+                <Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
+                <Bar dataKey="salary" name="Salary" fill={selectedEmployee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} radius={[5, 5, 0, 0]} maxBarSize={46}>
+                  <LabelList dataKey="salary" position="top" formatter={(value) => currency.format(value)} fill="var(--text-primary)" fontSize={10} fontWeight={700} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : view === "chart" ? (
+          <div className="salary-chart salary-employee-overview"><ResponsiveContainer width="100%" height={420}><BarChart data={visibleEmployees} margin={{ top: 16, right: 18, left: 4, bottom: 82 }}>
+            <CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="name" interval={0} angle={-42} textAnchor="end" height={90} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} /><YAxis tickFormatter={shortCurrency} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={52} /><Tooltip content={<SalaryTooltip />} cursor={{ fill: "var(--surface-hover)" }} /><Bar dataKey="salary" name="Salary" radius={[4, 4, 0, 0]} maxBarSize={38} onClick={selectEmployee} className="salary-employee-clickable">{visibleEmployees.map((employee) => <Cell key={`${employee.department}-${employee.name}`} fill={employee.department === "Kitchen" ? "var(--series-1)" : "var(--series-2)"} cursor="pointer" />)}</Bar>
+          </BarChart></ResponsiveContainer></div>
+        ) : (
+          <div className="table-wrap"><table className="salary-table"><thead><tr><th>Employee</th><th>Department</th><th>Salary</th></tr></thead><tbody>{visibleEmployees.map((employee) => <tr key={`${employee.department}-${employee.name}`} className="salary-employee-table-row" onClick={() => selectEmployee(employee)}><td className="salary-table__month">{employee.name}</td><td>{employee.department}</td><td>{currency.format(employee.salary)}</td></tr>)}</tbody></table></div>
+        )}
       </div>
     </div>
   );
