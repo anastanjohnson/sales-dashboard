@@ -396,6 +396,10 @@
 .eyebrow { display: block; margin-bottom: 6px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .salary-summary .stat-card__value { font-size: clamp(20px, 2vw, 28px); }
 .salary-panel { padding: 0; overflow: hidden; }
+.salary-trend-panel { padding: 0; overflow: hidden; }
+.salary-trend-chart { padding: 8px 14px 10px; }
+.salary-trend-switch { flex-shrink: 0; }
+.salary-trend-switch button { min-width: 74px; }
 .salary-panel__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 20px 22px 16px; margin: 0; border-bottom: 1px solid var(--border); }
 .salary-panel__head p { margin: 5px 0 0; color: var(--text-muted); font-size: 12px; }
 .salary-legend { display: flex; gap: 14px; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
