@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Table2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -252,6 +252,8 @@ export default function SalaryPage() {
               <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
               <YAxis domain={[0, "auto"]} tickFormatter={(value) => `${value.toFixed(0)}%`} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={48} />
               <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, `${name} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} cursor={{ fill: "var(--surface-hover)" }} />
+              {(trendDepartment === "All" || trendDepartment === "Kitchen") && <ReferenceLine y={14} stroke="var(--series-1)" strokeWidth={2} strokeDasharray="7 5" ifOverflow="extendDomain" label={{ value: "Kitchen target 14%", position: "insideTopRight", fill: "var(--series-1)", fontSize: 11, fontWeight: 700 }} />}
+              {(trendDepartment === "All" || trendDepartment === "Service") && <ReferenceLine y={10} stroke="var(--series-2)" strokeWidth={2} strokeDasharray="7 5" ifOverflow="extendDomain" label={{ value: "Service target 10%", position: "insideBottomRight", fill: "var(--series-2)", fontSize: 11, fontWeight: 700 }} />}
               {(trendDepartment === "All" || trendDepartment === "Kitchen") && <Bar dataKey="kitchenPercentage" name="Kitchen" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="kitchenPercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-1)" fontSize={11} fontWeight={700} /></Bar>}
               {(trendDepartment === "All" || trendDepartment === "Service") && <Bar dataKey="servicePercentage" name="Service" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="servicePercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-2)" fontSize={11} fontWeight={700} /></Bar>}
             </BarChart>
