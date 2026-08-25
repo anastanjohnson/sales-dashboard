@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Table2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { salesData } from "../data/salesData";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -98,16 +98,16 @@ export default function SalaryPage() {
       const employees = row.employees || [];
       const kitchenSalary = employees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
       const serviceSalary = employees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
-      const salary = trendDepartment === "Kitchen" ? kitchenSalary : trendDepartment === "Service" ? serviceSalary : kitchenSalary + serviceSalary;
+      const revenue = Number(sales?.revenue) || 0;
       return {
         month: `${String(row.month).slice(0, 3)}${sales?.partial ? "*" : ""}`,
-        salary,
-        revenue: Number(sales?.revenue) || 0,
-        percentage: sales?.revenue > 0 ? (salary / sales.revenue) * 100 : null,
+        revenue,
+        kitchenPercentage: revenue > 0 ? (kitchenSalary / revenue) * 100 : null,
+        servicePercentage: revenue > 0 ? (serviceSalary / revenue) * 100 : null,
         partial: Boolean(sales?.partial),
       };
     })
-    .filter((row) => row.percentage != null), [salaryData, trendDepartment]);
+    .filter((row) => row.kitchenPercentage != null || row.servicePercentage != null), [salaryData]);
 
   const selectedSalesRevenue = useMemo(() => {
     const sales2026 = salesData.filter((row) => row.year === 2026);
@@ -172,15 +172,14 @@ export default function SalaryPage() {
         </div>
         <div className="salary-trend-chart">
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salarySalesTrend} margin={{ top: 30, right: 24, left: 6, bottom: 8 }}>
+            <BarChart data={salarySalesTrend} margin={{ top: 34, right: 24, left: 6, bottom: 8 }} barGap={5}>
               <CartesianGrid vertical={false} stroke="var(--grid)" />
               <XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
               <YAxis domain={[0, "auto"]} tickFormatter={(value) => `${value.toFixed(0)}%`} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={48} />
-              <Tooltip formatter={(value, _name, item) => [`${Number(value).toFixed(1)}%`, `${trendDepartment} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} />
-              <Line type="monotone" dataKey="percentage" name="Salary % of Sales" stroke={trendDepartment === "Kitchen" ? "var(--series-1)" : trendDepartment === "Service" ? "var(--series-2)" : "var(--series-4)"} strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: "var(--surface)" }} activeDot={{ r: 6 }}>
-                <LabelList dataKey="percentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--text-primary)" fontSize={11} fontWeight={700} />
-              </Line>
-            </LineChart>
+              <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, `${name} salary / sales`]} labelFormatter={(value) => `${value.replace("*", "")} 2026${value.includes("*") ? " · MTD" : ""}`} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} cursor={{ fill: "var(--surface-hover)" }} />
+              {(trendDepartment === "All" || trendDepartment === "Kitchen") && <Bar dataKey="kitchenPercentage" name="Kitchen" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="kitchenPercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-1)" fontSize={11} fontWeight={700} /></Bar>}
+              {(trendDepartment === "All" || trendDepartment === "Service") && <Bar dataKey="servicePercentage" name="Service" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={38}><LabelList dataKey="servicePercentage" position="top" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="var(--series-2)" fontSize={11} fontWeight={700} /></Bar>}
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
