@@ -494,6 +494,38 @@
     color: var(--accent-contrast);
     filter: brightness(1.06);
 }
+
+.salary-employee-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+}
+.salary-employee-picker button {
+    min-width: 92px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease, transform .15s ease;
+}
+.salary-employee-picker button:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.salary-employee-picker button.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 0 0 2px rgba(144, 133, 233, .18);
+}
 .sales-year-switch { align-items: center; gap: 4px; padding-left: 10px; }
 .sales-year-switch > svg { color: var(--text-muted); margin-right: 2px; }
 .sales-year-switch button { min-width: 58px; font-weight: 600; }
