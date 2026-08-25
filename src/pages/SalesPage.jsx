@@ -6,12 +6,28 @@ import { salesData } from "../data/salesData";
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
 const revenueReference = 57000;
+const comparisonPartialRevenue2025 = 54256.35;
 const label = (row) => `${row.month} ${row.year}`;
 const fullLabel = (row) => `${row.monthName} ${row.year}`;
 const delta = (current, previous) => previous ? ((current - previous) / previous) * 100 : null;
 
-function KpiCard({ icon: Icon, label: title, value, note }) {
-  return <div className="stat-card"><div className="stat-card__head"><span className="stat-card__label">{title}</span><span className="stat-card__icon"><Icon size={16} /></span></div><div className="stat-card__value">{value}</div><div className="sales-kpi-note">{note}</div></div>;
+function KpiCard({ icon: Icon, label: title, value, note, benchmarkLabel, benchmarkValue, benchmarkNote, benchmarkChange }) {
+  return (
+    <div className="stat-card weekly-kpi-card">
+      <div className="stat-card__head"><span className="stat-card__label">{title}</span><span className="stat-card__icon"><Icon size={16} /></span></div>
+      <div className="stat-card__value">{value}</div>
+      <div className="sales-kpi-note">{note}</div>
+      {benchmarkLabel && (
+        <div className="weekly-kpi-benchmark">
+          <span>{benchmarkLabel}</span>
+          <strong>{benchmarkValue}</strong>
+          <em className={benchmarkChange == null ? "" : benchmarkChange >= 0 ? "weekly-kpi-benchmark--up" : "weekly-kpi-benchmark--down"}>
+            {benchmarkChange == null ? benchmarkNote : <>{benchmarkChange >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{benchmarkChange >= 0 ? "+" : ""}{benchmarkChange.toFixed(1)}%</>}
+          </em>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Change({ value }) {
@@ -51,6 +67,14 @@ export default function SalesPage() {
     ? completeRows.reduce((sum, row) => sum + row.revenue, 0) / completeRows.length
     : 0;
   const bestMonth = completeRows.reduce((best, row) => !best || row.revenue > best.revenue ? row : best, null);
+  const comparisonCompleteRows = salesData
+    .filter((row) => row.year === 2025)
+    .slice(0, completeRows.length);
+  const comparisonTotalRevenue = comparisonCompleteRows.reduce((sum, row) => sum + row.revenue, 0) + comparisonPartialRevenue2025;
+  const comparisonAverageRevenue = comparisonCompleteRows.length
+    ? comparisonCompleteRows.reduce((sum, row) => sum + row.revenue, 0) / comparisonCompleteRows.length
+    : 0;
+  const comparisonBestMonth = comparisonCompleteRows.reduce((best, row) => !best || row.revenue > best.revenue ? row : best, null);
   const latest = rows.at(-1);
   const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const metricConfig = {
@@ -77,7 +101,12 @@ export default function SalesPage() {
 
     <div className="toolbar sales-toolbar"><div className="metric-switch sales-year-switch" aria-label="Current sales year"><Calendar size={14} /><button type="button" className="active" aria-pressed="true">2026</button></div><div className="toolbar__controls"><button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button><button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button></div></div>
 
-    <div className="stat-grid sales-summary"><KpiCard icon={Euro} label="Total Revenue" value={money.format(totals.revenue)} note={`${rows.length} selected months`} /><KpiCard icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completeRows.length} completed months`} /><KpiCard icon={ReceiptText} label="Tips" value={money.format(totals.tips)} note={`${((totals.tips / Math.max(totals.revenue, 1)) * 100).toFixed(1)}% of revenue`} /><KpiCard icon={TrendingUp} label="Best Full Month" value={bestMonth ? money.format(bestMonth.revenue) : "—"} note={bestMonth ? fullLabel(bestMonth) : "No complete month selected"} /></div>
+    <div className="stat-grid sales-summary">
+      <KpiCard icon={Euro} label="Total Revenue" value={money.format(totals.revenue)} note="2026 through Week 34" benchmarkLabel="2025 · Same Week Count" benchmarkValue={money.format(comparisonTotalRevenue)} benchmarkChange={delta(totals.revenue, comparisonTotalRevenue)} />
+      <KpiCard icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completeRows.length} completed months in 2026`} benchmarkLabel="2025 Monthly Average" benchmarkValue={money.format(comparisonAverageRevenue)} benchmarkChange={delta(averageMonthlyRevenue, comparisonAverageRevenue)} />
+      <KpiCard icon={ReceiptText} label="Tips" value={money.format(totals.tips)} note={`${((totals.tips / Math.max(totals.revenue, 1)) * 100).toFixed(1)}% of revenue`} />
+      <KpiCard icon={TrendingUp} label="Best Full Month" value={bestMonth ? money.format(bestMonth.revenue) : "—"} note={bestMonth ? fullLabel(bestMonth) : "No complete month selected"} benchmarkLabel={comparisonBestMonth ? `2025 Best · ${comparisonBestMonth.monthName}` : "2025 Best Month"} benchmarkValue={comparisonBestMonth ? money.format(comparisonBestMonth.revenue) : "—"} benchmarkChange={bestMonth && comparisonBestMonth ? delta(bestMonth.revenue, comparisonBestMonth.revenue) : null} benchmarkNote="Completed months" />
+    </div>
 
     <div className="panel sales-panel"><div className="panel__head sales-panel__head"><div><h3>{metricConfig.label} Trend</h3></div><div className="metric-switch"><button className={metric === "revenue" ? "active" : ""} onClick={() => setMetric("revenue")}>Revenue</button><button className={metric === "tips" ? "active" : ""} onClick={() => setMetric("tips")}>Tips</button></div></div>
       {view === "chart" ? <div className="sales-chart"><ResponsiveContainer width="100%" height={360}><BarChart data={comparisonData} margin={{ top: 36, right: 18, left: 4, bottom: 8 }} barGap={4}><CartesianGrid vertical={false} stroke="var(--grid)" /><XAxis dataKey="month" tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 12 }} /><YAxis tickFormatter={metricConfig.short} tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={58} /><Tooltip formatter={(value, year, item) => [metricConfig.formatter(value), `${year}${year === "2026" && item.payload.partial2026 ? " (MTD)" : ""}`]} contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10 }} /><Legend verticalAlign="top" align="right" height={34} iconType="circle" iconSize={8} />{metric === "revenue" && <ReferenceLine y={revenueReference} stroke="var(--series-4)" strokeWidth={2} strokeDasharray="6 4" label={{ value: "€57,000", position: "insideTopRight", fill: "var(--series-4)", fontSize: 12, fontWeight: 700 }} />}<Bar dataKey="2025" name="2025 comparison" fill="var(--series-1)" radius={[5, 5, 0, 0]} maxBarSize={32}><LabelList dataKey="2025" content={<SalesBarValueLabel align="end" color="var(--series-1)" formatter={metricConfig.labelFormatter} />} /></Bar><Bar dataKey="2026" name="2026" fill="var(--series-2)" radius={[5, 5, 0, 0]} maxBarSize={32}><LabelList dataKey="2026" content={<SalesBarValueLabel align="start" color="var(--series-2)" formatter={metricConfig.labelFormatter} />} /></Bar></BarChart></ResponsiveContainer></div> : <div className="table-wrap"><table className="sales-table"><thead><tr><th>Month</th><th>Revenue</th><th>Orders</th><th>Average Order</th><th>Tips</th><th>YoY Revenue</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={label(row)}><td>{fullLabel(row)}</td><td>{money.format(row.revenue)}</td><td>{row.orders.toLocaleString()}</td><td>{money.format(row.averageOrder)}</td><td>{money.format(row.tips)}</td><td><Change value={row.yoy} /></td><td>{row.partial ? <span className="status-pill status-pill--partial">Partial{row.asOf ? ` · ${row.asOf}` : ""}</span> : <span className="status-pill">Complete</span>}</td></tr>)}</tbody></table></div>}
