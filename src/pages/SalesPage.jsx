@@ -7,6 +7,7 @@ const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR
 const compactMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 0 });
 const revenueReference = 57000;
 const comparisonPartialRevenue2025 = 54256.35;
+const comparisonTips2025 = 24268.52;
 const label = (row) => `${row.month} ${row.year}`;
 const fullLabel = (row) => `${row.monthName} ${row.year}`;
 const delta = (current, previous) => previous ? ((current - previous) / previous) * 100 : null;
@@ -104,7 +105,7 @@ export default function SalesPage() {
     <div className="stat-grid sales-summary">
       <KpiCard icon={Euro} label="Total Revenue" value={money.format(totals.revenue)} note="2026 through Week 34" benchmarkLabel="2025 · Same Week Count" benchmarkValue={money.format(comparisonTotalRevenue)} benchmarkChange={delta(totals.revenue, comparisonTotalRevenue)} />
       <KpiCard icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completeRows.length} completed months in 2026`} benchmarkLabel="2025 Monthly Average" benchmarkValue={money.format(comparisonAverageRevenue)} benchmarkChange={delta(averageMonthlyRevenue, comparisonAverageRevenue)} />
-      <KpiCard icon={ReceiptText} label="Tips" value={money.format(totals.tips)} note={`${((totals.tips / Math.max(totals.revenue, 1)) * 100).toFixed(1)}% of revenue`} />
+      <KpiCard icon={ReceiptText} label="Tips" value={money.format(totals.tips)} note="2026 through Week 34" benchmarkLabel="2025 Tips · Same Week Count" benchmarkValue={money.format(comparisonTips2025)} benchmarkChange={delta(totals.tips, comparisonTips2025)} />
       <KpiCard icon={TrendingUp} label="Best Full Month" value={bestMonth ? money.format(bestMonth.revenue) : "—"} note={bestMonth ? fullLabel(bestMonth) : "No complete month selected"} benchmarkLabel={comparisonBestMonth ? `2025 Best · ${comparisonBestMonth.monthName}` : "2025 Best Month"} benchmarkValue={comparisonBestMonth ? money.format(comparisonBestMonth.revenue) : "—"} benchmarkChange={bestMonth && comparisonBestMonth ? delta(bestMonth.revenue, comparisonBestMonth.revenue) : null} benchmarkNote="Completed months" />
     </div>
 
