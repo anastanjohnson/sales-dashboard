@@ -30,14 +30,22 @@ const findRevenueWeek = (guestWeek, revenueData) => revenueData.find((week) => {
     || revenueWeekNumber === guestWeek?.weekNumber;
 });
 
-function KpiCard({ icon: Icon, label, value, note, change }) {
+function KpiCard({ icon: Icon, label, value, note, change, benchmarkLabel, benchmarkValue }) {
   return (
-    <div className="stat-card">
+    <div className="stat-card weekly-kpi-card">
       <div className="stat-card__head"><span className="stat-card__label">{label}</span><span className="stat-card__icon"><Icon size={16} /></span></div>
       <div className="stat-card__value">{value}</div>
-      <div className={change == null ? "sales-kpi-note" : `sales-change ${change >= 0 ? "sales-change--up" : "sales-change--down"}`}>
-        {change == null ? note : <>{change >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{note}</>}
-      </div>
+      {benchmarkLabel ? (
+        <div className="weekly-kpi-benchmark">
+          <span>{benchmarkLabel}</span>
+          <strong>{benchmarkValue}</strong>
+          <em className={change == null ? "" : change >= 0 ? "weekly-kpi-benchmark--up" : "weekly-kpi-benchmark--down"}>
+            {change == null ? "—" : <>{change >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{signedPercentage(change)}</>}
+          </em>
+        </div>
+      ) : (
+        <div className="sales-kpi-note">{note}</div>
+      )}
     </div>
   );
 }
@@ -257,9 +265,9 @@ export default function WeeklyInsightsPage() {
 
       <div className="stat-grid weekly-summary">
         {hasCurrentData ? <>
-          <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} note={`${signedPercentage(revenueChange)} vs ${comparisonYear}`} change={revenueChange} />
-          <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} note={`${signedPercentage(guestChange)} vs ${comparisonYear}`} change={guestChange} />
-          <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} note={`${comparisonYear}: ${comparisonSpending == null ? "—" : money.format(comparisonSpending)} · ${signedPercentage(spendingChange)}`} change={spendingChange} />
+          <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} benchmarkLabel={`${comparisonYear} Revenue`} benchmarkValue={money.format(revenueTotals.comparison)} change={revenueChange} />
+          <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} benchmarkLabel={`${comparisonYear} Guests`} benchmarkValue={number.format(comparisonGuests)} change={guestChange} />
+          <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} benchmarkLabel={`${comparisonYear} Average`} benchmarkValue={comparisonSpending == null ? "—" : money.format(comparisonSpending)} change={spendingChange} />
         </> : <>
           <KpiCard icon={Euro} label={`${comparisonYear} Revenue Benchmark`} value={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} note={selectedRevenueWeek?.partialBenchmark ? "Partial — one source day is not recorded" : "Thursday to Monday benchmark"} />
           <KpiCard icon={Users} label={`${comparisonYear} Guest Benchmark`} value={comparisonGuests == null ? "—" : number.format(comparisonGuests)} note="OpenTable seated covers" />
