@@ -408,6 +408,11 @@
 .legend-dot--good { background: #67c9a3; }
 .legend-dot--warning { background: #ef8f8f; }
 .salary-panel .table-wrap { padding: 0; }
+.salary-employee-clickable,
+.salary-employee-table-row { cursor: pointer; }
+.salary-employee-table-row:hover { background: var(--surface-hover); }
+.salary-employee-back { white-space: nowrap; }
+.salary-employee-history { padding-top: 6px; }
 .salary-toolbar { margin-top: 8px; }
 .salary-month-picker {
     display: grid;
