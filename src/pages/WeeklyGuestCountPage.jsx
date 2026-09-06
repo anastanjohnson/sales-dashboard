@@ -11,6 +11,16 @@ const latestWeekId = weeklyGuestData.filter((week) => week.available).at(-1)?.id
 
 const dateLabel = (value) => value ? shortDate.format(new Date(`${value}T12:00:00`)) : "—";
 const rangeLabel = (week) => week ? `${dateLabel(week.startDate)} – ${dateLabel(week.endDate)}` : "Thursday – Monday";
+const mergeWeeklyGuestUpdates = (baseWeeks, updates) => {
+  const updateList = Array.isArray(updates) ? updates : [];
+  const merged = baseWeeks.map((week) =>
+    updateList.find((update) => update.id === week.id || Number(update.weekNumber) === Number(week.weekNumber)) || week
+  );
+  updateList.forEach((update) => {
+    if (!merged.some((week) => week.id === update.id || Number(week.weekNumber) === Number(update.weekNumber))) merged.push(update);
+  });
+  return merged.sort((a, b) => Number(a.weekNumber) - Number(b.weekNumber));
+};
 
 function KpiCard({ icon: Icon, label, value, note, change }) {
   return (
@@ -70,15 +80,19 @@ export default function WeeklyGuestCountPage() {
     Promise.all([
       fetch("/api/weekly-performance", { credentials: "include" }),
       fetch("/api/weekly-benchmarks", { credentials: "include" }),
+      fetch("/api/weekly-guests", { credentials: "include" }),
     ])
-      .then(async ([response, benchmarkResponse]) => {
-        if (response.status === 401 || benchmarkResponse.status === 401) return window.location.reload();
-        if (!response.ok || !benchmarkResponse.ok) throw new Error("Unable to load weekly benchmark data.");
-        return Promise.all([response.json(), benchmarkResponse.json()]);
+      .then(async ([response, benchmarkResponse, guestResponse]) => {
+        if (response.status === 401 || benchmarkResponse.status === 401 || guestResponse.status === 401) return window.location.reload();
+        if (!response.ok || !benchmarkResponse.ok || !guestResponse.ok) throw new Error("Unable to load weekly benchmark data.");
+        return Promise.all([response.json(), benchmarkResponse.json(), guestResponse.json()]);
       })
-      .then(([data, benchmarkData]) => {
+      .then(([data, benchmarkData, guestUpdates]) => {
+        const updatedGuestWeeks = mergeWeeklyGuestUpdates(weeklyGuestData, guestUpdates);
+        const mergedGuestWeeks = mergeWeeklyGuestBenchmarks(updatedGuestWeeks, benchmarkData);
         setWeeklyRevenueData(mergeWeeklyRevenueBenchmarks(Array.isArray(data) ? data : [], benchmarkData));
-        setGuestWeeks(mergeWeeklyGuestBenchmarks(weeklyGuestData, benchmarkData));
+        setGuestWeeks(mergedGuestWeeks);
+        setSelectedWeekId([...mergedGuestWeeks].reverse().find((week) => week.available)?.id || latestWeekId);
         setRevenueStatus("ready");
       })
       .catch(() => {
@@ -176,7 +190,7 @@ export default function WeeklyGuestCountPage() {
         )}
       </div>
 
-      <div className="source-note"><strong>Source:</strong> OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; future weeks show the aligned 2025 guest benchmark until 2026 results become available. Current data through 24 Aug 2026; W34 is partial.</div>
+      <div className="source-note"><strong>Source:</strong> OpenTable seated covers, aggregated without guest personal information. <strong>Week definition:</strong> Thursday through the following Monday; future weeks show the aligned 2025 guest benchmark until 2026 results become available. Current data through 6 Sep 2026; W35 is complete and W36 is partial.</div>
     </div>
   );
 }

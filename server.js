@@ -26,9 +26,19 @@ const normalizedSalaryData = salaryData.map((period) => {
 });
 
 const staffHoursData = JSON.parse(process.env.STAFF_HOURS_DATA_JSON);
+const staffHoursAppend = JSON.parse(process.env.STAFF_HOURS_APPEND_JSON || "[]");
 const staffHoursOverrides = JSON.parse(process.env.STAFF_HOURS_OVERRIDES_JSON || "[]");
 const staffHoursExclusions = JSON.parse(process.env.STAFF_HOURS_EXCLUSIONS_JSON || "[]");
-const overriddenStaffHoursData = staffHoursData.map((period) => {
+const appendedStaffHoursData = [...staffHoursData];
+staffHoursAppend.forEach((entry) => {
+  const index = appendedStaffHoursData.findIndex((period) =>
+    Number(period.year) === Number(entry.year)
+    && String(period.month || "").slice(0, 3).toLowerCase() === String(entry.month || "").slice(0, 3).toLowerCase()
+  );
+  if (index >= 0) appendedStaffHoursData[index] = { ...appendedStaffHoursData[index], ...entry };
+  else appendedStaffHoursData.push(entry);
+});
+const overriddenStaffHoursData = appendedStaffHoursData.map((period) => {
   const override = staffHoursOverrides.find((entry) =>
     Number(entry.year) === Number(period.year)
     && String(entry.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
@@ -49,8 +59,18 @@ const normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
   };
 });
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
+const weeklyPerformanceAppend = JSON.parse(process.env.WEEKLY_PERFORMANCE_APPEND_JSON || "[]");
+const weeklyGuestAppendData = JSON.parse(process.env.WEEKLY_GUEST_APPEND_JSON || "[]");
 const weeklyPerformanceOverrides = JSON.parse(process.env.WEEKLY_PERFORMANCE_OVERRIDES_JSON || "[]");
-const normalizedWeeklyPerformanceData = weeklyPerformanceData.map((week) => {
+const appendedWeeklyPerformanceData = [...weeklyPerformanceData];
+weeklyPerformanceAppend.forEach((entry) => {
+  const index = appendedWeeklyPerformanceData.findIndex((week) =>
+    week.id === entry.id || Number(week.weekNumber) === Number(entry.weekNumber)
+  );
+  if (index >= 0) appendedWeeklyPerformanceData[index] = { ...appendedWeeklyPerformanceData[index], ...entry };
+  else appendedWeeklyPerformanceData.push(entry);
+});
+const normalizedWeeklyPerformanceData = appendedWeeklyPerformanceData.map((week) => {
   const override = weeklyPerformanceOverrides.find((entry) => entry.id === week.id || Number(entry.weekNumber) === Number(week.weekNumber));
   if (!override) return week;
   const overrideDays = Array.isArray(override.days) ? override.days : [];
@@ -164,6 +184,7 @@ app.post("/api/logout", (_req, res) => {
 app.get("/api/salary", requireAuth, (_req, res) => res.json(normalizedSalaryData));
 app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(normalizedStaffHoursData));
 app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(normalizedWeeklyPerformanceData));
+app.get("/api/weekly-guests", requireAuth, (_req, res) => res.json(weeklyGuestAppendData));
 app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
 
 app.use(express.static(path.join(__dirname, "dist"), {

@@ -21,6 +21,16 @@ const latestWeekId = weeklyGuestData.filter((week) => week.available).at(-1)?.id
 
 const dateLabel = (value) => value ? shortDate.format(new Date(`${value}T12:00:00`)) : "—";
 const rangeLabel = (week) => week ? `${dateLabel(week.startDate)} – ${dateLabel(week.endDate)}` : "Thursday – Monday";
+const mergeWeeklyGuestUpdates = (baseWeeks, updates) => {
+  const updateList = Array.isArray(updates) ? updates : [];
+  const merged = baseWeeks.map((week) =>
+    updateList.find((update) => update.id === week.id || Number(update.weekNumber) === Number(week.weekNumber)) || week
+  );
+  updateList.forEach((update) => {
+    if (!merged.some((week) => week.id === update.id || Number(week.weekNumber) === Number(update.weekNumber))) merged.push(update);
+  });
+  return merged.sort((a, b) => Number(a.weekNumber) - Number(b.weekNumber));
+};
 const signedPercentage = (value) => value == null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
 
 const findRevenueWeek = (guestWeek, revenueData) => revenueData.find((week) => {
@@ -133,16 +143,18 @@ export default function WeeklyInsightsPage() {
   const loadWeeklyData = async () => {
     setStatus("loading");
     try {
-      const [response, benchmarkResponse] = await Promise.all([
+      const [response, benchmarkResponse, guestResponse] = await Promise.all([
         fetch("/api/weekly-performance", { credentials: "include" }),
         fetch("/api/weekly-benchmarks", { credentials: "include" }),
+        fetch("/api/weekly-guests", { credentials: "include" }),
       ]);
-      if (response.status === 401 || benchmarkResponse.status === 401) return window.location.reload();
-      if (!response.ok || !benchmarkResponse.ok) throw new Error("Unable to load weekly performance data.");
-      const [data, benchmarkData] = await Promise.all([response.json(), benchmarkResponse.json()]);
+      if (response.status === 401 || benchmarkResponse.status === 401 || guestResponse.status === 401) return window.location.reload();
+      if (!response.ok || !benchmarkResponse.ok || !guestResponse.ok) throw new Error("Unable to load weekly performance data.");
+      const [data, benchmarkData, guestUpdates] = await Promise.all([response.json(), benchmarkResponse.json(), guestResponse.json()]);
       if (!Array.isArray(data)) throw new Error("Invalid weekly performance data.");
       const mergedData = mergeWeeklyRevenueBenchmarks(data, benchmarkData);
-      const mergedGuestWeeks = mergeWeeklyGuestBenchmarks(weeklyGuestData, benchmarkData);
+      const updatedGuestWeeks = mergeWeeklyGuestUpdates(weeklyGuestData, guestUpdates);
+      const mergedGuestWeeks = mergeWeeklyGuestBenchmarks(updatedGuestWeeks, benchmarkData);
       setWeeklyRevenueData(mergedData);
       setGuestWeeks(mergedGuestWeeks);
       const latestCombinedWeek = [...mergedGuestWeeks].reverse().find((week) => week.available && findRevenueWeek(week, mergedData));
@@ -227,7 +239,7 @@ export default function WeeklyInsightsPage() {
             const hasCurrentWeekData = Boolean(guestWeek.available && revenueWeek?.days?.some((row) => row.currentRevenue != null));
             const hasBenchmarkData = Boolean(guestWeek.comparisonCovers != null && revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
             const hasData = hasCurrentWeekData || hasBenchmarkData;
-            const isDisabled = Number(guestWeek.weekNumber) > Number(weeklyGuestMeta.latestCompletedWeek) || !hasData;
+            const isDisabled = !hasData;
             const change = hasCurrentWeekData ? percentageChange(totals.current, totals.comparison) : null;
             const direction = !hasCurrentWeekData && hasBenchmarkData ? "benchmark" : change == null ? "empty" : change > 0 ? "up" : change < 0 ? "down" : "neutral";
             const isSelected = guestWeek.id === selectedWeekId;
