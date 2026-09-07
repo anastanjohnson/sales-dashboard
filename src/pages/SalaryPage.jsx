@@ -6,7 +6,6 @@ import { salesData } from "../data/salesData";
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const shortCurrency = (value) => `€${Math.round(value / 1000)}k`;
 const barCurrency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-const monthLabel = (row) => `${row.month} ${row.year}`;
 const monthOrder = [
   { short: "Jan", full: "January" },
   { short: "Feb", full: "February" },
@@ -21,6 +20,31 @@ const monthOrder = [
   { short: "Nov", full: "November" },
   { short: "Dec", full: "December" },
 ];
+const normalizeMonth = (value) => {
+  const raw = String(value ?? "").trim().toLowerCase();
+  const numericMatch = raw.match(/^(?:\d{4}[-/])?(\d{1,2})(?:[-/]\d{4})?$/);
+  if (numericMatch) {
+    const index = Number(numericMatch[1]) - 1;
+    if (index >= 0 && index < monthOrder.length) return monthOrder[index].short.toLowerCase();
+  }
+  return monthOrder.find(({ short, full }) =>
+    raw.startsWith(short.toLowerCase()) || raw.startsWith(full.toLowerCase())
+  )?.short.toLowerCase() || raw.slice(0, 3);
+};
+const is2026Period = (row) => Number(row?.year) === 2026 || /2026/.test(String(row?.month || ""));
+const combineEmployees = (periods) => {
+  const combined = new Map();
+  periods.forEach((row) => {
+    (row.employees || []).forEach((employee) => {
+      const name = String(employee.name).trim();
+      const key = `${employee.department}::${name}`;
+      const existing = combined.get(key) || { name, department: employee.department, salary: 0 };
+      existing.salary += Number(employee.salary) || 0;
+      combined.set(key, existing);
+    });
+  });
+  return Array.from(combined.values()).sort((a, b) => b.salary - a.salary);
+};
 
 function SalaryTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -40,7 +64,7 @@ function SalaryTooltip({ active, payload, label }) {
 
 export default function SalaryPage() {
   const [salaryData, setSalaryData] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(0);
+  const [summaryMonth, setSummaryMonth] = useState("all");
   const [department, setDepartment] = useState("All");
   const [trendDepartment, setTrendDepartment] = useState("All");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -55,7 +79,7 @@ export default function SalaryPage() {
       if (!response.ok) throw new Error("Unable to load salary data.");
       const data = await response.json();
       setSalaryData(data);
-      setSelectedMonth(Math.max(0, data.length - 1));
+      setSummaryMonth("all");
       setStatus("ready");
     } catch {
       setStatus("error");
@@ -64,31 +88,27 @@ export default function SalaryPage() {
 
   useEffect(() => { loadSalaryData(); }, []);
 
-  const monthData = selectedMonth === "all" ? null : salaryData[selectedMonth];
-  const selectedEmployees = useMemo(() => {
-    if (selectedMonth !== "all") return salaryData[selectedMonth]?.employees || [];
+  const monthData = summaryMonth === "all" ? null : salaryData[summaryMonth];
+  const summaryEmployees = useMemo(
+    () => summaryMonth === "all"
+      ? combineEmployees(salaryData.filter(is2026Period))
+      : salaryData[summaryMonth]?.employees || [],
+    [salaryData, summaryMonth],
+  );
 
-    const combined = new Map();
-    salaryData.forEach((row) => {
-      row.employees.forEach((employee) => {
-        const name = String(employee.name).trim();
-        const key = `${employee.department}::${name}`;
-        const existing = combined.get(key) || { name, department: employee.department, salary: 0 };
-        existing.salary += Number(employee.salary) || 0;
-        combined.set(key, existing);
-      });
-    });
-    return Array.from(combined.values()).sort((a, b) => b.salary - a.salary);
-  }, [salaryData, selectedMonth]);
+  const chartEmployees = useMemo(
+    () => combineEmployees(salaryData.filter(is2026Period)),
+    [salaryData],
+  );
 
   const visibleEmployees = useMemo(
-    () => selectedEmployees.filter((employee) => department === "All" || employee.department === department).filter((employee) => Number(employee.salary) > 0),
-    [selectedEmployees, department],
+    () => chartEmployees.filter((employee) => department === "All" || employee.department === department).filter((employee) => Number(employee.salary) > 0),
+    [chartEmployees, department],
   );
 
   const employeePickerOptions = useMemo(() => {
     const employees = new Map();
-    salaryData.filter((row) => row.year === 2026).forEach((row) => {
+    salaryData.filter(is2026Period).forEach((row) => {
       (row.employees || []).forEach((employee) => {
         if (department !== "All" && employee.department !== department) return;
         const name = String(employee.name).trim();
@@ -104,13 +124,13 @@ export default function SalaryPage() {
   const employeeMonthlyHistory = useMemo(() => {
     if (!selectedEmployee) return [];
     const targetName = String(selectedEmployee.name).trim().toLowerCase();
-    return salaryData.filter((row) => row.year === 2026).map((row) => {
+    return salaryData.filter(is2026Period).map((row) => {
       const employee = (row.employees || []).find((item) =>
         item.department === selectedEmployee.department
         && String(item.name).trim().toLowerCase() === targetName
       );
       return {
-        month: String(row.month).slice(0, 3),
+        month: normalizeMonth(row.month).replace(/^./, (value) => value.toUpperCase()),
         salary: Number(employee?.salary) || 0,
         department: selectedEmployee.department,
       };
@@ -118,23 +138,23 @@ export default function SalaryPage() {
   }, [salaryData, selectedEmployee]);
 
   const totals = useMemo(() => {
-    const salariedEmployees = selectedEmployees.filter((employee) => Number(employee.salary) > 0);
+    const salariedEmployees = summaryEmployees.filter((employee) => Number(employee.salary) > 0);
     const kitchen = salariedEmployees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + employee.salary, 0);
     const service = salariedEmployees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + employee.salary, 0);
     return { kitchen, service, total: kitchen + service };
-  }, [selectedEmployees]);
+  }, [summaryEmployees]);
 
   const salarySalesTrend = useMemo(() => salaryData
-    .filter((row) => row.year === 2026)
+    .filter(is2026Period)
     .map((row) => {
-      const monthKey = String(row.month).slice(0, 3).toLowerCase();
-      const sales = salesData.find((item) => item.year === 2026 && String(item.month).slice(0, 3).toLowerCase() === monthKey);
+      const monthKey = normalizeMonth(row.month);
+      const sales = salesData.find((item) => item.year === 2026 && normalizeMonth(item.month) === monthKey);
       const employees = row.employees || [];
       const kitchenSalary = employees.filter((employee) => employee.department === "Kitchen").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
       const serviceSalary = employees.filter((employee) => employee.department === "Service").reduce((sum, employee) => sum + (Number(employee.salary) || 0), 0);
       const revenue = Number(sales?.revenue) || 0;
       return {
-        month: `${String(row.month).slice(0, 3)}${sales?.partial ? "*" : ""}`,
+        month: `${monthKey.replace(/^./, (value) => value.toUpperCase())}${sales?.partial ? "*" : ""}`,
         revenue,
         kitchenPercentage: revenue > 0 ? (kitchenSalary / revenue) * 100 : null,
         servicePercentage: revenue > 0 ? (serviceSalary / revenue) * 100 : null,
@@ -145,27 +165,27 @@ export default function SalaryPage() {
 
   const selectedSalesRevenue = useMemo(() => {
     const sales2026 = salesData.filter((row) => row.year === 2026);
-    if (selectedMonth === "all") {
-      const salaryMonths = new Set(salaryData.map((row) => String(row.month).slice(0, 3).toLowerCase()));
+    if (summaryMonth === "all") {
+      const salaryMonths = new Set(salaryData.filter(is2026Period).map((row) => normalizeMonth(row.month)));
       return sales2026
-        .filter((row) => salaryMonths.has(String(row.month).slice(0, 3).toLowerCase()))
+        .filter((row) => salaryMonths.has(normalizeMonth(row.month)))
         .reduce((sum, row) => sum + row.revenue, 0);
     }
 
-    const salaryMonth = salaryData[selectedMonth];
+    const salaryMonth = salaryData[summaryMonth];
     if (!salaryMonth) return 0;
-    const monthKey = String(salaryMonth.month).slice(0, 3).toLowerCase();
-    return sales2026.find((row) => String(row.month).slice(0, 3).toLowerCase() === monthKey)?.revenue || 0;
-  }, [salaryData, selectedMonth]);
+    const monthKey = normalizeMonth(salaryMonth.month);
+    return sales2026.find((row) => normalizeMonth(row.month) === monthKey)?.revenue || 0;
+  }, [salaryData, summaryMonth]);
 
   if (status === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading secure salary data…</h3></div></div></div>;
   if (status === "error" || !salaryData.length) return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Salary data could not be loaded.</h3><button className="btn btn--ghost" onClick={loadSalaryData}>Try again</button></div></div></div>;
 
-  const reset = () => { setSelectedMonth(salaryData.length - 1); setDepartment("All"); setTrendDepartment("All"); setSelectedEmployee(null); setView("chart"); };
+  const reset = () => { setSummaryMonth("all"); setDepartment("All"); setTrendDepartment("All"); setSelectedEmployee(null); setView("chart"); };
   const selectDepartment = (option) => { setDepartment(option); setSelectedEmployee(null); };
   const selectEmployee = (employee) => { setSelectedEmployee({ name: employee.name, department: employee.department }); setView("chart"); };
-  const selectionLabel = selectedMonth === "all" ? "All Time 2026" : monthLabel(monthData);
-  const salesScopeLabel = selectedMonth === "all" ? "of all-time sales" : `of ${monthData.month} sales`;
+  const selectionLabel = "All Time 2026";
+  const salesScopeLabel = summaryMonth === "all" ? "of all-time sales" : `of ${monthData.month} sales`;
   const salaryPercentage = (value) => selectedSalesRevenue > 0 ? `${((value / selectedSalesRevenue) * 100).toFixed(1)}%` : "—";
 
   return (
@@ -176,12 +196,12 @@ export default function SalaryPage() {
       </div>
 
       <div className="salary-month-picker" role="group" aria-label="Select salary month">
-        <button type="button" className={`salary-month-button salary-month-button--all ${selectedMonth === "all" ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === "all"} onClick={() => setSelectedMonth("all")}>All Time</button>
+        <button type="button" className={`salary-month-button salary-month-button--all ${summaryMonth === "all" ? "salary-month-button--active" : ""}`} aria-pressed={summaryMonth === "all"} onClick={() => setSummaryMonth("all")}>All Time</button>
         {monthOrder.map(({ short, full }) => {
-          const dataIndex = salaryData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === short.toLowerCase());
+          const dataIndex = salaryData.findIndex((row) => is2026Period(row) && normalizeMonth(row.month) === short.toLowerCase());
           const available = dataIndex >= 0;
-          const selected = available && selectedMonth === dataIndex;
-          return <button type="button" key={short} className={`salary-month-button ${selected ? "salary-month-button--active" : ""}`} disabled={!available} aria-pressed={selected} title={available ? `${full} 2026` : `${full} 2026 — no data yet`} onClick={() => setSelectedMonth(dataIndex)}>{short}</button>;
+          const selected = available && summaryMonth === dataIndex;
+          return <button type="button" key={short} className={`salary-month-button ${selected ? "salary-month-button--active" : ""}`} disabled={!available} aria-pressed={selected} title={available ? `${full} 2026` : `${full} 2026 — no data yet`} onClick={() => setSummaryMonth(dataIndex)}>{short}</button>;
         })}
       </div>
 
