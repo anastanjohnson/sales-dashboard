@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, ArrowRight, Award, Banknote, Clock3, Euro, Gauge,
-  ReceiptText, RefreshCcw, RefreshCw, TrendingDown, TrendingUp, Users,
+  AlertTriangle, ArrowRight, Award, Banknote, BarChart3, Clock3, Euro, Gauge,
+  RefreshCcw, RefreshCw, TrendingDown, TrendingUp, Users,
 } from "lucide-react";
 import SalaryPage from "./SalaryPage";
 import StaffHoursPage from "./StaffHoursPage";
@@ -121,9 +121,12 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   if (activePage === "settings") return <SettingsPage theme={theme} onToggleTheme={onToggleTheme} />;
 
   const sales2026 = salesData.filter((row) => row.year === 2026);
+  const completedSales2026 = sales2026.filter((row) => !row.partial);
   const latestSales = sales2026.at(-1);
   const totalRevenue = sales2026.reduce((sum, row) => sum + row.revenue, 0);
-  const totalTips = sales2026.reduce((sum, row) => sum + row.tips, 0);
+  const averageMonthlyRevenue = completedSales2026.length
+    ? completedSales2026.reduce((sum, row) => sum + row.revenue, 0) / completedSales2026.length
+    : 0;
 
   const latestGuestWeek = [...liveData.guestWeeks].reverse().find((week) =>
     week.available && findRevenueWeek(week, liveData.weeklyRevenue)?.days?.some((day) => day.currentRevenue != null)
@@ -176,10 +179,10 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
 
       {status === "error" && <div className="overview-alert"><AlertTriangle size={17} />Sales and loyalty figures are visible, but protected salary, staff-hours or weekly data could not be refreshed.</div>}
 
-      <Section title="Sales Revenue" subtitle="2026 revenue and tips from the General Ledger" page="sales" onNavigate={onNavigate}>
+      <Section title="Sales Revenue" subtitle="2026 revenue performance from the General Ledger" page="sales" onNavigate={onNavigate}>
         <Widget icon={Euro} label="2026 Revenue" value={money.format(totalRevenue)} note="Year to date" page="sales" onNavigate={onNavigate} tone="purple" />
         <Widget icon={Gauge} label={`${latestSales?.monthName || "Latest Month"} Revenue${latestSales?.partial ? " · MTD" : ""}`} value={money.format(latestSales?.revenue || 0)} note={latestSales?.asOf ? `Updated through ${latestSales.asOf}` : "Latest available month"} page="sales" onNavigate={onNavigate} tone="blue" />
-        <Widget icon={ReceiptText} label="2026 Tips" value={money.format(totalTips)} note="Year to date" page="sales" onNavigate={onNavigate} tone="gold" />
+        <Widget icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completedSales2026.length} completed months in 2026`} page="sales" onNavigate={onNavigate} tone="gold" />
       </Section>
 
       <Section title="Weekly Performance" subtitle={latestGuestWeek ? `Latest completed reporting week · W${latestGuestWeek.weekNumber}` : "Latest completed Thursday–Monday reporting week"} page="weekly-performance" onNavigate={onNavigate}>
