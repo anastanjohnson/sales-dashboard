@@ -42,7 +42,7 @@ export default function App() {
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
       <div className="app-main">
         <Topbar theme={theme} onToggleTheme={toggleTheme} onLogout={logout} />
-        <main className="app-content"><Dashboard activePage={activePage} theme={theme} onToggleTheme={toggleTheme} /></main>
+        <main className="app-content"><Dashboard activePage={activePage} theme={theme} onToggleTheme={toggleTheme} onNavigate={setActivePage} /></main>
       </div>
     </div>
   );
