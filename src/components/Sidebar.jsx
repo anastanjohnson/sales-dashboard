@@ -8,17 +8,18 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
+    X,
 } from "lucide-react";
 import { useState } from "react";
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
     { icon: LayoutGrid, label: "Dashboard", page: "overview" },
   { icon: Euro, label: "Sales Revenue", page: "sales" },
     { icon: ChartLine, label: "Weekly Performance", page: "weekly-performance" },
     { icon: RefreshCcw, label: "Repeated Guest", page: "repeated-guests" },
     { icon: Banknote, label: "Salary", page: "sales-salary" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
-  { icon: Settings, label: "Setting", page: "settings" },
+  { icon: Settings, label: "Settings", page: "settings" },
   ];
 
 export default function Sidebar({ activePage, onNavigate }) {
@@ -48,4 +49,48 @@ export default function Sidebar({ activePage, onNavigate }) {
             </nav>
       </aside>
       );
+}
+
+export function MobileNavigation({ activePage, onNavigate, open, onClose }) {
+  const navigate = (page) => {
+    onNavigate(page);
+    onClose();
+  };
+
+  return (
+    <>
+      <button
+        className={`mobile-nav__backdrop ${open ? "mobile-nav__backdrop--open" : ""}`}
+        type="button"
+        aria-label="Close navigation"
+        tabIndex={open ? 0 : -1}
+        onClick={onClose}
+      />
+      <aside className={`mobile-nav ${open ? "mobile-nav--open" : ""}`} aria-hidden={!open}>
+        <div className="mobile-nav__head">
+          <div className="mobile-nav__brand">
+            <strong>KARIKAALA</strong>
+            <span>Management Dashboard</span>
+          </div>
+          <button className="icon-btn" type="button" onClick={onClose} aria-label="Close navigation" tabIndex={open ? 0 : -1}>
+            <X size={18} />
+          </button>
+        </div>
+        <nav className="mobile-nav__list" aria-label="Mobile navigation">
+          {NAV_ITEMS.map(({ icon: Icon, label, page }) => (
+            <button
+              key={label}
+              type="button"
+              className={`mobile-nav__item ${activePage === page ? "mobile-nav__item--active" : ""}`}
+              onClick={() => navigate(page)}
+              tabIndex={open ? 0 : -1}
+            >
+              <Icon size={19} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+    </>
+  );
 }
