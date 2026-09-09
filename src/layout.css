@@ -1077,6 +1077,26 @@ tbody tr:last-child td {
     .salary-filter-panel { align-items: stretch; flex-direction: column; }
     .salary-filter-panel select { width: 100%; }
     .sales-panel__head { align-items: flex-start; flex-direction: column; }
+    .sales-panel { padding: 16px 12px 10px; overflow: hidden; }
+    .sales-panel__head { gap: 12px; }
+    .sales-panel__head > div:first-child { width: 100%; }
+    .sales-panel__head .metric-switch { display: flex; width: 100%; }
+    .sales-panel__head .metric-switch button { flex: 1; }
+    .sales-chart { margin: 0 -6px; }
+    .sales-chart__hint {
+          margin: 5px 0 0;
+          color: var(--text-muted);
+          font-size: 11px;
+          line-height: 1.4;
+    }
+    .sales-chart--mobile .recharts-default-legend {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 6px 12px;
+    }
+    .sales-chart--mobile .recharts-legend-item { margin-right: 0 !important; }
+    .sales-chart--mobile .recharts-legend-item-text { font-size: 11px; }
     .settings-panel__row { align-items: flex-start; flex-direction: column; }
     .weekly-week-grid { grid-template-columns: repeat(4, minmax(52px, 1fr)); }
     .weekly-week-picker__head { align-items: flex-start; flex-direction: column; }
