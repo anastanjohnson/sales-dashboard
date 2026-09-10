@@ -221,7 +221,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
         {error && <div className="salary-payment-error" role="alert">{error}</div>}
         <div className="table-wrap">
           <table className="salary-payment-table">
-            <thead><tr><th>Name</th><th>Salary</th><th>Tips</th><th>Total</th><th>Paid Amount</th><th>Paid Date</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Name</th><th>Salary</th><th>Tips</th><th className="salary-payment-table__total">Total</th><th>Paid Amount</th><th>Paid Date</th><th>Actions</th></tr></thead>
             <tbody>{rows.map((row) => {
               const key = keyFor(row);
               const values = payments[key] || { paidAmount: "", paidDate: "" };
@@ -236,7 +236,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
                 <td><div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button>}</div></td>
               </tr>;
             })}</tbody>
-            <tfoot><tr><td colSpan="3">Total</td><td>{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
+            <tfoot><tr><td colSpan="3">Total</td><td className="salary-payment-table__total">{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
           </table>
         </div>
       </div>
