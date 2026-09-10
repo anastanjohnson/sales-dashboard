@@ -498,8 +498,58 @@ app.use((error, _req, res, _next) => {
   if (!res.headersSent) res.status(500).json({ error: "The requested update could not be completed." });
 });
 
+const seedInitialSalaryPayments = async () => {
+  const migrationKey = "initial_salary_payments_v1";
+  const client = await database.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [migrationKey]);
+    const applied = await client.query("SELECT 1 FROM app_migrations WHERE migration_key = $1", [migrationKey]);
+    if (applied.rowCount) {
+      await client.query("COMMIT");
+      return;
+    }
+
+    const state = await client.query(`
+      SELECT
+        EXISTS (SELECT 1 FROM salary_payments) AS has_payments,
+        EXISTS (SELECT 1 FROM salary_entries) AS has_entries,
+        EXISTS (SELECT 1 FROM salary_entry_deletions) AS has_deletions
+    `);
+    const databaseAlreadyInUse = Object.values(state.rows[0]).some(Boolean);
+    if (!databaseAlreadyInUse) {
+      for (const period of salaryPaymentSourceData) {
+        for (const employee of period.employees || []) {
+          const paidAmount = parsePaidAmount(employee.paidAmount);
+          const paidDate = parsePaidDate(employee.paidDate);
+          if ((paidAmount == null && paidDate == null) || paidAmount === undefined || paidDate === undefined) continue;
+          await client.query(`
+            INSERT INTO salary_payments
+              (period_year, period_month, employee_name, department, paid_amount, paid_date)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (period_year, period_month, employee_name, department) DO NOTHING
+          `, [Number(period.year), period.month, employee.name, employee.department, paidAmount, paidDate]);
+        }
+      }
+    }
+
+    await client.query("INSERT INTO app_migrations (migration_key) VALUES ($1)", [migrationKey]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const start = async () => {
   await database.query(`
+    CREATE TABLE IF NOT EXISTS app_migrations (
+      migration_key VARCHAR(120) PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS salary_entries (
       id BIGSERIAL PRIMARY KEY,
       period_year INTEGER NOT NULL CHECK (period_year BETWEEN 2020 AND 2100),
@@ -534,19 +584,7 @@ const start = async () => {
       UNIQUE (period_year, period_month, employee_name, department)
     )
   `);
-  for (const period of salaryPaymentSourceData) {
-    for (const employee of period.employees || []) {
-      const paidAmount = parsePaidAmount(employee.paidAmount);
-      const paidDate = parsePaidDate(employee.paidDate);
-      if ((paidAmount == null && paidDate == null) || paidAmount === undefined || paidDate === undefined) continue;
-      await database.query(`
-        INSERT INTO salary_payments
-          (period_year, period_month, employee_name, department, paid_amount, paid_date)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (period_year, period_month, employee_name, department) DO NOTHING
-      `, [Number(period.year), period.month, employee.name, employee.department, paidAmount, paidDate]);
-    }
-  }
+  await seedInitialSalaryPayments();
   app.listen(port, "0.0.0.0", () => console.log(`Secure dashboard listening on port ${port}`));
 };
 
