@@ -10,6 +10,8 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
   const [staffDirectory, setStaffDirectory] = useState([]);
   const [payments, setPayments] = useState({});
   const [selectedMonth, setSelectedMonth] = useState("");
+  const [newMonth, setNewMonth] = useState("");
+  const [openingMonth, setOpeningMonth] = useState(false);
   const [department, setDepartment] = useState("All");
   const [pageStatus, setPageStatus] = useState("loading");
   const [rowStatus, setRowStatus] = useState({});
@@ -47,7 +49,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
       setSalaryData(periods);
       setStaffDirectory(Array.isArray(staff) ? staff : []);
       setPayments(paymentMap);
-      setSelectedMonth((current) => current || periods.at(-1)?.month || "");
+      setSelectedMonth((current) => periods.some((period) => period.month === current) ? current : periods.at(-1)?.month || "");
       setPageStatus("ready");
     } catch (loadError) {
       setError(loadError.message);
@@ -61,6 +63,32 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     Number(a.year) - Number(b.year) || monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
   ), [salaryData]);
   const selectedPeriod = periods.find((row) => row.month === selectedMonth);
+  const unopenedMonths = monthOrder.filter((month) => !periods.some((period) => period.month === month));
+  const openMonth = async (event) => {
+    event.preventDefault();
+    if (!canEnterSalary || !newMonth || openingMonth) return;
+    setOpeningMonth(true);
+    setError("");
+    try {
+      const response = await fetch("/api/salary-months", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: 2026, month: newMonth }),
+      });
+      if (response.status === 401) return window.location.reload();
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to open month.");
+      await loadData();
+      setSelectedMonth(result.month);
+      setNewMonth("");
+      setEntryEmployee("");
+      setEntrySalary("");
+      setEntryTips("");
+      setEntryStatus("idle");
+      setDepartment("All");
+    } catch (error) { setError(error.message); }
+    finally { setOpeningMonth(false); }
+  };
   const staffOptions = useMemo(() => staffDirectory.map((employee) => ({
     ...employee,
     key: `${employee.department}::${String(employee.name).trim().toLowerCase()}`,
@@ -192,6 +220,14 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
       <div className="salary-month-picker" role="group" aria-label="Select salary payment month">
         {periods.map((period) => <button type="button" key={`${period.year}-${period.month}`} className={`salary-month-button ${selectedMonth === period.month ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === period.month} onClick={() => setSelectedMonth(period.month)}>{period.month.slice(0, 3)}</button>)}
       </div>
+
+      {canEnterSalary && unopenedMonths.length > 0 && <form className="panel salary-entry-panel" onSubmit={openMonth}>
+        <div className="salary-entry-panel__head"><h3>Open new salary month · 2026</h3></div>
+        <div className="salary-entry-grid">
+          <label><span>Month</span><select value={newMonth} onChange={(event) => setNewMonth(event.target.value)} required disabled={openingMonth}><option value="">Select month</option>{unopenedMonths.map((month) => <option key={month} value={month}>{month}</option>)}</select></label>
+          <button className="salary-payment-save salary-entry-save" type="submit" disabled={!newMonth || openingMonth}>{openingMonth ? "Opening…" : "Open month"}</button>
+        </div>
+      </form>}
 
       {canEnterSalary && <form className="panel salary-entry-panel" onSubmit={saveSalaryEntry}>
         <div className="salary-entry-panel__head"><div><h3><UserPlus size={17} /> Enter {selectedMonth} Salary</h3><p>Select a staff member, then enter the salary and tips. Saving updates this page and the main Salary page.</p></div></div>

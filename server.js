@@ -354,14 +354,35 @@ app.get("/api/salary", requireAuth, requireAdmin, async (_req, res, next) => {
   }
   catch (error) { next(error); }
 });
-app.get("/api/salary-payment-source", requireAuth, async (_req, res, next) => {
+app.get("/api/salary-payment-source", requireAuth, async (req, res, next) => {
   try {
     const { entries, deletions } = await readSalaryState();
-    res.json(mergeSalaryEntries(salaryPaymentSourceData, entries, true, deletions));
+    const periods = mergeSalaryEntries(salaryPaymentSourceData, entries, true, deletions);
+    if (req.session.role === "salary-payment") {
+      const opened = await database.query('SELECT period_year AS "year", period_month AS "month" FROM salary_months');
+      for (const period of opened.rows) {
+        if (!periods.some((item) => Number(item.year) === period.year && item.month === period.month)) {
+          periods.push({ ...period, employees: [] });
+        }
+      }
+    }
+    res.json(req.session.role === "admin"
+      ? periods.filter((period) => !(Number(period.year) === 2026 && monthKey(period.month) === "sep"))
+      : periods);
   }
   catch (error) { next(error); }
 });
 app.get("/api/salary-payment-staff", requireAuth, requireSalaryPayment, (_req, res) => res.json(getSalaryPaymentStaff()));
+app.post("/api/salary-months", requireAuth, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
+  const year = Number(req.body?.year);
+  const month = monthOrder.find((item) => item === req.body?.month);
+  if (year !== 2026 || !month) return res.status(400).json({ error: "Select a valid month in 2026." });
+  try {
+    await database.query(`INSERT INTO salary_months (period_year, period_month) VALUES ($1, $2)
+      ON CONFLICT (period_year, period_month) DO NOTHING`, [year, month]);
+    res.json({ year, month });
+  } catch (error) { next(error); }
+});
 app.put("/api/salary-entry", requireAuth, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
   const year = Number(req.body?.year);
   const month = monthOrder.find((item) => monthKey(item) === monthKey(req.body?.month));
@@ -545,6 +566,12 @@ const seedInitialSalaryPayments = async () => {
 
 const start = async () => {
   await database.query(`
+    CREATE TABLE IF NOT EXISTS salary_months (
+      period_year INTEGER NOT NULL CHECK (period_year = 2026),
+      period_month VARCHAR(20) NOT NULL CHECK (period_month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')),
+      PRIMARY KEY (period_year, period_month)
+    );
+
     CREATE TABLE IF NOT EXISTS app_migrations (
       migration_key VARCHAR(120) PRIMARY KEY,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
