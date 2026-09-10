@@ -1194,33 +1194,35 @@ tbody tr:last-child td {
 .salary-payment-summary .stat-card__value { font-size: clamp(19px, 2vw, 25px); }
 .salary-payment-panel .salary-panel__head h3 { display: flex; align-items: center; gap: 8px; }
 .salary-payment-error { padding: 11px 16px; border-bottom: 1px solid rgba(208, 59, 59, .22); background: var(--bad-bg); color: var(--bad); font-size: 13px; font-weight: 650; }
-.salary-payment-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.salary-payment-table { width: 100%; border-collapse: collapse; color: var(--text-primary); font-size: 14.5px; font-variant-numeric: tabular-nums; line-height: 1.45; }
 .salary-payment-table th,
-.salary-payment-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
-.salary-payment-table th { background: var(--surface-2); color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.salary-payment-table td { padding: 15px 16px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.salary-payment-table th { padding: 13px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2); color: var(--text-secondary); font-size: 13.5px; font-weight: 600; letter-spacing: .01em; text-align: left; white-space: nowrap; }
+.salary-payment-table tbody td { font-weight: 500; }
 .salary-payment-table tbody tr:hover { background: var(--surface-hover); }
-.salary-payment-table__employee { color: var(--text-primary); font-weight: 700; }
+.salary-payment-table__employee { color: var(--text-primary); font-weight: 600 !important; }
 .salary-payment-table__employee span,
 .salary-payment-table__employee small { display: block; }
-.salary-payment-table__employee small { margin-top: 3px; color: var(--text-muted); font-size: 10px; font-weight: 600; }
-.salary-payment-table__total { color: var(--text-primary); font-weight: 800; }
-.salary-payment-table tfoot td { border-bottom: 0; background: var(--surface-2); color: var(--text-primary); font-weight: 800; }
+.salary-payment-table__employee small { margin-top: 4px; color: var(--text-secondary); font-size: 11.5px; font-weight: 500; }
+.salary-payment-table__total { color: var(--text-primary); font-weight: 650 !important; }
+.salary-payment-table tfoot td { padding: 15px 16px; border-bottom: 0; background: var(--surface-2); color: var(--text-primary); font-size: 15px; font-weight: 650; }
 .salary-payment-table tfoot td:first-child { text-align: right; }
-.salary-payment-amount { display: inline-flex; align-items: center; width: 150px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-muted); }
+.salary-payment-amount { display: inline-flex; align-items: center; width: 160px; min-height: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-secondary); }
 .salary-payment-amount:focus-within,
 .salary-payment-date:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(144, 133, 233, .16); outline: none; }
-.salary-payment-amount span { padding-left: 10px; font-size: 13px; }
-.salary-payment-amount input { width: 100%; min-width: 0; padding: 9px 10px 9px 5px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; }
-.salary-payment-date { min-width: 148px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-primary); color-scheme: light dark; font: inherit; }
+.salary-payment-amount span { padding-left: 11px; font-size: 14px; }
+.salary-payment-amount input { width: 100%; min-width: 0; padding: 10px 11px 10px 6px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 14.5px; font-weight: 500; }
+.salary-payment-date { min-width: 160px; min-height: 42px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-primary); color-scheme: light dark; font: inherit; font-size: 14.5px; font-weight: 500; }
 .salary-payment-field--locked,
 .salary-payment-field--locked:focus,
-.salary-payment-amount.salary-payment-field--locked:focus-within { border-color: var(--border); background: var(--surface-2); box-shadow: none; color: var(--text-muted); cursor: not-allowed; opacity: .78; }
-.salary-payment-field--locked input { cursor: not-allowed; }
-.salary-payment-save { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 92px; padding: 9px 12px; border: 1px solid transparent; border-radius: 8px; background: var(--accent); color: var(--accent-contrast); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.salary-payment-amount.salary-payment-field--locked:focus-within { border-color: var(--border); background: var(--surface-2); box-shadow: none; color: var(--text-secondary); cursor: not-allowed; opacity: 1; }
+.salary-payment-field--locked input,
+.salary-payment-date.salary-payment-field--locked { color: var(--text-secondary); cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--text-secondary); }
+.salary-payment-save { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 92px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: var(--accent); color: var(--accent-contrast); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .salary-payment-save:disabled { cursor: default; opacity: .72; }
 .salary-payment-save--saved { background: var(--good-bg); color: var(--good); }
 .salary-payment-actions { display: flex; align-items: center; gap: 8px; }
-.salary-payment-delete { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 88px; padding: 9px 11px; border: 1px solid rgba(224, 79, 79, .35); border-radius: 8px; background: transparent; color: var(--bad); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.salary-payment-delete { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 88px; padding: 10px 11px; border: 1px solid rgba(224, 79, 79, .35); border-radius: 8px; background: transparent; color: var(--bad); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .salary-payment-delete:hover:not(:disabled) { background: var(--bad-bg); }
 .salary-payment-delete:disabled { cursor: default; opacity: .55; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
