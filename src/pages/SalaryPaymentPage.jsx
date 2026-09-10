@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, RefreshCw, Save, UserPlus, WalletCards } from "lucide-react";
+import { Check, RefreshCw, Save, Trash2, UserPlus, WalletCards } from "lucide-react";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -35,7 +35,7 @@ export default function SalaryPaymentPage() {
       const paymentMap = Object.fromEntries(paymentRows.map((row) => [keyFor(row), {
         paidAmount: row.paidAmount == null ? "" : String(row.paidAmount),
         paidDate: row.paidDate || "",
-        locked: row.paidAmount != null && Boolean(row.paidDate),
+        locked: Boolean(row.locked || (row.paidAmount != null && row.paidDate)),
       }]));
       setSalaryData(periods);
       setPayments(paymentMap);
@@ -105,11 +105,38 @@ export default function SalaryPaymentPage() {
       setPayments((current) => ({ ...current, [key]: {
         paidAmount: result.paidAmount == null ? "" : String(result.paidAmount),
         paidDate: result.paidDate || "",
-        locked: result.paidAmount != null && Boolean(result.paidDate),
+        locked: Boolean(result.locked || (result.paidAmount != null && result.paidDate)),
       } }));
       setRowStatus((current) => ({ ...current, [key]: "saved" }));
     } catch (saveError) {
       setError(saveError.message);
+      setRowStatus((current) => ({ ...current, [key]: "error" }));
+    }
+  };
+
+  const deleteRow = async (row) => {
+    if (!window.confirm(`Delete the salary and tips entry for ${row.employeeName} in ${row.month} ${row.year}?`)) return;
+    const key = keyFor(row);
+    setRowStatus((current) => ({ ...current, [key]: "deleting" }));
+    setError("");
+    try {
+      const response = await fetch("/api/salary-entry", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row),
+      });
+      if (response.status === 401) return window.location.reload();
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to delete the salary entry.");
+      if (entryEmployee === `${row.department}::${row.employeeName.trim().toLowerCase()}`) {
+        setEntrySalary("");
+        setEntryTips("");
+        setEntryStatus("idle");
+      }
+      await loadData();
+    } catch (deleteError) {
+      setError(deleteError.message);
       setRowStatus((current) => ({ ...current, [key]: "error" }));
     }
   };
@@ -190,18 +217,19 @@ export default function SalaryPaymentPage() {
         {error && <div className="salary-payment-error" role="alert">{error}</div>}
         <div className="table-wrap">
           <table className="salary-payment-table">
-            <thead><tr><th>Name</th><th>Salary</th><th>Tips</th><th>Total</th><th>Paid Amount</th><th>Paid Date</th><th><span className="sr-only">Save</span></th></tr></thead>
+            <thead><tr><th>Name</th><th>Salary</th><th>Tips</th><th>Total</th><th>Paid Amount</th><th>Paid Date</th><th>Actions</th></tr></thead>
             <tbody>{rows.map((row) => {
               const key = keyFor(row);
               const values = payments[key] || { paidAmount: "", paidDate: "" };
               const status = rowStatus[key];
               const locked = Boolean(values.locked || status === "saved");
               const complete = values.paidAmount !== "" && Boolean(values.paidDate);
+              const busy = status === "saving" || status === "deleting";
               return <tr key={key}>
                 <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td><td>{currency.format(row.salary)}</td><td>{currency.format(row.tips)}</td><td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
-                <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked} required /></div></td>
-                <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked} required /></td>
-                <td><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={status === "saving" || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button></td>
+                <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked || busy} required /></div></td>
+                <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked || busy} required /></td>
+                <td><div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button><button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button></div></td>
               </tr>;
             })}</tbody>
             <tfoot><tr><td colSpan="3">Total</td><td>{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
