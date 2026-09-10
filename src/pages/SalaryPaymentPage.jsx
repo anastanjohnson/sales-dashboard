@@ -7,6 +7,7 @@ const keyFor = (row) => `${row.year}::${row.month}::${row.department}::${row.emp
 
 export default function SalaryPaymentPage() {
   const [salaryData, setSalaryData] = useState([]);
+  const [staffDirectory, setStaffDirectory] = useState([]);
   const [payments, setPayments] = useState({});
   const [selectedMonth, setSelectedMonth] = useState("");
   const [department, setDepartment] = useState("All");
@@ -22,13 +23,14 @@ export default function SalaryPaymentPage() {
     setPageStatus("loading");
     setError("");
     try {
-      const [salaryResponse, paymentResponse] = await Promise.all([
+      const [salaryResponse, paymentResponse, staffResponse] = await Promise.all([
         fetch("/api/salary-payment-source", { credentials: "include" }),
         fetch("/api/salary-payments", { credentials: "include" }),
+        fetch("/api/salary-payment-staff", { credentials: "include" }),
       ]);
-      if (salaryResponse.status === 401 || paymentResponse.status === 401) return window.location.reload();
-      if (!salaryResponse.ok || !paymentResponse.ok) throw new Error("Unable to load salary payment data.");
-      const [salary, paymentRows] = await Promise.all([salaryResponse.json(), paymentResponse.json()]);
+      if ([salaryResponse, paymentResponse, staffResponse].some((response) => response.status === 401)) return window.location.reload();
+      if ([salaryResponse, paymentResponse, staffResponse].some((response) => !response.ok)) throw new Error("Unable to load salary payment data.");
+      const [salary, paymentRows, staff] = await Promise.all([salaryResponse.json(), paymentResponse.json(), staffResponse.json()]);
       const periods = salary
         .filter((row) => Number(row.year) === 2026)
         .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
@@ -38,6 +40,7 @@ export default function SalaryPaymentPage() {
         locked: Boolean(row.locked || (row.paidAmount != null && row.paidDate)),
       }]));
       setSalaryData(periods);
+      setStaffDirectory(Array.isArray(staff) ? staff : []);
       setPayments(paymentMap);
       setSelectedMonth((current) => current || periods.at(-1)?.month || "");
       setPageStatus("ready");
@@ -53,14 +56,10 @@ export default function SalaryPaymentPage() {
     Number(a.year) - Number(b.year) || monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
   ), [salaryData]);
   const selectedPeriod = periods.find((row) => row.month === selectedMonth);
-  const staffOptions = useMemo(() => {
-    const employees = new Map();
-    [...salaryData].reverse().forEach((period) => (period.employees || []).forEach((employee) => {
-      const key = `${employee.department}::${String(employee.name).trim().toLowerCase()}`;
-      if (!employees.has(key)) employees.set(key, { name: employee.name, department: employee.department, key });
-    }));
-    return Array.from(employees.values()).sort((a, b) => a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
-  }, [salaryData]);
+  const staffOptions = useMemo(() => staffDirectory.map((employee) => ({
+    ...employee,
+    key: `${employee.department}::${String(employee.name).trim().toLowerCase()}`,
+  })), [staffDirectory]);
   const selectedStaff = staffOptions.find((employee) => employee.key === entryEmployee);
   const rows = useMemo(() => (selectedPeriod?.employees || [])
     .filter((employee) => department === "All" || employee.department === department)

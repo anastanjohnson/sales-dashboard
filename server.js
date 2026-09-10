@@ -204,6 +204,22 @@ const findRosterEmployee = ({ employeeName, department }) => {
   return null;
 };
 
+const getSalaryPaymentStaff = () => {
+  const staff = new Map();
+  [...normalizedSalaryData, ...salaryPaymentSourceData].slice().reverse().forEach((period) => {
+    (period.employees || []).forEach((employee) => {
+      const name = String(employee.name || "").trim();
+      const department = String(employee.department || "").trim();
+      if (!name || !department) return;
+      const key = `${department.toLowerCase()}::${name.toLowerCase()}`;
+      if (!staff.has(key)) staff.set(key, { name, department });
+    });
+  });
+  return Array.from(staff.values()).sort((a, b) =>
+    a.department.localeCompare(b.department) || a.name.localeCompare(b.name)
+  );
+};
+
 const parseMoney = (value) => {
   if (value === "" || value == null) return undefined;
   const amount = Number(value);
@@ -340,6 +356,7 @@ app.get("/api/salary-payment-source", requireAuth, async (_req, res, next) => {
   }
   catch (error) { next(error); }
 });
+app.get("/api/salary-payment-staff", requireAuth, (_req, res) => res.json(getSalaryPaymentStaff()));
 app.put("/api/salary-entry", requireAuth, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
   const year = Number(req.body?.year);
   const month = monthOrder.find((item) => monthKey(item) === monthKey(req.body?.month));
