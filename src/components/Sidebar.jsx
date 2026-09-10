@@ -4,6 +4,7 @@ import {
     ChartLine,
     RefreshCcw,
     Banknote,
+    WalletCards,
     Clock3,
     Settings,
     ChevronLeft,
@@ -18,6 +19,7 @@ export const NAV_ITEMS = [
     { icon: ChartLine, label: "Weekly Performance", page: "weekly-performance" },
     { icon: RefreshCcw, label: "Repeated Guest", page: "repeated-guests" },
     { icon: Banknote, label: "Salary", page: "sales-salary" },
+    { icon: WalletCards, label: "Salary Payment", page: "salary-payment" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
   { icon: Settings, label: "Settings", page: "settings" },
   ];

@@ -1170,6 +1170,45 @@ tbody tr:last-child td {
 .staff-hours-table td:not(:first-child) { text-align: right; }
 .status-pill--over { background: var(--bad-bg); color: var(--bad); }
 
+/* Salary payment page */
+.salary-payment-panel { padding: 0; overflow: hidden; }
+.salary-payment-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.salary-payment-summary .stat-card__value { font-size: clamp(19px, 2vw, 25px); }
+.salary-payment-panel .salary-panel__head h3 { display: flex; align-items: center; gap: 8px; }
+.salary-payment-error { padding: 11px 16px; border-bottom: 1px solid rgba(208, 59, 59, .22); background: var(--bad-bg); color: var(--bad); font-size: 13px; font-weight: 650; }
+.salary-payment-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.salary-payment-table th,
+.salary-payment-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.salary-payment-table th { background: var(--surface-2); color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.salary-payment-table tbody tr:hover { background: var(--surface-hover); }
+.salary-payment-table__employee { color: var(--text-primary); font-weight: 700; }
+.salary-payment-table__employee span,
+.salary-payment-table__employee small { display: block; }
+.salary-payment-table__employee small { margin-top: 3px; color: var(--text-muted); font-size: 10px; font-weight: 600; }
+.salary-payment-table__total { color: var(--text-primary); font-weight: 800; }
+.salary-payment-table tfoot td { border-bottom: 0; background: var(--surface-2); color: var(--text-primary); font-weight: 800; }
+.salary-payment-table tfoot td:first-child { text-align: right; }
+.salary-payment-amount { display: inline-flex; align-items: center; width: 150px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-muted); }
+.salary-payment-amount:focus-within,
+.salary-payment-date:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(144, 133, 233, .16); outline: none; }
+.salary-payment-amount span { padding-left: 10px; font-size: 13px; }
+.salary-payment-amount input { width: 100%; min-width: 0; padding: 9px 10px 9px 5px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; }
+.salary-payment-date { min-width: 148px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-primary); color-scheme: light dark; font: inherit; }
+.salary-payment-save { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 92px; padding: 9px 12px; border: 1px solid transparent; border-radius: 8px; background: var(--accent); color: var(--accent-contrast); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.salary-payment-save:disabled { cursor: default; opacity: .72; }
+.salary-payment-save--saved { background: var(--good-bg); color: var(--good); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 720px) {
+    .salary-payment-page .dashboard__header { align-items: stretch; flex-direction: column; gap: 12px; }
+    .salary-payment-page .salary-month-picker { grid-template-columns: repeat(4, minmax(62px, 1fr)); }
+    .salary-payment-panel .salary-panel__head { align-items: stretch; }
+    .salary-payment-panel .salary-department-switch { display: flex; width: 100%; }
+    .salary-payment-panel .salary-department-switch button { flex: 1; }
+    .salary-payment-table th,
+    .salary-payment-table td { padding: 10px 12px; }
+    .salary-payment-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* Website visits */
 .website-toolbar{padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .website-month{display:inline-flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}.website-month svg{color:var(--accent)}.website-month strong{color:var(--text-primary)}
