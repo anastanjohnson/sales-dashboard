@@ -362,6 +362,7 @@ app.put("/api/salary-payments", requireAuth, requireSameOrigin, paymentWriteLimi
   if (!Number.isInteger(year) || !month || !employeeName || !department || !salaryMatch) {
     return res.status(400).json({ error: "Select a valid salary employee and month." });
   }
+  if (paidAmount === null || paidDate === null) return res.status(400).json({ error: "Paid Amount and Paid Date are both required." });
   if (paidAmount === undefined) return res.status(400).json({ error: "Paid Amount must be a valid positive amount." });
   if (paidDate === undefined) return res.status(400).json({ error: "Paid Date must be a valid date." });
 

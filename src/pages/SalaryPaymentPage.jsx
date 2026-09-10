@@ -35,6 +35,7 @@ export default function SalaryPaymentPage() {
       const paymentMap = Object.fromEntries(paymentRows.map((row) => [keyFor(row), {
         paidAmount: row.paidAmount == null ? "" : String(row.paidAmount),
         paidDate: row.paidDate || "",
+        locked: row.paidAmount != null && Boolean(row.paidDate),
       }]));
       setSalaryData(periods);
       setPayments(paymentMap);
@@ -82,7 +83,7 @@ export default function SalaryPaymentPage() {
 
   const updateField = (row, field, value) => {
     const key = keyFor(row);
-    setPayments((current) => ({ ...current, [key]: { paidAmount: "", paidDate: "", ...current[key], [field]: value } }));
+    setPayments((current) => ({ ...current, [key]: { paidAmount: "", paidDate: "", ...current[key], [field]: value, locked: false } }));
     setRowStatus((current) => ({ ...current, [key]: "dirty" }));
   };
 
@@ -104,6 +105,7 @@ export default function SalaryPaymentPage() {
       setPayments((current) => ({ ...current, [key]: {
         paidAmount: result.paidAmount == null ? "" : String(result.paidAmount),
         paidDate: result.paidDate || "",
+        locked: result.paidAmount != null && Boolean(result.paidDate),
       } }));
       setRowStatus((current) => ({ ...current, [key]: "saved" }));
     } catch (saveError) {
@@ -193,11 +195,13 @@ export default function SalaryPaymentPage() {
               const key = keyFor(row);
               const values = payments[key] || { paidAmount: "", paidDate: "" };
               const status = rowStatus[key];
+              const locked = Boolean(values.locked || status === "saved");
+              const complete = values.paidAmount !== "" && Boolean(values.paidDate);
               return <tr key={key}>
                 <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td><td>{currency.format(row.salary)}</td><td>{currency.format(row.tips)}</td><td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
-                <td><div className="salary-payment-amount"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} /></div></td>
-                <td><input className="salary-payment-date" type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} /></td>
-                <td><button type="button" className={`salary-payment-save ${status === "saved" ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={status === "saving" || status === "saved"} aria-label={`Save payment for ${row.employeeName}`}>{status === "saved" ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button></td>
+                <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked} required /></div></td>
+                <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked} required /></td>
+                <td><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={status === "saving" || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button></td>
               </tr>;
             })}</tbody>
             <tfoot><tr><td colSpan="3">Total</td><td>{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>

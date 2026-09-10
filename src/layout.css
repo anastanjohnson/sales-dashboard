@@ -1212,6 +1212,10 @@ tbody tr:last-child td {
 .salary-payment-amount span { padding-left: 10px; font-size: 13px; }
 .salary-payment-amount input { width: 100%; min-width: 0; padding: 9px 10px 9px 5px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; }
 .salary-payment-date { min-width: 148px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-primary); color-scheme: light dark; font: inherit; }
+.salary-payment-field--locked,
+.salary-payment-field--locked:focus,
+.salary-payment-amount.salary-payment-field--locked:focus-within { border-color: var(--border); background: var(--surface-2); box-shadow: none; color: var(--text-muted); cursor: not-allowed; opacity: .78; }
+.salary-payment-field--locked input { cursor: not-allowed; }
 .salary-payment-save { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 92px; padding: 9px 12px; border: 1px solid transparent; border-radius: 8px; background: var(--accent); color: var(--accent-contrast); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .salary-payment-save:disabled { cursor: default; opacity: .72; }
 .salary-payment-save--saved { background: var(--good-bg); color: var(--good); }
