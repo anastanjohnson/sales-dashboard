@@ -7,7 +7,7 @@ import helmet from "helmet";
 import pg from "pg";
 
 const { Pool } = pg;
-const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "SALARY_PAYMENT_DATA_JSON", "STAFF_HOURS_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON", "WEEKLY_BENCHMARKS_DATA_JSON", "DATABASE_URL"];
+const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SALARY_PAYMENT_USERNAME", "SALARY_PAYMENT_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "SALARY_PAYMENT_DATA_JSON", "STAFF_HOURS_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON", "WEEKLY_BENCHMARKS_DATA_JSON", "DATABASE_URL"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
   console.error(`Missing required environment variables: ${missing.join(", ")}`);
@@ -121,27 +121,28 @@ const parseCookies = (header = "") =>
 
 const sign = (value) => crypto.createHmac("sha256", process.env.SESSION_SECRET).update(value).digest("base64url");
 
-const createSession = () => {
-  const payload = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + sessionDurationSeconds })).toString("base64url");
+const createSession = (role) => {
+  const payload = Buffer.from(JSON.stringify({ role, exp: Math.floor(Date.now() / 1000) + sessionDurationSeconds })).toString("base64url");
   return `${payload}.${sign(payload)}`;
 };
 
-const validSession = (req) => {
+const getSession = (req) => {
   const token = parseCookies(req.headers.cookie)[cookieName];
-  if (!token) return false;
+  if (!token) return null;
   const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+  if (!payload || !signature) return null;
   const expected = sign(payload);
-  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false;
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   try {
-    return JSON.parse(Buffer.from(payload, "base64url").toString()).exp > Math.floor(Date.now() / 1000);
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return session.exp > Math.floor(Date.now() / 1000) && ["admin", "salary-payment"].includes(session.role) ? session : null;
   } catch {
-    return false;
+    return null;
   }
 };
 
-const verifyPassword = (password) => {
-  const [saltHex, expectedHex] = process.env.DASHBOARD_PASSWORD_HASH.split(":");
+const verifyPassword = (password, passwordHash) => {
+  const [saltHex, expectedHex] = String(passwordHash || "").split(":");
   if (!saltHex || !expectedHex) return false;
   const actual = crypto.scryptSync(password, Buffer.from(saltHex, "hex"), 64);
   const expected = Buffer.from(expectedHex, "hex");
@@ -149,8 +150,15 @@ const verifyPassword = (password) => {
 };
 
 const requireAuth = (req, res, next) => {
-  if (!validSession(req)) return res.status(401).json({ error: "Authentication required" });
+  const session = getSession(req);
+  if (!session) return res.status(401).json({ error: "Authentication required" });
+  req.session = session;
   res.set("Cache-Control", "no-store");
+  next();
+};
+
+const requireAdmin = (req, res, next) => {
+  if (req.session?.role !== "admin") return res.status(403).json({ error: "Administrator access required" });
   next();
 };
 
@@ -174,16 +182,34 @@ const paymentWriteLimiter = rateLimit({
 });
 
 const monthKey = (value) => String(value || "").trim().slice(0, 3).toLowerCase();
-const findSalaryPaymentEmployee = ({ year, month, employeeName, department }) => {
-  const period = salaryPaymentSourceData.find((entry) =>
-    Number(entry.year) === Number(year) && monthKey(entry.month) === monthKey(month)
-  );
+const findSalaryPaymentEmployee = (sourceData, { year, month, employeeName, department }) => {
+  const period = sourceData.find((entry) => Number(entry.year) === Number(year) && monthKey(entry.month) === monthKey(month));
   if (!period) return null;
   const employee = (period.employees || []).find((entry) =>
     String(entry.name || "").trim().toLowerCase() === String(employeeName || "").trim().toLowerCase()
     && String(entry.department || "").trim().toLowerCase() === String(department || "").trim().toLowerCase()
   );
   return employee ? { period, employee } : null;
+};
+
+const findRosterEmployee = ({ employeeName, department }) => {
+  const periods = [...normalizedSalaryData, ...salaryPaymentSourceData].slice().reverse();
+  for (const period of periods) {
+    const employee = (period.employees || []).find((entry) =>
+      String(entry.name || "").trim().toLowerCase() === String(employeeName || "").trim().toLowerCase()
+      && String(entry.department || "").trim().toLowerCase() === String(department || "").trim().toLowerCase()
+    );
+    if (employee) return { name: employee.name, department: employee.department };
+  }
+  return null;
+};
+
+const parseMoney = (value) => {
+  if (value === "" || value == null) return undefined;
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount >= 0 && amount <= 1_000_000
+    ? Math.round((amount + Number.EPSILON) * 100) / 100
+    : undefined;
 };
 
 const parsePaidAmount = (value) => {
@@ -213,24 +239,29 @@ const loginLimiter = rateLimit({
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.get("/api/session", (req, res) => {
   res.set("Cache-Control", "no-store");
-  res.json({ authenticated: validSession(req) });
+  const session = getSession(req);
+  res.json({ authenticated: Boolean(session), role: session?.role || null });
 });
 
 app.post("/api/login", loginLimiter, (req, res) => {
   const username = String(req.body?.username || "").trim();
   const password = String(req.body?.password || "");
-  const usernameMatches = username.toLowerCase() === process.env.DASHBOARD_USERNAME.toLowerCase();
-  if (!usernameMatches || !verifyPassword(password)) {
+  const adminMatches = username.toLowerCase() === process.env.DASHBOARD_USERNAME.toLowerCase()
+    && verifyPassword(password, process.env.DASHBOARD_PASSWORD_HASH);
+  const salaryPaymentMatches = username.toLowerCase() === process.env.SALARY_PAYMENT_USERNAME.toLowerCase()
+    && verifyPassword(password, process.env.SALARY_PAYMENT_PASSWORD_HASH);
+  const role = adminMatches ? "admin" : salaryPaymentMatches ? "salary-payment" : null;
+  if (!role) {
     return res.status(401).json({ error: "Incorrect username or password." });
   }
-  res.cookie(cookieName, createSession(), {
+  res.cookie(cookieName, createSession(role), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     maxAge: sessionDurationSeconds * 1000,
     path: "/",
   });
-  res.json({ authenticated: true });
+  res.json({ authenticated: true, role });
 });
 
 app.post("/api/logout", (_req, res) => {
@@ -238,8 +269,70 @@ app.post("/api/logout", (_req, res) => {
   res.json({ authenticated: false });
 });
 
-app.get("/api/salary", requireAuth, (_req, res) => res.json(normalizedSalaryData));
-app.get("/api/salary-payment-source", requireAuth, (_req, res) => res.json(salaryPaymentSourceData));
+const readSalaryEntries = async () => {
+  const result = await database.query(`
+    SELECT period_year AS "year", period_month AS "month", employee_name AS "employeeName",
+           department, salary::float8 AS salary, tips::float8 AS tips
+    FROM salary_entries
+    ORDER BY period_year, period_month, department, employee_name
+  `);
+  return result.rows;
+};
+
+const mergeSalaryEntries = (baseData, entries, includeCurrentMonth = false) => {
+  const periods = baseData.map((period) => ({ ...period, employees: (period.employees || []).map((employee) => ({ ...employee })) }));
+  if (includeCurrentMonth && !periods.some((period) => Number(period.year) === 2026 && monthKey(period.month) === "sep")) {
+    periods.push({ year: 2026, month: "September", employees: [] });
+  }
+  entries.forEach((entry) => {
+    let period = periods.find((item) => Number(item.year) === Number(entry.year) && monthKey(item.month) === monthKey(entry.month));
+    if (!period) {
+      period = { year: Number(entry.year), month: entry.month, employees: [] };
+      periods.push(period);
+    }
+    const index = period.employees.findIndex((employee) =>
+      String(employee.name || "").trim().toLowerCase() === String(entry.employeeName || "").trim().toLowerCase()
+      && String(employee.department || "").trim().toLowerCase() === String(entry.department || "").trim().toLowerCase()
+    );
+    const employee = { name: entry.employeeName, department: entry.department, salary: entry.salary, tips: entry.tips };
+    if (index >= 0) period.employees[index] = { ...period.employees[index], ...employee };
+    else period.employees.push(employee);
+  });
+  return periods.sort((a, b) => Number(a.year) - Number(b.year) || monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+};
+
+const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+app.get("/api/salary", requireAuth, requireAdmin, async (_req, res, next) => {
+  try { res.json(mergeSalaryEntries(normalizedSalaryData, await readSalaryEntries())); }
+  catch (error) { next(error); }
+});
+app.get("/api/salary-payment-source", requireAuth, async (_req, res, next) => {
+  try { res.json(mergeSalaryEntries(salaryPaymentSourceData, await readSalaryEntries(), true)); }
+  catch (error) { next(error); }
+});
+app.put("/api/salary-entry", requireAuth, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
+  const year = Number(req.body?.year);
+  const month = monthOrder.find((item) => monthKey(item) === monthKey(req.body?.month));
+  const employeeName = String(req.body?.employeeName || "").trim();
+  const department = String(req.body?.department || "").trim();
+  const salary = parseMoney(req.body?.salary);
+  const tips = parseMoney(req.body?.tips);
+  const rosterEmployee = findRosterEmployee({ employeeName, department });
+  if (year !== 2026 || !month || !rosterEmployee) return res.status(400).json({ error: "Select a valid employee and salary month." });
+  if (salary === undefined || tips === undefined) return res.status(400).json({ error: "Salary and Tips must be valid non-negative amounts." });
+  try {
+    const result = await database.query(`
+      INSERT INTO salary_entries (period_year, period_month, employee_name, department, salary, tips, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (period_year, period_month, employee_name, department)
+      DO UPDATE SET salary = EXCLUDED.salary, tips = EXCLUDED.tips, updated_at = NOW()
+      RETURNING period_year AS "year", period_month AS "month", employee_name AS "employeeName",
+                department, salary::float8 AS salary, tips::float8 AS tips, updated_at AS "updatedAt"
+    `, [year, month, rosterEmployee.name, rosterEmployee.department, salary, tips]);
+    res.json(result.rows[0]);
+  } catch (error) { next(error); }
+});
 app.get("/api/salary-payments", requireAuth, async (_req, res, next) => {
   try {
     const result = await database.query(`
@@ -261,7 +354,10 @@ app.put("/api/salary-payments", requireAuth, requireSameOrigin, paymentWriteLimi
   const department = String(req.body?.department || "").trim();
   const paidAmount = parsePaidAmount(req.body?.paidAmount);
   const paidDate = parsePaidDate(req.body?.paidDate);
-  const salaryMatch = findSalaryPaymentEmployee({ year, month, employeeName, department });
+  let salaryMatch;
+  try {
+    salaryMatch = findSalaryPaymentEmployee(mergeSalaryEntries(salaryPaymentSourceData, await readSalaryEntries(), true), { year, month, employeeName, department });
+  } catch (error) { return next(error); }
 
   if (!Number.isInteger(year) || !month || !employeeName || !department || !salaryMatch) {
     return res.status(400).json({ error: "Select a valid salary employee and month." });
@@ -285,10 +381,10 @@ app.put("/api/salary-payments", requireAuth, requireSameOrigin, paymentWriteLimi
     next(error);
   }
 });
-app.get("/api/staff-hours", requireAuth, (_req, res) => res.json(normalizedStaffHoursData));
-app.get("/api/weekly-performance", requireAuth, (_req, res) => res.json(normalizedWeeklyPerformanceData));
-app.get("/api/weekly-guests", requireAuth, (_req, res) => res.json(weeklyGuestAppendData));
-app.get("/api/weekly-benchmarks", requireAuth, (_req, res) => res.json(weeklyBenchmarksData));
+app.get("/api/staff-hours", requireAuth, requireAdmin, (_req, res) => res.json(normalizedStaffHoursData));
+app.get("/api/weekly-performance", requireAuth, requireAdmin, (_req, res) => res.json(normalizedWeeklyPerformanceData));
+app.get("/api/weekly-guests", requireAuth, requireAdmin, (_req, res) => res.json(weeklyGuestAppendData));
+app.get("/api/weekly-benchmarks", requireAuth, requireAdmin, (_req, res) => res.json(weeklyBenchmarksData));
 
 app.use(express.static(path.join(__dirname, "dist"), {
   index: false,
@@ -305,6 +401,18 @@ app.use((error, _req, res, _next) => {
 
 const start = async () => {
   await database.query(`
+    CREATE TABLE IF NOT EXISTS salary_entries (
+      id BIGSERIAL PRIMARY KEY,
+      period_year INTEGER NOT NULL CHECK (period_year BETWEEN 2020 AND 2100),
+      period_month VARCHAR(20) NOT NULL,
+      employee_name VARCHAR(160) NOT NULL,
+      department VARCHAR(80) NOT NULL,
+      salary NUMERIC(12, 2) NOT NULL CHECK (salary >= 0),
+      tips NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (tips >= 0),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (period_year, period_month, employee_name, department)
+    );
+
     CREATE TABLE IF NOT EXISTS salary_payments (
       id BIGSERIAL PRIMARY KEY,
       period_year INTEGER NOT NULL CHECK (period_year BETWEEN 2020 AND 2100),

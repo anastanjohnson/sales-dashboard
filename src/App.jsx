@@ -9,7 +9,7 @@ import "./layout.css";
 export default function App() {
   const [activePage, setActivePage] = useState("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authState, setAuthState] = useState("checking");
+  const [authState, setAuthState] = useState({ status: "checking", role: null });
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined" && window.matchMedia) {
       return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -40,13 +40,13 @@ export default function App() {
   useEffect(() => {
     fetch("/api/session", { credentials: "include" })
       .then((response) => response.json())
-      .then((result) => setAuthState(result.authenticated ? "authenticated" : "guest"))
-      .catch(() => setAuthState("guest"));
+      .then((result) => setAuthState({ status: result.authenticated ? "authenticated" : "guest", role: result.role || null }))
+      .catch(() => setAuthState({ status: "guest", role: null }));
   }, []);
 
   const logout = async () => {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
-    setAuthState("guest");
+    setAuthState({ status: "guest", role: null });
   };
 
   const toggleTheme = () => setTheme((value) => value === "dark" ? "light" : "dark");
@@ -55,8 +55,17 @@ export default function App() {
     setMobileMenuOpen(false);
   };
 
-  if (authState === "checking") return <div className="app-loading">Loading secure dashboard…</div>;
-  if (authState !== "authenticated") return <AuthGate onAuthenticated={() => setAuthState("authenticated")} />;
+  if (authState.status === "checking") return <div className="app-loading">Loading secure dashboard…</div>;
+  if (authState.status !== "authenticated") return <AuthGate onAuthenticated={(role) => setAuthState({ status: "authenticated", role })} />;
+
+  if (authState.role === "salary-payment") {
+    return (
+      <div className="restricted-app">
+        <Topbar theme={theme} onToggleTheme={toggleTheme} onLogout={logout} restricted />
+        <main className="app-content"><Dashboard activePage="salary-payment" theme={theme} onToggleTheme={toggleTheme} /></main>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">

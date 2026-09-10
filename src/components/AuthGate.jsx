@@ -22,7 +22,7 @@ export default function AuthGate({ onAuthenticated }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to sign in.");
-      onAuthenticated();
+      onAuthenticated(result.role);
     } catch (loginError) {
       setError(loginError.message);
     } finally {

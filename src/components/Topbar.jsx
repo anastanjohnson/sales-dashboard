@@ -1,10 +1,10 @@
 import { Search, Sun, Moon, Bell, LogOut, Menu } from "lucide-react";
 
-export default function Topbar({ theme, onToggleTheme, onLogout, onOpenMenu, menuOpen }) {
+export default function Topbar({ theme, onToggleTheme, onLogout, onOpenMenu, menuOpen, restricted = false }) {
   return (
     <header className="topbar">
       <div className="topbar__left">
-        <button
+        {!restricted && <button
           className="icon-btn topbar__menu"
           type="button"
           onClick={onOpenMenu}
@@ -12,8 +12,8 @@ export default function Topbar({ theme, onToggleTheme, onLogout, onOpenMenu, men
           aria-expanded={menuOpen}
         >
           <Menu size={18} />
-        </button>
-        <div className="topbar__search"><Search size={16} /><input type="text" placeholder="Search..." aria-label="Search" /></div>
+        </button>}
+        {restricted ? <div className="topbar__restricted-title">KARIKAALA · Salary Payment</div> : <div className="topbar__search"><Search size={16} /><input type="text" placeholder="Search..." aria-label="Search" /></div>}
       </div>
       <div className="topbar__actions">
         <button className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme" title="Toggle light / dark theme">{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>

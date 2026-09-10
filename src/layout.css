@@ -1171,6 +1171,24 @@ tbody tr:last-child td {
 .status-pill--over { background: var(--bad-bg); color: var(--bad); }
 
 /* Salary payment page */
+.restricted-app { min-height: 100vh; background: var(--background); }
+.restricted-app .app-content { max-width: 1500px; margin: 0 auto; }
+.topbar__restricted-title { color: var(--text-primary); font-size: 14px; font-weight: 750; letter-spacing: .02em; }
+.salary-entry-panel { padding: 18px 20px; }
+.salary-entry-panel__head h3 { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-primary); font-size: 15px; }
+.salary-entry-panel__head p { margin: 5px 0 0; color: var(--text-muted); font-size: 12px; }
+.salary-entry-grid { display: grid; grid-template-columns: minmax(210px, 1.4fr) minmax(150px, .8fr) minmax(140px, .75fr) minmax(140px, .75fr) auto; gap: 14px; align-items: end; margin-top: 16px; }
+.salary-entry-grid label { display: grid; gap: 6px; color: var(--text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.salary-entry-grid select,
+.salary-entry-grid input { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; outline: 0; background: var(--surface); color: var(--text-primary); font: inherit; font-size: 13px; text-transform: none; letter-spacing: normal; }
+.salary-entry-grid select:focus,
+.salary-entry-grid input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(144, 133, 233, .16); }
+.salary-entry-grid input[readonly] { background: var(--surface-2); color: var(--text-muted); }
+.salary-entry-money { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-muted); }
+.salary-entry-money:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(144, 133, 233, .16); }
+.salary-entry-money span { padding-left: 10px; font-size: 13px; }
+.salary-entry-money input { border: 0; box-shadow: none !important; padding-left: 5px; }
+.salary-entry-save { height: 40px; min-width: 118px; }
 .salary-payment-panel { padding: 0; overflow: hidden; }
 .salary-payment-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .salary-payment-summary .stat-card__value { font-size: clamp(19px, 2vw, 25px); }
@@ -1207,6 +1225,12 @@ tbody tr:last-child td {
     .salary-payment-table th,
     .salary-payment-table td { padding: 10px 12px; }
     .salary-payment-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .salary-entry-grid { grid-template-columns: 1fr; }
+    .salary-entry-save { width: 100%; }
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+    .salary-entry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .salary-entry-save { width: 100%; }
 }
 
 /* Website visits */

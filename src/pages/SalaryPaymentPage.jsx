@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, RefreshCw, Save, WalletCards } from "lucide-react";
+import { Check, RefreshCw, Save, UserPlus, WalletCards } from "lucide-react";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -12,6 +12,10 @@ export default function SalaryPaymentPage() {
   const [department, setDepartment] = useState("All");
   const [pageStatus, setPageStatus] = useState("loading");
   const [rowStatus, setRowStatus] = useState({});
+  const [entryEmployee, setEntryEmployee] = useState("");
+  const [entrySalary, setEntrySalary] = useState("");
+  const [entryTips, setEntryTips] = useState("");
+  const [entryStatus, setEntryStatus] = useState("idle");
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
@@ -48,6 +52,15 @@ export default function SalaryPaymentPage() {
     Number(a.year) - Number(b.year) || monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
   ), [salaryData]);
   const selectedPeriod = periods.find((row) => row.month === selectedMonth);
+  const staffOptions = useMemo(() => {
+    const employees = new Map();
+    [...salaryData].reverse().forEach((period) => (period.employees || []).forEach((employee) => {
+      const key = `${employee.department}::${String(employee.name).trim().toLowerCase()}`;
+      if (!employees.has(key)) employees.set(key, { name: employee.name, department: employee.department, key });
+    }));
+    return Array.from(employees.values()).sort((a, b) => a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
+  }, [salaryData]);
+  const selectedStaff = staffOptions.find((employee) => employee.key === entryEmployee);
   const rows = useMemo(() => (selectedPeriod?.employees || [])
     .filter((employee) => department === "All" || employee.department === department)
     .map((employee) => ({
@@ -99,6 +112,40 @@ export default function SalaryPaymentPage() {
     }
   };
 
+  const selectEntryEmployee = (value) => {
+    setEntryEmployee(value);
+    setEntryStatus("idle");
+    const employee = staffOptions.find((item) => item.key === value);
+    const existing = (selectedPeriod?.employees || []).find((item) =>
+      item.department === employee?.department && String(item.name).trim().toLowerCase() === String(employee?.name || "").trim().toLowerCase()
+    );
+    setEntrySalary(existing?.salary == null ? "" : String(existing.salary));
+    setEntryTips(existing?.tips == null ? "" : String(existing.tips));
+  };
+
+  const saveSalaryEntry = async (event) => {
+    event.preventDefault();
+    if (!selectedStaff) return setError("Select a staff member.");
+    setEntryStatus("saving");
+    setError("");
+    try {
+      const response = await fetch("/api/salary-entry", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: 2026, month: selectedMonth, employeeName: selectedStaff.name, department: selectedStaff.department, salary: entrySalary, tips: entryTips }),
+      });
+      if (response.status === 401) return window.location.reload();
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to save the salary entry.");
+      setEntryStatus("saved");
+      await loadData();
+    } catch (saveError) {
+      setError(saveError.message);
+      setEntryStatus("error");
+    }
+  };
+
   if (pageStatus === "loading") return <div className="dashboard"><div className="panel"><div className="panel__head"><h3>Loading salary payments…</h3></div></div></div>;
   if (pageStatus === "error") return <div className="dashboard"><div className="panel"><div className="panel__head"><div><h3>Salary payments could not be loaded.</h3><p>{error}</p></div><button className="btn btn--ghost" onClick={loadData}>Try again</button></div></div></div>;
 
@@ -112,6 +159,17 @@ export default function SalaryPaymentPage() {
       <div className="salary-month-picker" role="group" aria-label="Select salary payment month">
         {periods.map((period) => <button type="button" key={`${period.year}-${period.month}`} className={`salary-month-button ${selectedMonth === period.month ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === period.month} onClick={() => setSelectedMonth(period.month)}>{period.month.slice(0, 3)}</button>)}
       </div>
+
+      <form className="panel salary-entry-panel" onSubmit={saveSalaryEntry}>
+        <div className="salary-entry-panel__head"><div><h3><UserPlus size={17} /> Enter {selectedMonth} Salary</h3><p>Select a staff member, then enter the salary and tips. Saving updates this page and the main Salary page.</p></div></div>
+        <div className="salary-entry-grid">
+          <label><span>Name</span><select value={entryEmployee} onChange={(event) => selectEntryEmployee(event.target.value)} required><option value="">Select staff member</option>{staffOptions.map((employee) => <option key={employee.key} value={employee.key}>{employee.name} · {employee.department}</option>)}</select></label>
+          <label><span>Department</span><input value={selectedStaff?.department || ""} placeholder="Selected automatically" readOnly /></label>
+          <label><span>Salary</span><div className="salary-entry-money"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" value={entrySalary} onChange={(event) => { setEntrySalary(event.target.value); setEntryStatus("idle"); }} required /></div></label>
+          <label><span>Tips</span><div className="salary-entry-money"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" value={entryTips} onChange={(event) => { setEntryTips(event.target.value); setEntryStatus("idle"); }} required /></div></label>
+          <button className={`salary-payment-save salary-entry-save ${entryStatus === "saved" ? "salary-payment-save--saved" : ""}`} type="submit" disabled={entryStatus === "saving"}>{entryStatus === "saved" ? <><Check size={15} />Saved</> : <><Save size={15} />{entryStatus === "saving" ? "Saving…" : "Save salary"}</>}</button>
+        </div>
+      </form>
 
       <div className="stat-grid salary-payment-summary">
         <div className="stat-card"><div className="stat-card__label">Revenue</div><div className="stat-card__value">{currency.format(Number(selectedPeriod?.revenue) || 0)}</div><div className="sales-kpi-note">{selectedMonth} 2026</div></div>
