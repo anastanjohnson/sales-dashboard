@@ -84,7 +84,7 @@ function Section({ title, subtitle, page, onNavigate, children }) {
   );
 }
 
-export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate }) {
+export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate, role }) {
   const [liveData, setLiveData] = useState({ salary: [], staffHours: [], weeklyRevenue: [], guestWeeks: weeklyGuestData });
   const [status, setStatus] = useState("loading");
 
@@ -115,7 +115,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   }, [activePage, loadOverview]);
 
   if (activePage === "sales-salary") return <SalaryPage />;
-  if (activePage === "salary-payment") return <SalaryPaymentPage />;
+  if (activePage === "salary-payment") return <SalaryPaymentPage canEnterSalary={role === "salary-payment"} />;
   if (activePage === "staff-hours") return <StaffHoursPage />;
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyInsightsPage />;

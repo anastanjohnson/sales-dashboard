@@ -5,7 +5,7 @@ const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "
 const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const keyFor = (row) => `${row.year}::${row.month}::${row.department}::${row.employeeName}`;
 
-export default function SalaryPaymentPage() {
+export default function SalaryPaymentPage({ canEnterSalary = false }) {
   const [salaryData, setSalaryData] = useState([]);
   const [staffDirectory, setStaffDirectory] = useState([]);
   const [payments, setPayments] = useState({});
@@ -26,11 +26,16 @@ export default function SalaryPaymentPage() {
       const [salaryResponse, paymentResponse, staffResponse] = await Promise.all([
         fetch("/api/salary-payment-source", { credentials: "include" }),
         fetch("/api/salary-payments", { credentials: "include" }),
-        fetch("/api/salary-payment-staff", { credentials: "include" }),
+        canEnterSalary ? fetch("/api/salary-payment-staff", { credentials: "include" }) : Promise.resolve(null),
       ]);
-      if ([salaryResponse, paymentResponse, staffResponse].some((response) => response.status === 401)) return window.location.reload();
-      if ([salaryResponse, paymentResponse, staffResponse].some((response) => !response.ok)) throw new Error("Unable to load salary payment data.");
-      const [salary, paymentRows, staff] = await Promise.all([salaryResponse.json(), paymentResponse.json(), staffResponse.json()]);
+      const responses = [salaryResponse, paymentResponse, staffResponse].filter(Boolean);
+      if (responses.some((response) => response.status === 401)) return window.location.reload();
+      if (responses.some((response) => !response.ok)) throw new Error("Unable to load salary payment data.");
+      const [salary, paymentRows, staff] = await Promise.all([
+        salaryResponse.json(),
+        paymentResponse.json(),
+        staffResponse ? staffResponse.json() : Promise.resolve([]),
+      ]);
       const periods = salary
         .filter((row) => Number(row.year) === 2026)
         .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
@@ -48,7 +53,7 @@ export default function SalaryPaymentPage() {
       setError(loadError.message);
       setPageStatus("error");
     }
-  }, []);
+  }, [canEnterSalary]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -188,7 +193,7 @@ export default function SalaryPaymentPage() {
         {periods.map((period) => <button type="button" key={`${period.year}-${period.month}`} className={`salary-month-button ${selectedMonth === period.month ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === period.month} onClick={() => setSelectedMonth(period.month)}>{period.month.slice(0, 3)}</button>)}
       </div>
 
-      <form className="panel salary-entry-panel" onSubmit={saveSalaryEntry}>
+      {canEnterSalary && <form className="panel salary-entry-panel" onSubmit={saveSalaryEntry}>
         <div className="salary-entry-panel__head"><div><h3><UserPlus size={17} /> Enter {selectedMonth} Salary</h3><p>Select a staff member, then enter the salary and tips. Saving updates this page and the main Salary page.</p></div></div>
         <div className="salary-entry-grid">
           <label><span>Name</span><select value={entryEmployee} onChange={(event) => selectEntryEmployee(event.target.value)} required><option value="">Select staff member</option>{staffOptions.map((employee) => <option key={employee.key} value={employee.key}>{employee.name} · {employee.department}</option>)}</select></label>
@@ -197,7 +202,7 @@ export default function SalaryPaymentPage() {
           <label><span>Tips</span><div className="salary-entry-money"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" value={entryTips} onChange={(event) => { setEntryTips(event.target.value); setEntryStatus("idle"); }} required /></div></label>
           <button className={`salary-payment-save salary-entry-save ${entryStatus === "saved" ? "salary-payment-save--saved" : ""}`} type="submit" disabled={entryStatus === "saving"}>{entryStatus === "saved" ? <><Check size={15} />Saved</> : <><Save size={15} />{entryStatus === "saving" ? "Saving…" : "Save salary"}</>}</button>
         </div>
-      </form>
+      </form>}
 
       <div className="stat-grid salary-payment-summary">
         <div className="stat-card"><div className="stat-card__label">Revenue</div><div className="stat-card__value">{currency.format(Number(selectedPeriod?.revenue) || 0)}</div><div className="sales-kpi-note">{selectedMonth} 2026</div></div>
@@ -228,7 +233,7 @@ export default function SalaryPaymentPage() {
                 <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td><td>{currency.format(row.salary)}</td><td>{currency.format(row.tips)}</td><td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
                 <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked || busy} required /></div></td>
                 <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked || busy} required /></td>
-                <td><div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button><button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button></div></td>
+                <td><div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button>}</div></td>
               </tr>;
             })}</tbody>
             <tfoot><tr><td colSpan="3">Total</td><td>{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>

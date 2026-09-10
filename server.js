@@ -162,6 +162,11 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+const requireSalaryPayment = (req, res, next) => {
+  if (req.session?.role !== "salary-payment") return res.status(403).json({ error: "Salary payment access required" });
+  next();
+};
+
 const requireSameOrigin = (req, res, next) => {
   const origin = req.get("origin");
   if (!origin) return res.status(403).json({ error: "Request origin is required." });
@@ -356,8 +361,8 @@ app.get("/api/salary-payment-source", requireAuth, async (_req, res, next) => {
   }
   catch (error) { next(error); }
 });
-app.get("/api/salary-payment-staff", requireAuth, (_req, res) => res.json(getSalaryPaymentStaff()));
-app.put("/api/salary-entry", requireAuth, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
+app.get("/api/salary-payment-staff", requireAuth, requireSalaryPayment, (_req, res) => res.json(getSalaryPaymentStaff()));
+app.put("/api/salary-entry", requireAuth, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
   const year = Number(req.body?.year);
   const month = monthOrder.find((item) => monthKey(item) === monthKey(req.body?.month));
   const employeeName = String(req.body?.employeeName || "").trim();
@@ -392,7 +397,7 @@ app.put("/api/salary-entry", requireAuth, requireSameOrigin, paymentWriteLimiter
     client?.release();
   }
 });
-app.delete("/api/salary-entry", requireAuth, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
+app.delete("/api/salary-entry", requireAuth, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, async (req, res, next) => {
   const year = Number(req.body?.year);
   const month = monthOrder.find((item) => monthKey(item) === monthKey(req.body?.month));
   const employeeName = String(req.body?.employeeName || "").trim();

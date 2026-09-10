@@ -62,7 +62,7 @@ export default function App() {
     return (
       <div className="restricted-app">
         <Topbar theme={theme} onToggleTheme={toggleTheme} onLogout={logout} restricted />
-        <main className="app-content"><Dashboard activePage="salary-payment" theme={theme} onToggleTheme={toggleTheme} /></main>
+        <main className="app-content"><Dashboard activePage="salary-payment" theme={theme} onToggleTheme={toggleTheme} role={authState.role} /></main>
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function App() {
           onOpenMenu={() => setMobileMenuOpen(true)}
           menuOpen={mobileMenuOpen}
         />
-        <main className="app-content"><Dashboard activePage={activePage} theme={theme} onToggleTheme={toggleTheme} onNavigate={navigate} /></main>
+        <main className="app-content"><Dashboard activePage={activePage} theme={theme} onToggleTheme={toggleTheme} onNavigate={navigate} role={authState.role} /></main>
       </div>
     </div>
   );
