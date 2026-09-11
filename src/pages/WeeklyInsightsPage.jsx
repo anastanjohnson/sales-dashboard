@@ -157,7 +157,7 @@ export default function WeeklyInsightsPage() {
       const mergedGuestWeeks = mergeWeeklyGuestBenchmarks(updatedGuestWeeks, benchmarkData);
       setWeeklyRevenueData(mergedData);
       setGuestWeeks(mergedGuestWeeks);
-      const latestCombinedWeek = [...mergedGuestWeeks].reverse().find((week) => week.available && findRevenueWeek(week, mergedData));
+      const latestCombinedWeek = [...mergedGuestWeeks].reverse().find((week) => findRevenueWeek(week, mergedData)?.days?.some((day) => day.currentRevenue != null));
       setSelectedWeekId(latestCombinedWeek?.id || latestWeekId);
       setStatus("ready");
     } catch {
@@ -172,18 +172,21 @@ export default function WeeklyInsightsPage() {
   const currentYear = selectedRevenueWeek?.currentYear || weeklyGuestMeta.currentYear;
   const comparisonYear = selectedRevenueWeek?.comparisonYear || weeklyGuestMeta.comparisonYear;
   const revenueTotals = useMemo(() => getWeekTotals(selectedRevenueWeek), [selectedRevenueWeek]);
-  const currentGuests = selectedGuestWeek?.currentCovers == null ? null : Number(selectedGuestWeek.currentCovers);
+  const hasCurrentGuestData = Boolean(selectedGuestWeek?.available && !selectedRevenueWeek?.partial);
+  const currentGuests = !hasCurrentGuestData || selectedGuestWeek?.currentCovers == null ? null : Number(selectedGuestWeek.currentCovers);
   const comparisonGuests = selectedGuestWeek?.comparisonCovers == null ? null : Number(selectedGuestWeek.comparisonCovers);
-  const hasCurrentData = Boolean(selectedGuestWeek?.available && selectedRevenueWeek?.days?.some((row) => row.currentRevenue != null));
-  const hasBenchmark = Boolean(comparisonGuests != null && selectedRevenueWeek?.days?.some((row) => row.comparisonRevenue != null));
+  const hasCurrentData = Boolean(selectedRevenueWeek?.days?.some((row) => row.currentRevenue != null));
+  const hasBenchmark = Boolean(selectedRevenueWeek?.days?.some((row) => row.comparisonRevenue != null));
   const currentSpending = hasCurrentData && currentGuests > 0 ? revenueTotals.current / currentGuests : null;
-  const comparisonSpending = hasBenchmark && !selectedRevenueWeek?.partialBenchmark && comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
-  const revenueChange = hasCurrentData ? percentageChange(revenueTotals.current, revenueTotals.comparison) : null;
-  const guestChange = hasCurrentData ? percentageChange(currentGuests, comparisonGuests) : null;
+  const comparisonSpending = hasBenchmark && !selectedRevenueWeek?.partial && !selectedRevenueWeek?.partialBenchmark && comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
+  const revenueChange = hasCurrentData && hasBenchmark ? percentageChange(revenueTotals.current, revenueTotals.comparison) : null;
+  const guestChange = hasCurrentGuestData ? percentageChange(currentGuests, comparisonGuests) : null;
   const spendingChange = currentSpending != null && comparisonSpending != null
     ? percentageChange(currentSpending, comparisonSpending)
     : null;
-  const insight = hasCurrentData
+  const insight = hasCurrentData && !hasCurrentGuestData
+    ? { label: "Revenue updated", text: `Revenue is updated through ${dateLabel(selectedRevenueWeek?.asOf)}. Guest count and average spending will update when matching OpenTable figures are available.` }
+    : hasCurrentData
     ? buildGrowthInsight(revenueChange, guestChange, spendingChange)
     : {
       label: "Benchmark ready",
@@ -236,8 +239,8 @@ export default function WeeklyInsightsPage() {
           {guestWeeks.map((guestWeek) => {
             const revenueWeek = findRevenueWeek(guestWeek, weeklyRevenueData);
             const totals = getWeekTotals(revenueWeek);
-            const hasCurrentWeekData = Boolean(guestWeek.available && revenueWeek?.days?.some((row) => row.currentRevenue != null));
-            const hasBenchmarkData = Boolean(guestWeek.comparisonCovers != null && revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
+            const hasCurrentWeekData = Boolean(revenueWeek?.days?.some((row) => row.currentRevenue != null));
+            const hasBenchmarkData = Boolean(revenueWeek?.days?.some((row) => row.comparisonRevenue != null));
             const hasData = hasCurrentWeekData || hasBenchmarkData;
             const isDisabled = !hasData;
             const change = hasCurrentWeekData ? percentageChange(totals.current, totals.comparison) : null;
@@ -268,7 +271,7 @@ export default function WeeklyInsightsPage() {
       </div>
 
       <div className="toolbar weekly-toolbar weekly-view-toolbar">
-        <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedGuestWeek)}</span></div>
+        <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedGuestWeek)}{selectedRevenueWeek?.partial ? ` · Through ${dateLabel(selectedRevenueWeek.asOf)} · Partial week` : ""}</span></div>
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button>
@@ -277,8 +280,8 @@ export default function WeeklyInsightsPage() {
 
       <div className="stat-grid weekly-summary">
         {hasCurrentData ? <>
-          <KpiCard icon={Euro} label={`${currentYear} Revenue`} value={money.format(revenueTotals.current)} benchmarkLabel={`${comparisonYear} Revenue`} benchmarkValue={money.format(revenueTotals.comparison)} change={revenueChange} />
-          <KpiCard icon={Users} label={`${currentYear} Guests`} value={number.format(currentGuests)} benchmarkLabel={`${comparisonYear} Guests`} benchmarkValue={number.format(comparisonGuests)} change={guestChange} />
+          <KpiCard icon={Euro} label={`${currentYear} Revenue${selectedRevenueWeek?.partial ? " · To date" : ""}`} value={money.format(revenueTotals.current)} benchmarkLabel={`${comparisonYear} Revenue${selectedRevenueWeek?.partial ? " · Same days" : ""}`} benchmarkValue={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} change={revenueChange} />
+          <KpiCard icon={Users} label={`${currentYear} Guests`} value={currentGuests == null ? "Pending" : number.format(currentGuests)} benchmarkLabel={`${comparisonYear} Guests`} benchmarkValue={comparisonGuests == null ? "—" : number.format(comparisonGuests)} change={guestChange} />
           <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} benchmarkLabel={`${comparisonYear} Average`} benchmarkValue={comparisonSpending == null ? "—" : money.format(comparisonSpending)} change={spendingChange} />
         </> : <>
           <KpiCard icon={Euro} label={`${comparisonYear} Revenue Benchmark`} value={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} note={selectedRevenueWeek?.partialBenchmark ? "Partial — one source day is not recorded" : "Thursday to Monday benchmark"} />

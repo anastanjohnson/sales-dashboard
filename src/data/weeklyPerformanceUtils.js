@@ -34,10 +34,51 @@ export const getWeekTotals = (week) =>
   (week?.days || []).reduce(
     (totals, row) => ({
       current: totals.current + (Number(row.currentRevenue) || 0),
-      comparison: totals.comparison + (Number(row.comparisonRevenue) || 0),
+      comparison: totals.comparison + (week?.partial && row.currentRevenue == null ? 0 : Number(row.comparisonRevenue) || 0),
     }),
     { current: 0, comparison: 0 },
   );
+
+// Apply verified ledger days while retaining historical weeks and benchmarks.
+export const mergeDailyRevenue = (weeklyData, benchmarkData, records) => {
+  const merged = weeklyData.map((week) => ({ ...week, days: (week.days || []).map((day) => ({ ...day })) }));
+  if (!records.length) return merged;
+  const asOf = records.map((row) => row.date).sort().at(-1);
+  const touched = new Set();
+  for (const record of records) {
+    const date = new Date(`${record.date}T12:00:00Z`);
+    if (Number.isNaN(date.getTime()) || !Number.isFinite(record.revenue)) throw new Error("Invalid daily revenue record");
+    // Monday belongs to the reporting week that began the preceding Thursday.
+    date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 3) % 7));
+    const startDate = toDateKey(date);
+    const weekNumber = getIsoWeekNumber(startDate);
+    const currentYear = date.getUTCFullYear();
+    let week = merged.find((row) => row.startDate === startDate);
+    if (!week) {
+      const benchmark = (benchmarkData?.weeks || []).find((row) => row.startDate === startDate);
+      const comparison = getWeekRange(currentYear - 1, weekNumber);
+      const days = Array.from({ length: 5 }, (_, index) => {
+        const currentDate = toDateKey(new Date(date.getTime() + index * DAY_MS));
+        const previousDate = toDateKey(new Date(new Date(`${comparison.startDate}T12:00:00Z`).getTime() + index * DAY_MS));
+        const previous = benchmark?.days?.find((row) => row.currentDate === currentDate);
+        return { day: ["Thursday", "Friday", "Saturday", "Sunday", "Monday"][index], currentDate, comparisonDate: previous?.comparisonDate || previousDate, currentRevenue: null, comparisonRevenue: previous?.comparisonRevenue ?? null };
+      });
+      week = { ...benchmark, id: benchmark?.id || `${currentYear}-W${String(weekNumber).padStart(2, "0")}`, weekNumber, currentYear, comparisonYear: currentYear - 1, ...getWeekRange(currentYear, weekNumber), days };
+      merged.push(week);
+    }
+    const day = week.days.find((row) => row.currentDate === record.date);
+    if (!day) throw new Error(`Revenue date is outside the reporting window: ${record.date}`);
+    day.currentRevenue = record.revenue;
+    week.benchmarkOnly = false;
+    touched.add(week);
+  }
+  for (const week of touched) {
+    week.asOf = asOf < week.endDate ? asOf : week.endDate;
+    week.partial = week.days.some((day) => day.currentRevenue == null);
+    week.partialBenchmark = week.days.some((day) => day.comparisonRevenue == null);
+  }
+  return merged.sort((a, b) => a.startDate.localeCompare(b.startDate));
+};
 
 const getWeekNumber = (week) => Number(week?.weekNumber)
   || Number(String(week?.id || "").match(/W(\d{1,2})$/)?.[1])
