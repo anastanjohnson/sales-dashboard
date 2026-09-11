@@ -170,6 +170,13 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     } catch (deleteError) {
       setError(deleteError.message);
       setRowStatus((current) => ({ ...current, [key]: "error" }));
+    } finally {
+      setRowStatus((current) => {
+        if (current[key] !== "deleting") return current;
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
     }
   };
 
