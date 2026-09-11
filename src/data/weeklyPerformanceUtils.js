@@ -116,6 +116,50 @@ const toGuestBenchmark = (week) => ({
   })),
 });
 
+export const mergeDailyGuestRecords = (baseWeeks, updates, benchmarkData, records) => {
+  const merged = baseWeeks.map((base) => {
+    const update = updates.find((week) => week.id === base.id || Number(week.weekNumber) === Number(base.weekNumber));
+    const week = update || base;
+    return { ...week, days: (week.days || []).map((day) => ({ ...day })) };
+  });
+  updates.forEach((week) => {
+    if (!merged.some((row) => row.id === week.id || Number(row.weekNumber) === Number(week.weekNumber))) merged.push({ ...week, days: (week.days || []).map((day) => ({ ...day })) });
+  });
+  const touched = new Set();
+  const asOf = records.map((row) => row.date).sort().at(-1);
+  for (const record of records) {
+    if (![record.currentCovers, record.comparisonCovers].every((value) => Number.isInteger(value) && value >= 0)) throw new Error("Invalid daily cover count");
+    const week = merged.find((row) => row.days.some((day) => day.currentDate === record.date));
+    if (!week) throw new Error(`No reporting week for covers: ${record.date}`);
+    const day = week.days.find((row) => row.currentDate === record.date);
+    day.currentCovers = record.currentCovers;
+    day.comparisonCovers = record.comparisonCovers;
+    touched.add(week);
+  }
+  for (const week of touched) {
+    const benchmark = (benchmarkData?.weeks || []).find((row) => Number(row.weekNumber) === Number(week.weekNumber));
+    week.days.forEach((day) => {
+      if (day.comparisonCovers == null) day.comparisonCovers = benchmark?.days?.find((row) => row.currentDate === day.currentDate)?.comparisonCovers ?? null;
+    });
+    const recorded = week.days.filter((day) => day.currentCovers != null);
+    week.currentCovers = recorded.reduce((sum, day) => sum + day.currentCovers, 0);
+    week.comparisonCovers = recorded.every((day) => day.comparisonCovers != null) ? recorded.reduce((sum, day) => sum + day.comparisonCovers, 0) : null;
+    week.available = true;
+    week.benchmarkAvailable = week.comparisonCovers != null;
+    week.partial = recorded.length < week.days.length;
+    week.asOf = asOf < week.endDate ? asOf : week.endDate;
+    week.difference = week.comparisonCovers == null ? null : week.currentCovers - week.comparisonCovers;
+    week.yoy = percentageChange(week.currentCovers, week.comparisonCovers);
+  }
+  return merged.sort((a, b) => Number(a.weekNumber) - Number(b.weekNumber));
+};
+
+export const hasMatchingGuestDates = (guestWeek, revenueWeek) => {
+  const dates = (rows, field) => (rows || []).filter((day) => day[field] != null).map((day) => day.currentDate).sort().join(",");
+  const revenueDates = dates(revenueWeek?.days, "currentRevenue");
+  return Boolean(guestWeek?.available && revenueDates && revenueDates === dates(guestWeek.days, "currentCovers"));
+};
+
 export const mergeWeeklyRevenueBenchmarks = (weeklyData, benchmarkData) => {
   const benchmarks = (benchmarkData?.weeks || []).map(toRevenueBenchmark);
   const existingWeeks = new Set(weeklyData.map(getWeekNumber));

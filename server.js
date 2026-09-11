@@ -5,7 +5,8 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pg from "pg";
-import { mergeDailyRevenue } from "./src/data/weeklyPerformanceUtils.js";
+import { mergeDailyRevenue, mergeDailyGuestRecords } from "./src/data/weeklyPerformanceUtils.js";
+import { weeklyGuestData } from "./src/data/weeklyGuestData.js";
 
 const { Pool } = pg;
 const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SALARY_PAYMENT_USERNAME", "SALARY_PAYMENT_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "SALARY_PAYMENT_DATA_JSON", "STAFF_HOURS_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON", "WEEKLY_BENCHMARKS_DATA_JSON", "DATABASE_URL"];
@@ -101,6 +102,10 @@ const weeklyBenchmarksData = JSON.parse(process.env.WEEKLY_BENCHMARKS_DATA_JSON)
 const refreshedWeeklyPerformanceData = mergeDailyRevenue(
   normalizedWeeklyPerformanceData, weeklyBenchmarksData,
   JSON.parse(process.env.WEEKLY_REVENUE_DAILY_JSON || "[]"),
+);
+const refreshedWeeklyGuestData = mergeDailyGuestRecords(
+  weeklyGuestData, weeklyGuestAppendData, weeklyBenchmarksData,
+  JSON.parse(process.env.WEEKLY_GUEST_DAILY_JSON || "[]"),
 );
 const database = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -518,7 +523,7 @@ app.put("/api/salary-payments", requireAuth, requireSameOrigin, paymentWriteLimi
 });
 app.get("/api/staff-hours", requireAuth, requireAdmin, (_req, res) => res.json(normalizedStaffHoursData));
 app.get("/api/weekly-performance", requireAuth, requireAdmin, (_req, res) => res.json(refreshedWeeklyPerformanceData));
-app.get("/api/weekly-guests", requireAuth, requireAdmin, (_req, res) => res.json(weeklyGuestAppendData));
+app.get("/api/weekly-guests", requireAuth, requireAdmin, (_req, res) => res.json(refreshedWeeklyGuestData));
 app.get("/api/weekly-benchmarks", requireAuth, requireAdmin, (_req, res) => res.json(weeklyBenchmarksData));
 
 app.use(express.static(path.join(__dirname, "dist"), {

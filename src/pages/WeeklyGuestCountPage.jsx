@@ -142,7 +142,7 @@ export default function WeeklyGuestCountPage() {
       </div>
 
       <div className="toolbar weekly-toolbar weekly-view-toolbar">
-        <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedWeek)}</span></div>
+        <div className="weekly-selected-range"><CalendarDays size={15} /><span>{rangeLabel(selectedWeek)}{selectedWeek?.partial ? ` · Through ${dateLabel(selectedWeek.asOf)} · Partial week` : ""}</span></div>
         <div className="toolbar__controls">
           <button className={`select-btn ${view === "chart" ? "select-btn--active" : ""}`} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={`select-btn ${view === "table" ? "select-btn--active" : ""}`} onClick={() => setView("table")}><Table2 size={14} />Table</button>
@@ -151,7 +151,7 @@ export default function WeeklyGuestCountPage() {
 
       <div className="stat-grid weekly-summary">
         <KpiCard icon={Users} label={`${weeklyGuestMeta.currentYear} Guest Count`} value={hasCurrentData ? number.format(selectedWeek.currentCovers) : "Pending"} note={hasCurrentData ? rangeLabel(selectedWeek) : "Available after this week is completed"} />
-        <KpiCard icon={CalendarDays} label={`${weeklyGuestMeta.comparisonYear} Same Weekdays`} value={hasBenchmark ? number.format(selectedWeek.comparisonCovers) : "—"} note={hasBenchmark ? "Thursday to Monday benchmark" : "Waiting for comparison data"} />
+        <KpiCard icon={CalendarDays} label={`${weeklyGuestMeta.comparisonYear} Same Weekdays`} value={hasBenchmark ? number.format(selectedWeek.comparisonCovers) : "—"} note={hasBenchmark ? selectedWeek?.partial ? "Matching recorded days only" : "Thursday to Monday benchmark" : "Waiting for comparison data"} />
         <KpiCard icon={difference != null && difference >= 0 ? UserPlus : TrendingDown} label="Guest Difference" value={difference == null ? "Pending" : `${difference >= 0 ? "+" : ""}${number.format(difference)}${change == null ? "" : ` (${change >= 0 ? "+" : ""}${change.toFixed(1)}%)`}`} note={difference == null ? `Calculated when ${weeklyGuestMeta.currentYear} data is available` : `${weeklyGuestMeta.currentYear} minus ${weeklyGuestMeta.comparisonYear}`} />
         <KpiCard icon={Euro} label={hasCurrentData ? "Average Guest Spending" : `${weeklyGuestMeta.comparisonYear} Benchmark Spending`} value={hasCurrentData ? averageGuestSpending == null ? "—" : money.format(averageGuestSpending) : benchmarkGuestSpending == null ? "—" : money.format(benchmarkGuestSpending)} note={hasCurrentData && selectedRevenueWeek ? `${money.format(revenueTotals.current)} revenue ÷ ${number.format(selectedWeek.currentCovers)} guests` : !hasCurrentData && benchmarkGuestSpending != null ? `${money.format(revenueTotals.comparison)} revenue ÷ ${number.format(selectedWeek.comparisonCovers)} guests` : revenueStatus === "loading" ? "Loading weekly sales revenue…" : selectedRevenueWeek?.partialBenchmark ? "Revenue benchmark is partial for this week" : "Weekly Performance revenue is not available for this week"} />
       </div>

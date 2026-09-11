@@ -187,7 +187,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
         <Widget icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completedSales2026.length} completed months in 2026`} page="sales" onNavigate={onNavigate} tone="gold" />
       </Section>
 
-      <Section title="Weekly Performance" subtitle={latestGuestWeek ? `Latest completed reporting week · W${latestGuestWeek.weekNumber}` : "Latest completed Thursday–Monday reporting week"} page="weekly-performance" onNavigate={onNavigate}>
+      <Section title="Weekly Performance" subtitle={latestGuestWeek ? `${latestGuestWeek.partial ? `Partial week · Through ${latestGuestWeek.asOf}` : "Latest completed reporting week"} · W${latestGuestWeek.weekNumber}` : "Latest completed Thursday–Monday reporting week"} page="weekly-performance" onNavigate={onNavigate}>
         <Widget icon={Euro} label="Weekly Revenue" value={status === "ready" ? money.format(weeklyTotals.current) : "—"} change={status === "ready" ? weeklyRevenueChange : null} page="weekly-performance" onNavigate={onNavigate} tone="green" />
         <Widget icon={Users} label="Weekly Guests" value={status === "ready" ? number.format(weeklyGuests) : "—"} change={status === "ready" ? weeklyGuestChange : null} page="weekly-performance" onNavigate={onNavigate} tone="blue" />
         <Widget icon={Gauge} label="Average Guest Spending" value={status === "ready" ? money.format(averageGuestSpend) : "—"} note="Revenue ÷ seated guests" page="weekly-performance" onNavigate={onNavigate} tone="purple" />

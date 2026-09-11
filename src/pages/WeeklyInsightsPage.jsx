@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { weeklyGuestData, weeklyGuestMeta } from "../data/weeklyGuestData";
-import { getIsoWeekNumber, getWeekTotals, mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
+import { getIsoWeekNumber, getWeekTotals, hasMatchingGuestDates, mergeWeeklyGuestBenchmarks, mergeWeeklyRevenueBenchmarks, percentageChange } from "../data/weeklyPerformanceUtils";
 
 const number = new Intl.NumberFormat("de-DE");
 const money = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
@@ -172,13 +172,13 @@ export default function WeeklyInsightsPage() {
   const currentYear = selectedRevenueWeek?.currentYear || weeklyGuestMeta.currentYear;
   const comparisonYear = selectedRevenueWeek?.comparisonYear || weeklyGuestMeta.comparisonYear;
   const revenueTotals = useMemo(() => getWeekTotals(selectedRevenueWeek), [selectedRevenueWeek]);
-  const hasCurrentGuestData = Boolean(selectedGuestWeek?.available && !selectedRevenueWeek?.partial);
+  const hasCurrentGuestData = hasMatchingGuestDates(selectedGuestWeek, selectedRevenueWeek);
   const currentGuests = !hasCurrentGuestData || selectedGuestWeek?.currentCovers == null ? null : Number(selectedGuestWeek.currentCovers);
   const comparisonGuests = selectedGuestWeek?.comparisonCovers == null ? null : Number(selectedGuestWeek.comparisonCovers);
   const hasCurrentData = Boolean(selectedRevenueWeek?.days?.some((row) => row.currentRevenue != null));
   const hasBenchmark = Boolean(selectedRevenueWeek?.days?.some((row) => row.comparisonRevenue != null));
   const currentSpending = hasCurrentData && currentGuests > 0 ? revenueTotals.current / currentGuests : null;
-  const comparisonSpending = hasBenchmark && !selectedRevenueWeek?.partial && !selectedRevenueWeek?.partialBenchmark && comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
+  const comparisonSpending = hasBenchmark && (!selectedRevenueWeek?.partial || hasCurrentGuestData) && !selectedRevenueWeek?.partialBenchmark && comparisonGuests > 0 ? revenueTotals.comparison / comparisonGuests : null;
   const revenueChange = hasCurrentData && hasBenchmark ? percentageChange(revenueTotals.current, revenueTotals.comparison) : null;
   const guestChange = hasCurrentGuestData ? percentageChange(currentGuests, comparisonGuests) : null;
   const spendingChange = currentSpending != null && comparisonSpending != null
@@ -281,7 +281,7 @@ export default function WeeklyInsightsPage() {
       <div className="stat-grid weekly-summary">
         {hasCurrentData ? <>
           <KpiCard icon={Euro} label={`${currentYear} Revenue${selectedRevenueWeek?.partial ? " · To date" : ""}`} value={money.format(revenueTotals.current)} benchmarkLabel={`${comparisonYear} Revenue${selectedRevenueWeek?.partial ? " · Same days" : ""}`} benchmarkValue={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} change={revenueChange} />
-          <KpiCard icon={Users} label={`${currentYear} Guests`} value={currentGuests == null ? "Pending" : number.format(currentGuests)} benchmarkLabel={`${comparisonYear} Guests`} benchmarkValue={comparisonGuests == null ? "—" : number.format(comparisonGuests)} change={guestChange} />
+          <KpiCard icon={Users} label={`${currentYear} Guests${selectedGuestWeek?.partial ? " · To date" : ""}`} value={currentGuests == null ? "Pending" : number.format(currentGuests)} benchmarkLabel={`${comparisonYear} Guests${selectedGuestWeek?.partial ? " · Same days" : ""}`} benchmarkValue={comparisonGuests == null ? "—" : number.format(comparisonGuests)} change={guestChange} />
           <KpiCard icon={Euro} label="Average Guest Spending" value={currentSpending == null ? "—" : money.format(currentSpending)} benchmarkLabel={`${comparisonYear} Average`} benchmarkValue={comparisonSpending == null ? "—" : money.format(comparisonSpending)} change={spendingChange} />
         </> : <>
           <KpiCard icon={Euro} label={`${comparisonYear} Revenue Benchmark`} value={hasBenchmark ? money.format(revenueTotals.comparison) : "—"} note={selectedRevenueWeek?.partialBenchmark ? "Partial — one source day is not recorded" : "Thursday to Monday benchmark"} />
