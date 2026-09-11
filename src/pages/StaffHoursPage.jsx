@@ -143,7 +143,7 @@ export default function StaffHoursPage() {
           <div className="table-wrap"><table className="staff-hours-table"><thead><tr><th>Employee</th><th>Worked Hours</th><th>Monthly Limit</th><th>Extra Hours</th><th>Status</th></tr></thead><tbody>{staff.map((employee) => <tr key={employee.name}><td className="salary-table__month">{employee.name}</td><td>{hours.format(employee.workingHours)} h</td><td>{employee.hoursLimit == null ? "No limit" : `${hours.format(employee.hoursLimit)} h`}</td><td className={employee.extraHours > 0 ? "staff-hours-extra" : ""}>{employee.extraHours > 0 ? "+" : ""}{hours.format(employee.extraHours)} h</td><td><span className={"status-pill " + (employee.extraHours > 0 ? "status-pill--over" : "")}>{employee.hoursLimit == null ? "No limit" : employee.extraHours > 0 ? `Above ${hours.format(employee.hoursLimit)} h` : `Within ${hours.format(employee.hoursLimit)} h`}</span></td></tr>)}</tbody></table></div>
         )}
       </div>
-      <div className="source-note"><strong>Source:</strong> Working hours from the authorized 2026 monthly salary worksheets. Salary and tips are not used in this page.</div>
+      <div className="source-note"><strong>Source:</strong> {monthData.source || "Authorized 2026 monthly salary worksheets"}.{monthData.asOf && ` Data through ${monthData.asOf}${monthData.partial ? " · Partial month" : ""}.`} Salary and tips are not used in this page.</div>
     </div>
   );
 }

@@ -61,6 +61,16 @@ const normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
     employees: period.employees.filter((employee) => !excludedNames.has(String(employee.name || "").trim().toLowerCase())),
   };
 });
+// Verified daily time records replace only the supplied monthly periods.
+const dailyStaffHoursData = JSON.parse(process.env.STAFF_HOURS_DAILY_SOURCE_JSON || "[]");
+dailyStaffHoursData.forEach((entry) => {
+  const index = normalizedStaffHoursData.findIndex((period) =>
+    Number(period.year) === Number(entry.year)
+    && String(period.month || "").slice(0, 3).toLowerCase() === String(entry.month || "").slice(0, 3).toLowerCase()
+  );
+  if (index >= 0) normalizedStaffHoursData[index] = { ...normalizedStaffHoursData[index], ...entry };
+  else normalizedStaffHoursData.push(entry);
+});
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
 const weeklyPerformanceAppend = JSON.parse(process.env.WEEKLY_PERFORMANCE_APPEND_JSON || "[]");
 const weeklyGuestAppendData = JSON.parse(process.env.WEEKLY_GUEST_APPEND_JSON || "[]");
