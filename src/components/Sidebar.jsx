@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   { icon: BookOpen, label: "Reservations" },
   { icon: Users, label: "Staff" },
   { icon: ShoppingCart, label: "Billing" },
-  { icon: BarChart3, label: "Salary", page: "sales-salary" },
+  { icon: BarChart3, label: "Salary Pay", page: "sales-salary" },
   { icon: Settings, label: "Settings" },
   ];
 
