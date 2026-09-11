@@ -1228,6 +1228,12 @@ tbody tr:last-child td {
 .salary-payment-save:disabled { cursor: default; opacity: .72; }
 .salary-payment-save--saved { background: var(--good-bg); color: var(--good); }
 .salary-payment-actions { display: flex; align-items: center; gap: 8px; }
+.salary-payment-edit { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 76px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 400; cursor: pointer; }
+.salary-payment-edit:hover:not(:disabled) { background: var(--surface-hover); }
+.salary-payment-edit:disabled { cursor: default; opacity: .55; }
+.salary-payment-edit-amount { width: 140px; }
+.salary-payment-edit-amount input { font-weight: 400; }
+.salary-payment-notice { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--good); font-size: 13px; }
 .salary-payment-delete { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 88px; padding: 10px 11px; border: 1px solid rgba(224, 79, 79, .35); border-radius: 8px; background: transparent; color: var(--bad); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .salary-payment-delete:hover:not(:disabled) { background: var(--bad-bg); }
 .salary-payment-delete:disabled { cursor: default; opacity: .55; }

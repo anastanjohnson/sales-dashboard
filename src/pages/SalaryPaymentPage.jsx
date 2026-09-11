@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, RefreshCw, Save, Trash2, UserPlus, WalletCards } from "lucide-react";
+import { Check, Pencil, RefreshCw, Save, Trash2, UserPlus, WalletCards } from "lucide-react";
 
 const currency = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -19,6 +19,8 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
   const [entrySalary, setEntrySalary] = useState("");
   const [entryTips, setEntryTips] = useState("");
   const [entryStatus, setEntryStatus] = useState("idle");
+  const [salaryEdit, setSalaryEdit] = useState(null);
+  const [salaryEditMessage, setSalaryEditMessage] = useState("");
   const [error, setError] = useState("");
 
   const loadData = useCallback(async () => {
@@ -66,7 +68,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
   const unopenedMonths = monthOrder.filter((month) => !periods.some((period) => period.month === month));
   const openMonth = async (event) => {
     event.preventDefault();
-    if (!canEnterSalary || !newMonth || openingMonth) return;
+    if (!canEnterSalary || !newMonth || openingMonth || salaryEdit) return;
     setOpeningMonth(true);
     setError("");
     try {
@@ -117,6 +119,53 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     const key = keyFor(row);
     setPayments((current) => ({ ...current, [key]: { paidAmount: "", paidDate: "", ...current[key], [field]: value, locked: false } }));
     setRowStatus((current) => ({ ...current, [key]: "dirty" }));
+  };
+
+  const startSalaryEdit = (row) => {
+    if (!canEnterSalary || salaryEdit || entryStatus === "saving" || openingMonth || Object.values(rowStatus).includes("deleting")) return;
+    setSalaryEdit({ key: keyFor(row), salary: String(row.salary), tips: String(row.tips), saving: false });
+    setSalaryEditMessage("");
+    setError("");
+  };
+
+  const saveSalaryEdit = async (event, row) => {
+    event.preventDefault();
+    if (!canEnterSalary || salaryEdit?.key !== keyFor(row) || salaryEdit.saving) return;
+    const { salary, tips } = salaryEdit;
+    if ([salary, tips].some((value) => value.trim() === "" || !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 1000000)) {
+      setError("Salary and Tips must be valid non-negative amounts.");
+      return;
+    }
+    setSalaryEdit((current) => ({ ...current, saving: true }));
+    setError("");
+    try {
+      const response = await fetch("/api/salary-entry", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: row.year, month: row.month, employeeName: row.employeeName, department: row.department, salary, tips }),
+      });
+      if (response.status === 401) return window.location.reload();
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to save the salary changes.");
+      setSalaryData((current) => current.map((period) =>
+        Number(period.year) === Number(row.year) && period.month === row.month
+          ? { ...period, employees: period.employees.map((employee) =>
+            employee.name === row.employeeName && employee.department === row.department
+              ? { ...employee, salary: result.salary, tips: result.tips }
+              : employee) }
+          : period));
+      if (entryEmployee === `${row.department}::${row.employeeName.trim().toLowerCase()}`) {
+        setEntrySalary(String(result.salary));
+        setEntryTips(String(result.tips));
+        setEntryStatus("saved");
+      }
+      setSalaryEdit(null);
+      setSalaryEditMessage("Salary and tips saved.");
+    } catch (saveError) {
+      setError(saveError.message);
+      setSalaryEdit((current) => current ? { ...current, saving: false } : null);
+    }
   };
 
   const saveRow = async (row) => {
@@ -193,6 +242,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
 
   const saveSalaryEntry = async (event) => {
     event.preventDefault();
+    if (!canEnterSalary || salaryEdit || entryStatus === "saving") return;
     if (!selectedStaff) return setError("Select a staff member.");
     setEntryStatus("saving");
     setError("");
@@ -221,18 +271,18 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     <div className="dashboard salary-payment-page">
       <div className="dashboard__header">
         <div><h1>Salary Payment</h1><p className="dashboard__subtitle">Enter and save the paid amount and payment date for each employee.</p></div>
-        <button className="btn btn--ghost" onClick={loadData}><RefreshCw size={15} />Refresh</button>
+        <button className="btn btn--ghost" onClick={loadData} disabled={Boolean(salaryEdit)}><RefreshCw size={15} />Refresh</button>
       </div>
 
       <div className="salary-month-picker" role="group" aria-label="Select salary payment month">
-        {periods.map((period) => <button type="button" key={`${period.year}-${period.month}`} className={`salary-month-button ${selectedMonth === period.month ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === period.month} onClick={() => setSelectedMonth(period.month)}>{period.month.slice(0, 3)}</button>)}
+        {periods.map((period) => <button type="button" key={`${period.year}-${period.month}`} className={`salary-month-button ${selectedMonth === period.month ? "salary-month-button--active" : ""}`} aria-pressed={selectedMonth === period.month} onClick={() => setSelectedMonth(period.month)} disabled={Boolean(salaryEdit)}>{period.month.slice(0, 3)}</button>)}
       </div>
 
       {canEnterSalary && unopenedMonths.length > 0 && <form className="panel salary-entry-panel" onSubmit={openMonth}>
         <div className="salary-entry-panel__head"><h3>Open new salary month · 2026</h3></div>
         <div className="salary-entry-grid">
           <label><span>Month</span><select value={newMonth} onChange={(event) => setNewMonth(event.target.value)} required disabled={openingMonth}><option value="">Select month</option>{unopenedMonths.map((month) => <option key={month} value={month}>{month}</option>)}</select></label>
-          <button className="salary-payment-save salary-entry-save" type="submit" disabled={!newMonth || openingMonth}>{openingMonth ? "Opening…" : "Open month"}</button>
+          <button className="salary-payment-save salary-entry-save" type="submit" disabled={!newMonth || openingMonth || Boolean(salaryEdit)}>{openingMonth ? "Opening…" : "Open month"}</button>
         </div>
       </form>}
 
@@ -243,7 +293,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
           <label><span>Department</span><input value={selectedStaff?.department || ""} placeholder="Selected automatically" readOnly /></label>
           <label><span>Salary</span><div className="salary-entry-money"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" value={entrySalary} onChange={(event) => { setEntrySalary(event.target.value); setEntryStatus("idle"); }} required /></div></label>
           <label><span>Tips</span><div className="salary-entry-money"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" value={entryTips} onChange={(event) => { setEntryTips(event.target.value); setEntryStatus("idle"); }} required /></div></label>
-          <button className={`salary-payment-save salary-entry-save ${entryStatus === "saved" ? "salary-payment-save--saved" : ""}`} type="submit" disabled={entryStatus === "saving"}>{entryStatus === "saved" ? <><Check size={15} />Saved</> : <><Save size={15} />{entryStatus === "saving" ? "Saving…" : "Save salary"}</>}</button>
+          <button className={`salary-payment-save salary-entry-save ${entryStatus === "saved" ? "salary-payment-save--saved" : ""}`} type="submit" disabled={entryStatus === "saving" || Boolean(salaryEdit)}>{entryStatus === "saved" ? <><Check size={15} />Saved</> : <><Save size={15} />{entryStatus === "saving" ? "Saving…" : "Save salary"}</>}</button>
         </div>
       </form>}
 
@@ -256,12 +306,13 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
 
       <div className="panel salary-payment-panel">
         <div className="salary-panel__head">
-          <div><h3><WalletCards size={17} /> Saily Food Service GmbH · Salary {selectedMonth} 2026</h3><p>Salary in Cash · Paid Amount and Paid Date are stored in the protected backend database.</p></div>
+          <div><h3><WalletCards size={17} /> Saily Food Service GmbH · Salary {selectedMonth} 2026</h3><p>{canEnterSalary ? "Use Edit to change salary and tips, then Save salary to update the total." : "Salary in Cash · Enter the paid amount and payment date for each employee."}</p></div>
           <div className="metric-switch salary-department-switch" role="group" aria-label="Filter salary payments by department">
-            {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} onClick={() => setDepartment(option)}>{option}</button>)}
+            {["All", "Kitchen", "Service"].map((option) => <button type="button" key={option} className={department === option ? "active" : ""} onClick={() => setDepartment(option)} disabled={Boolean(salaryEdit)}>{option}</button>)}
           </div>
         </div>
         {error && <div className="salary-payment-error" role="alert">{error}</div>}
+        {salaryEditMessage && <div className="salary-payment-notice" role="status">{salaryEditMessage}</div>}
         <div className="table-wrap">
           <table className="salary-payment-table">
             <thead><tr><th>Name</th><th>Salary</th><th>Tips</th><th className="salary-payment-table__total">Total</th><th>Paid Amount</th><th>Paid Date</th><th>Actions</th></tr></thead>
@@ -272,11 +323,23 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
               const locked = Boolean(values.locked || status === "saved");
               const complete = values.paidAmount !== "" && Boolean(values.paidDate);
               const busy = status === "saving" || status === "deleting";
+              const editing = canEnterSalary && salaryEdit?.key === key;
+              const editFormId = `salary-edit-${encodeURIComponent(key)}`;
               return <tr key={key}>
-                <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td><td>{currency.format(row.salary)}</td><td>{currency.format(row.tips)}</td><td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
-                <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked || busy} required /></div></td>
-                <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked || busy} required /></td>
-                <td><div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button>}</div></td>
+                <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td>
+                {["salary", "tips"].map((field) => <td key={field}>{editing
+                  ? <div className="salary-payment-amount salary-payment-edit-amount"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" form={editFormId} aria-label={`${field === "salary" ? "Salary" : "Tips"} for ${row.employeeName}`} value={salaryEdit[field]} onChange={(event) => setSalaryEdit((current) => ({ ...current, [field]: event.target.value }))} disabled={salaryEdit.saving} autoFocus={field === "salary"} required /></div>
+                  : currency.format(row[field])}</td>)}
+                <td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
+                <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked || busy || editing} required /></div></td>
+                <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked || busy || editing} required /></td>
+                <td>{editing ? <form id={editFormId} className="salary-payment-actions" onSubmit={(event) => saveSalaryEdit(event, row)}>
+                  <button type="submit" className="salary-payment-save" disabled={salaryEdit.saving}><Save size={15} />{salaryEdit.saving ? "Saving…" : "Save salary"}</button>
+                  <button type="button" className="salary-payment-edit" onClick={() => { setSalaryEdit(null); setError(""); }} disabled={salaryEdit.saving}>Cancel</button>
+                </form> : <div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <>
+                  <button type="button" className="salary-payment-edit" onClick={() => startSalaryEdit(row)} disabled={busy || Boolean(salaryEdit) || entryStatus === "saving" || openingMonth || Object.values(rowStatus).includes("deleting")} aria-label={`Edit salary and tips for ${row.employeeName}`}><Pencil size={15} />Edit</button>
+                  <button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy || Boolean(salaryEdit)} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button>
+                </>}</div>}</td>
               </tr>;
             })}</tbody>
             <tfoot><tr><td colSpan="3">Total</td><td className="salary-payment-table__total">{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
