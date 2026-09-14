@@ -108,6 +108,21 @@ const refreshedWeeklyGuestData = mergeDailyGuestRecords(
   weeklyGuestData, weeklyGuestAppendData, weeklyBenchmarksData,
   [...JSON.parse(process.env.WEEKLY_GUEST_DAILY_JSON || "[]"), ...latestDailyGuests],
 );
+// Aggregate startup audit for the latest published reporting window.
+const latestPublishedDate = latestDailyRevenue.map((record) => record.date).sort().at(-1);
+if (latestPublishedDate) {
+  const revenueWeeks = refreshedWeeklyPerformanceData.filter((week) => week.days.some((day) => day.currentDate === latestPublishedDate));
+  const guestWeek = refreshedWeeklyGuestData.find((week) => week.days.some((day) => day.currentDate === latestPublishedDate));
+  console.info("Weekly refresh audit", JSON.stringify({
+    asOf: latestPublishedDate,
+    revenueWeeks: revenueWeeks.map((week) => ({
+      id: week.id,
+      startDate: week.startDate,
+      days: week.days.map((day) => ({ date: day.currentDate, revenue: day.currentRevenue })),
+    })),
+    guests: guestWeek?.currentCovers ?? null,
+  }));
+}
 const database = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 5,
