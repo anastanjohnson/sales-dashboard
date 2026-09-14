@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   CalendarDays,
   Euro,
   Lightbulb,
+  RefreshCw,
   Table2,
   TrendingDown,
   TrendingUp,
@@ -140,17 +141,29 @@ export default function WeeklyInsightsPage() {
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
 
-  const loadWeeklyData = async () => {
-    setStatus("loading");
+  const [refreshing, setRefreshing] = useState(false);
+  const [checkedAt, setCheckedAt] = useState(null);
+  const [refreshError, setRefreshError] = useState(false);
+  const requestRef = useRef(null);
+  const loadedRef = useRef(false);
+
+  const loadWeeklyData = useCallback(async () => {
+    if (requestRef.current) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
+    if (!loadedRef.current) setStatus("loading");
+    setRefreshing(true);
+    setRefreshError(false);
     try {
       const [response, benchmarkResponse, guestResponse] = await Promise.all([
-        fetch("/api/weekly-performance", { credentials: "include" }),
-        fetch("/api/weekly-benchmarks", { credentials: "include" }),
-        fetch("/api/weekly-guests", { credentials: "include" }),
+        fetch("/api/weekly-performance", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        fetch("/api/weekly-benchmarks", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        fetch("/api/weekly-guests", { credentials: "include", cache: "no-store", signal: controller.signal }),
       ]);
       if (response.status === 401 || benchmarkResponse.status === 401 || guestResponse.status === 401) return window.location.reload();
       if (!response.ok || !benchmarkResponse.ok || !guestResponse.ok) throw new Error("Unable to load weekly performance data.");
       const [data, benchmarkData, guestUpdates] = await Promise.all([response.json(), benchmarkResponse.json(), guestResponse.json()]);
+      if (controller.signal.aborted) return;
       if (!Array.isArray(data)) throw new Error("Invalid weekly performance data.");
       const mergedData = mergeWeeklyRevenueBenchmarks(data, benchmarkData);
       const updatedGuestWeeks = mergeWeeklyGuestUpdates(weeklyGuestData, guestUpdates);
@@ -158,14 +171,41 @@ export default function WeeklyInsightsPage() {
       setWeeklyRevenueData(mergedData);
       setGuestWeeks(mergedGuestWeeks);
       const latestCombinedWeek = [...mergedGuestWeeks].reverse().find((week) => findRevenueWeek(week, mergedData)?.days?.some((day) => day.currentRevenue != null));
-      setSelectedWeekId(latestCombinedWeek?.id || latestWeekId);
+      const preserveSelection = loadedRef.current;
+      setSelectedWeekId((current) => preserveSelection && mergedGuestWeeks.some((week) => week.id === current)
+        ? current : latestCombinedWeek?.id || latestWeekId);
+      loadedRef.current = true;
+      setCheckedAt(new Date());
       setStatus("ready");
-    } catch {
-      setStatus("error");
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        if (!loadedRef.current) setStatus("error");
+        else setRefreshError(true);
+      }
+    } finally {
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        if (!controller.signal.aborted) setRefreshing(false);
+      }
     }
-  };
+  }, []);
 
-  useEffect(() => { loadWeeklyData(); }, []);
+  useEffect(() => {
+    loadWeeklyData();
+    const refreshVisible = () => {
+      if (document.visibilityState === "visible") loadWeeklyData();
+    };
+    const interval = window.setInterval(refreshVisible, 60_000);
+    window.addEventListener("focus", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+      requestRef.current?.abort();
+      requestRef.current = null;
+    };
+  }, [loadWeeklyData]);
 
   const selectedGuestWeek = guestWeeks.find((week) => week.id === selectedWeekId) || null;
   const selectedRevenueWeek = findRevenueWeek(selectedGuestWeek, weeklyRevenueData) || null;
@@ -227,7 +267,17 @@ export default function WeeklyInsightsPage() {
   return (
     <div className="dashboard weekly-performance-page">
       <div className="dashboard__header">
-        <div><h1>Weekly Performance</h1><p className="dashboard__subtitle">Weekly revenue, guest count, average spending and performance insights in one report.</p></div>
+        <div>
+          <h1>Weekly Performance</h1>
+          <p className="dashboard__subtitle">Weekly revenue, guest count, average spending and performance insights in one report.</p>
+          <p className="dashboard__subtitle" role="status">
+            {refreshError ? "Could not check for updates. Showing the last loaded data."
+              : checkedAt ? `Checked at ${checkedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Checks for published updates every minute` : ""}
+          </p>
+        </div>
+        <button type="button" className="btn btn--ghost" onClick={loadWeeklyData} disabled={refreshing}>
+          <RefreshCw size={15} />{refreshing ? "Refreshing…" : "Refresh data"}
+        </button>
       </div>
 
       <div className="weekly-week-picker" aria-label="Select a combined reporting week">
