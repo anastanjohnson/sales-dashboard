@@ -21,7 +21,12 @@ const app = express();
 const port = Number(process.env.PORT || 10000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const salaryData = JSON.parse(process.env.SALARY_DATA_JSON);
-const salaryDataOverrides = JSON.parse(process.env.SALARY_DATA_OVERRIDES_JSON || "[]");
+// Fresh authorized sheet periods take precedence over older source overrides.
+// Database salary entries and deletions are still applied last.
+const salaryDataOverrides = [
+  ...JSON.parse(process.env.SALARY_SOURCE_REFRESH_JSON || "[]"),
+  ...JSON.parse(process.env.SALARY_DATA_OVERRIDES_JSON || "[]"),
+];
 const normalizedSalaryData = salaryData.map((period) => {
   const override = salaryDataOverrides.find((entry) =>
     Number(entry.year) === Number(period.year)
