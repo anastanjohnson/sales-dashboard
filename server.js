@@ -65,7 +65,10 @@ const normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
   };
 });
 // Verified daily time records replace only the supplied monthly periods.
-const dailyStaffHoursData = JSON.parse(process.env.STAFF_HOURS_DAILY_SOURCE_JSON || "[]");
+const dailyStaffHoursData = [
+  ...JSON.parse(process.env.STAFF_HOURS_DAILY_SOURCE_JSON || "[]"),
+  ...JSON.parse(process.env.STAFF_HOURS_SOURCE_REFRESH_JSON || "[]"),
+];
 dailyStaffHoursData.forEach((entry) => {
   const index = normalizedStaffHoursData.findIndex((period) =>
     Number(period.year) === Number(entry.year)
