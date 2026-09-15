@@ -14,7 +14,7 @@ import { salesData } from "../data/salesData";
 import { weeklyGuestData } from "../data/weeklyGuestData";
 import { repeatGuestData } from "../data/repeatGuestData";
 import {
-  getIsoWeekNumber, getWeekTotals, mergeWeeklyGuestBenchmarks,
+  getIsoWeekNumber, getWeekTotals, hasMatchingGuestDates, mergeWeeklyGuestBenchmarks,
   mergeWeeklyRevenueBenchmarks, percentageChange,
 } from "../data/weeklyPerformanceUtils";
 
@@ -138,7 +138,8 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   const weeklyRevenueChange = latestRevenueWeek ? percentageChange(weeklyTotals.current, weeklyTotals.comparison) : null;
   const weeklyGuests = Number(latestGuestWeek?.currentCovers) || 0;
   const weeklyGuestChange = latestGuestWeek?.comparisonCovers ? percentageChange(weeklyGuests, Number(latestGuestWeek.comparisonCovers)) : null;
-  const averageGuestSpend = weeklyGuests > 0 ? weeklyTotals.current / weeklyGuests : 0;
+  const matchingGuestDates = hasMatchingGuestDates(latestGuestWeek, latestRevenueWeek);
+  const averageGuestSpend = matchingGuestDates && weeklyGuests > 0 ? weeklyTotals.current / weeklyGuests : null;
 
   const latestSalary = liveData.salary.at(-1);
   const salaryTotals = (latestSalary?.employees || []).reduce((totals, employee) => {
@@ -187,10 +188,10 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
         <Widget icon={BarChart3} label="Average Monthly Revenue" value={money.format(averageMonthlyRevenue)} note={`${completedSales2026.length} completed months in 2026`} page="sales" onNavigate={onNavigate} tone="gold" />
       </Section>
 
-      <Section title="Weekly Performance" subtitle={latestGuestWeek ? `${latestGuestWeek.partial ? `Partial week · Through ${latestGuestWeek.asOf}` : "Latest completed reporting week"} · W${latestGuestWeek.weekNumber}` : "Latest completed Thursday–Monday reporting week"} page="weekly-performance" onNavigate={onNavigate}>
+      <Section title="Weekly Performance" subtitle={latestRevenueWeek ? `Revenue through ${latestRevenueWeek.asOf || latestRevenueWeek.endDate} · ${latestRevenueWeek.partial ? "Partial week · " : ""}W${latestGuestWeek.weekNumber}` : "Latest completed Thursday–Monday reporting week"} page="weekly-performance" onNavigate={onNavigate}>
         <Widget icon={Euro} label="Weekly Revenue" value={status === "ready" ? money.format(weeklyTotals.current) : "—"} change={status === "ready" ? weeklyRevenueChange : null} page="weekly-performance" onNavigate={onNavigate} tone="green" />
-        <Widget icon={Users} label="Weekly Guests" value={status === "ready" ? number.format(weeklyGuests) : "—"} change={status === "ready" ? weeklyGuestChange : null} page="weekly-performance" onNavigate={onNavigate} tone="blue" />
-        <Widget icon={Gauge} label="Average Guest Spending" value={status === "ready" ? money.format(averageGuestSpend) : "—"} note="Revenue ÷ seated guests" page="weekly-performance" onNavigate={onNavigate} tone="purple" />
+        <Widget icon={Users} label="Weekly Guests" value={status === "ready" ? number.format(weeklyGuests) : "—"} change={status === "ready" && matchingGuestDates ? weeklyGuestChange : undefined} note={latestGuestWeek ? `Guests through ${latestGuestWeek.asOf || latestGuestWeek.endDate}` : "Waiting for guest data"} page="weekly-performance" onNavigate={onNavigate} tone="blue" />
+        <Widget icon={Gauge} label="Average Guest Spending" value={status === "ready" && averageGuestSpend != null ? money.format(averageGuestSpend) : "Pending"} note={matchingGuestDates ? "Revenue ÷ seated guests" : "Waiting for matching guest dates"} page="weekly-performance" onNavigate={onNavigate} tone="purple" />
       </Section>
 
       <div className="overview-two-column">
