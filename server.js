@@ -5,6 +5,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pg from "pg";
+import { databaseConfig } from "./database-config.js";
 import { mergeDailyRevenue, mergeDailyGuestRecords } from "./src/data/weeklyPerformanceUtils.js";
 import { weeklyGuestData } from "./src/data/weeklyGuestData.js";
 import { latestDailyRevenue, latestDailyGuests } from "./src/data/latestDailyData.js";
@@ -131,12 +132,7 @@ if (latestPublishedDate) {
     guests: guestWeek?.currentCovers ?? null,
   }));
 }
-const database = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 10_000,
-});
+const database = new Pool(databaseConfig());
 const cookieName = "kk_management_session";
 const sessionDurationSeconds = 8 * 60 * 60;
 
@@ -609,6 +605,13 @@ const seedInitialSalaryPayments = async () => {
 };
 
 const start = async () => {
+  if (process.env.DATABASE_PREPROVISIONED === "true") {
+    // Schema and copied state are managed separately, with a restricted login.
+    // Never seed old environment values over the imported payment state.
+    await database.query("SELECT migration_key FROM app_migrations LIMIT 1");
+    app.listen(port, "0.0.0.0", () => console.log(`Secure dashboard listening on port ${port}`));
+    return;
+  }
   await database.query(`
     CREATE TABLE IF NOT EXISTS salary_months (
       period_year INTEGER NOT NULL CHECK (period_year = 2026),
