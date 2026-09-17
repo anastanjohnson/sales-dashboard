@@ -1,0 +1,156 @@
+.repeated-guest-page {
+  container: repeated-guests / inline-size;
+}
+
+.repeat-year-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.repeat-year {
+  --year-color: var(--series-3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-top: 5px solid var(--year-color);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+
+.repeat-year--2026 {
+  --year-color: var(--series-1);
+}
+
+.repeat-year__header {
+  padding: 4px 4px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.repeat-year__header h2 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.repeat-year__header h2 span {
+  color: var(--year-color);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.repeat-year__header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.repeat-year__header .repeat-year__period {
+  margin-top: 4px;
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.repeat-year__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.repeat-year__stats .stat-card {
+  min-width: 0;
+  padding: 14px 10px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.repeat-year__stats .stat-card__label {
+  font-size: 12px;
+}
+
+.repeat-year__stats .stat-card__value {
+  margin: 5px 0 4px;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.repeat-year__stats .sales-kpi-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.repeat-year > .panel {
+  min-width: 0;
+  margin: 0;
+  padding: 16px 12px 8px;
+  box-shadow: none;
+}
+
+.repeat-year .panel__head {
+  min-height: 75px;
+  margin: 0 4px 8px;
+}
+
+.repeat-year .panel__head h3 {
+  line-height: 1.4;
+}
+
+.repeat-year .panel__head p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.repeat-year .sales-chart {
+  min-width: 0;
+  padding: 0;
+}
+
+@container repeated-guests (max-width: 760px) {
+  .repeat-year-comparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .repeat-year-comparison {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .repeat-year {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .repeat-year__stats {
+    gap: 6px;
+  }
+
+  .repeat-year__stats .stat-card {
+    padding: 12px 8px;
+  }
+
+  .repeat-year__stats .stat-card__value {
+    font-size: 24px;
+  }
+
+  .repeat-year > .panel {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+}

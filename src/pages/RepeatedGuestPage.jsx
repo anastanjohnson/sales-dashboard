@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { repeatGuestData } from "../data/repeatGuestData";
+import "./RepeatedGuestPage.css";
 
 const number = new Intl.NumberFormat("de-DE");
 const pct = (value, total) => (total ? ((value / total) * 100).toFixed(1) : "0.0");
@@ -35,7 +36,7 @@ function VisitorTypeChart({ data, height = 140 }) {
             <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
               <CartesianGrid horizontal={false} stroke="var(--grid)" />
               <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
-              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={112} />
               <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
               <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
                 {data.map((entry, index) => (
@@ -54,7 +55,7 @@ function GapBucketChart({ data, height = 280 }) {
             <BarChart data={data} layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
               <CartesianGrid horizontal={false} stroke="var(--grid)" />
               <XAxis type="number" domain={[0, 100]} tickLine={false} axisLine={{ stroke: "var(--baseline)" }} tick={{ fill: "var(--text-muted)", fontSize: 11 }} unit="%" />
-              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={130} />
+              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} width={112} />
               <Tooltip content={<PercentTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
               <Bar dataKey="value" radius={[0, 5, 5, 0]} maxBarSize={32} isAnimationActive={false}>
                 {data.map((entry, index) => (
@@ -67,66 +68,69 @@ function GapBucketChart({ data, height = 280 }) {
         );
   }
 
+function YearAnalysis({ year }) {
+  const counts = repeatGuestData.yearlyRepeatCounts[year];
+  const visitCounts = [
+    { label: "3–4 visits", value: counts.threeOrMore - counts.fiveOrMore },
+    { label: "5–9 visits", value: counts.fiveOrMore - counts.tenOrMore },
+    { label: "10+ visits", value: counts.tenOrMore },
+  ];
+
+  return (
+    <section className={`repeat-year repeat-year--${year}`} aria-labelledby={`repeat-year-${year}`}>
+      <header className="repeat-year__header">
+        <h2 id={`repeat-year-${year}`}><span>{year}</span> Analysis</h2>
+        <p>{number.format(counts.totalGuests)} tracked guests</p>
+        <p className="repeat-year__period">{year === "2026" ? repeatGuestData.note2026 : "2025 reporting year"}</p>
+      </header>
+
+      <div className="repeat-year__stats">
+        {visitCounts.map(({ label, value }) => (
+          <div className="stat-card" key={label}>
+            <div className="stat-card__label">{label}</div>
+            <div className="stat-card__value">{number.format(value)}</div>
+            <div className="sales-kpi-note">{pct(value, counts.totalGuests)}% of {year} guests</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="panel">
+        <div className="panel__head">
+          <h3>{year} · One-Time vs Repeat Visitors</h3>
+          <p>Share of tracked guests in {year} who visited once versus those who returned.</p>
+        </div>
+        <div className="sales-chart">
+          <VisitorTypeChart data={repeatGuestData.visitorTypeSplitByYear[year]} />
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel__head">
+          <h3>{year} · Return Visit Gap Breakdown</h3>
+          <p>Days between a guest’s visit and their next one in {year}.</p>
+        </div>
+        <div className="sales-chart">
+          <GapBucketChart data={repeatGuestData.gapBucketPercentagesByYear[year]} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function RepeatedGuestPage() {
-    const {
-      yearlyRepeatCounts, visitorTypeSplitByYear,
-      gapBucketPercentagesByYear, visitGapStatsByYear, totalTrackedGuests,
-    } = repeatGuestData;
-    const y25 = yearlyRepeatCounts["2025"];
-    const y26 = yearlyRepeatCounts["2026"];
-    const gapStats25 = visitGapStatsByYear["2025"];
-    const gapStats26 = visitGapStatsByYear["2026"];
+  return (
+    <div className="dashboard repeated-guest-page">
+      <div className="dashboard__header">
+        <div>
+          <h1>Repeated Guest Analysis</h1>
+          <p className="dashboard__subtitle">How often guests come back, and how long they wait between visits, across {number.format(repeatGuestData.totalTrackedGuests)} tracked guests in 2025 and 2026.</p>
+        </div>
+      </div>
 
-    return (
-          <div className="dashboard">
-            <div className="dashboard__header">
-              <div>
-                <h1>Repeated Guest Analysis</h1>
-                <p className="dashboard__subtitle">How often guests come back, and how long they wait between visits, across {number.format(totalTrackedGuests)} tracked guests in 2025 and 2026.</p>
-              </div>
-            </div>
-
-            <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2025 - 3-4 visits</div><div className="stat-card__value">{number.format(y25.threeOrMore - y25.fiveOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y25.threeOrMore - y25.fiveOrMore, y25.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-              <div className="stat-card"><div className="stat-card__label">2025 - 5-9 visits</div><div className="stat-card__value">{number.format(y25.fiveOrMore - y25.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y25.fiveOrMore - y25.tenOrMore, y25.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-              <div className="stat-card"><div className="stat-card__label">2025 - 10+ visits</div><div className="stat-card__value">{number.format(y25.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y25.tenOrMore, y25.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y25.totalGuests)} guests that year</div></div>
-            </div>
-
-            <div className="stat-grid">
-              <div className="stat-card"><div className="stat-card__label">2026 - 3-4 visits</div><div className="stat-card__value">{number.format(y26.threeOrMore - y26.fiveOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.threeOrMore - y26.fiveOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-              <div className="stat-card"><div className="stat-card__label">2026 - 5-9 visits</div><div className="stat-card__value">{number.format(y26.fiveOrMore - y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.fiveOrMore - y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-              <div className="stat-card"><div className="stat-card__label">2026 - 10+ visits</div><div className="stat-card__value">{number.format(y26.tenOrMore)} <span className="stat-card__delta stat-card__delta--neutral">({pct(y26.tenOrMore, y26.totalGuests)}%)</span></div><div className="sales-kpi-note">of {number.format(y26.totalGuests)} guests so far</div></div>
-            </div>
-
-            <div className="panel-row">
-              <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2025 - One-Time vs Repeat Visitors</h3><p>Share of {number.format(y25.totalGuests)} guests tracked in 2025 who never returned versus those who did</p></div></div>
-                <div className="sales-chart">
-                  <VisitorTypeChart data={visitorTypeSplitByYear["2025"]} />
-                </div>
-              </div>
-              <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2026 - One-Time vs Repeat Visitors</h3><p>Share of {number.format(y26.totalGuests)} guests tracked in 2026 so far who never returned versus those who did</p></div></div>
-                <div className="sales-chart">
-                  <VisitorTypeChart data={visitorTypeSplitByYear["2026"]} />
-                </div>
-              </div>
-            </div>
-
-            <div className="panel-row">
-              <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2025 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2025.</p></div></div>
-                <div className="sales-chart">
-                  <GapBucketChart data={gapBucketPercentagesByYear["2025"]} />
-                </div>
-              </div>
-              <div className="panel panel--half">
-                <div className="panel__head"><div><h3>2026 - Return Visit Gap Breakdown</h3><p>Days between a guest's visit and their next one in 2026.</p></div></div>
-                <div className="sales-chart">
-                  <GapBucketChart data={gapBucketPercentagesByYear["2026"]} />
-                </div>
-              </div>
-            </div>
+      <div className="repeat-year-comparison">
+        <YearAnalysis year="2025" />
+        <YearAnalysis year="2026" />
+      </div>
 
       <div className="source-note"><strong>Source:</strong> GuestCenter reservation export, completed visits only, guests identified by phone number or email. Walk-ins without contact details cannot be tracked across visits and are excluded.</div>
     </div>
