@@ -128,12 +128,13 @@ export const mergeDailyGuestRecords = (baseWeeks, updates, benchmarkData, record
   const touched = new Set();
   const asOf = records.map((row) => row.date).sort().at(-1);
   for (const record of records) {
-    if (![record.currentCovers, record.comparisonCovers].every((value) => Number.isInteger(value) && value >= 0)) throw new Error("Invalid daily cover count");
+    if (!Number.isInteger(record.currentCovers) || record.currentCovers < 0
+      || (record.comparisonCovers !== undefined && (!Number.isInteger(record.comparisonCovers) || record.comparisonCovers < 0))) throw new Error("Invalid daily cover count");
     const week = merged.find((row) => row.days.some((day) => day.currentDate === record.date));
     if (!week) throw new Error(`No reporting week for covers: ${record.date}`);
     const day = week.days.find((row) => row.currentDate === record.date);
     day.currentCovers = record.currentCovers;
-    day.comparisonCovers = record.comparisonCovers;
+    if (record.comparisonCovers !== undefined) day.comparisonCovers = record.comparisonCovers;
     touched.add(week);
   }
   for (const week of touched) {
