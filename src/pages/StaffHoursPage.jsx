@@ -11,9 +11,11 @@ const STAFF_HOURS_LIMITS = {
   suman: 14,
 };
 
-function getHoursLimit(name) {
+function getHoursLimit(name, month, year) {
   const normalizedName = String(name || "").trim().toLowerCase();
   const matchedName = Object.keys(STAFF_HOURS_LIMITS).find((staffName) => normalizedName.includes(staffName));
+  const normalizedMonth = String(month || "").trim().slice(0, 3).toLowerCase();
+  if (matchedName === "thikalya" && Number(year) === 2026 && ["sep", "oct"].includes(normalizedMonth)) return 56;
   return matchedName ? STAFF_HOURS_LIMITS[matchedName] : DEFAULT_HOURS_LIMIT;
 }
 const hours = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -45,7 +47,7 @@ export default function StaffHoursPage() {
   const staff = useMemo(() => (monthData?.employees || [])
     .map((employee) => {
       const workingHours = Math.max(0, Number(employee.workingHours) || 0);
-      const hoursLimit = getHoursLimit(employee.name);
+      const hoursLimit = getHoursLimit(employee.name, monthData.month, monthData.year);
       return {
         ...employee,
         workingHours,
@@ -93,7 +95,7 @@ export default function StaffHoursPage() {
       </div>
 
       <div className="toolbar">
-        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Monthly limits: <strong>Fawad unlimited · Dina 10 h · Thikalya, Kirushalani & Suman 14 h · Others 43 h</strong></span></div>
+        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Selected month limits: <strong>Fawad unlimited · Dina 10 h · Thikalya {hours.format(getHoursLimit("thikalya", monthData.month, monthData.year))} h · Kirushalani & Suman 14 h · Others 43 h</strong></span></div>
         <div className="toolbar__controls">
           <button className={"select-btn " + (view === "chart" ? "select-btn--active" : "")} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={"select-btn " + (view === "table" ? "select-btn--active" : "")} onClick={() => setView("table")}><Table2 size={14} />Table</button>
