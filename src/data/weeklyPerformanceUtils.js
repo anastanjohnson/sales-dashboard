@@ -164,7 +164,15 @@ export const hasMatchingGuestDates = (guestWeek, revenueWeek) => {
 export const mergeWeeklyRevenueBenchmarks = (weeklyData, benchmarkData) => {
   const benchmarks = (benchmarkData?.weeks || []).map(toRevenueBenchmark);
   const existingWeeks = new Set(weeklyData.map(getWeekNumber));
+  // User-confirmed correction: the two 2025 days were combined under Friday.
+  const revenueCorrections = { "2025-09-25": 2112.90, "2025-09-26": 3547.60 };
   return [...weeklyData, ...benchmarks.filter((week) => !existingWeeks.has(getWeekNumber(week)))]
+    .map((week) => {
+      const days = (week.days || []).map((day) => Object.hasOwn(revenueCorrections, day.comparisonDate)
+        ? { ...day, comparisonRevenue: revenueCorrections[day.comparisonDate] }
+        : day);
+      return { ...week, days, partialBenchmark: days.some((day) => day.comparisonRevenue == null) };
+    })
     .sort((a, b) => getWeekNumber(a) - getWeekNumber(b));
 };
 
