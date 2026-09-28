@@ -107,5 +107,20 @@ export const latestDailyGuests = [
     "date": "2026-09-24",
     "currentCovers": 44,
     "currentCoversSource": "User-confirmed on 2026-09-25"
+  },
+  {
+    "date": "2026-09-25",
+    "currentCovers": 32,
+    "currentCoversSource": "User-confirmed on 2026-09-28"
+  },
+  {
+    "date": "2026-09-26",
+    "currentCovers": 73,
+    "currentCoversSource": "User-confirmed on 2026-09-28"
+  },
+  {
+    "date": "2026-09-27",
+    "currentCovers": 63,
+    "currentCoversSource": "User-confirmed on 2026-09-28"
   }
 ];
