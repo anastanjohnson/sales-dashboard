@@ -6,6 +6,7 @@ import {
 import SalaryPage from "./SalaryPage";
 import SalaryPaymentPage from "./SalaryPaymentPage";
 import StaffHoursPage from "./StaffHoursPage";
+import ShiftPlannerPage from "./ShiftPlannerPage";
 import SalesPage from "./SalesPage";
 import WeeklyInsightsPage from "./WeeklyInsightsPage";
 import RepeatedGuestPage from "./RepeatedGuestPage";
@@ -117,6 +118,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   if (activePage === "sales-salary") return <SalaryPage />;
   if (activePage === "salary-payment") return <SalaryPaymentPage canEnterSalary={role === "salary-payment"} />;
   if (activePage === "staff-hours") return <StaffHoursPage />;
+  if (activePage === "shift-planner") return <ShiftPlannerPage />;
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyInsightsPage />;
   if (activePage === "repeated-guests") return <RepeatedGuestPage />;

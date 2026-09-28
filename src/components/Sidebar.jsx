@@ -6,6 +6,7 @@ import {
     Banknote,
     WalletCards,
     Clock3,
+    CalendarDays,
     Settings,
     ChevronLeft,
     ChevronRight,
@@ -21,6 +22,7 @@ export const NAV_ITEMS = [
     { icon: Banknote, label: "Salary", page: "sales-salary" },
     { icon: WalletCards, label: "Salary Payment", page: "salary-payment" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
+    { icon: CalendarDays, label: "Shift Planner", page: "shift-planner" },
   { icon: Settings, label: "Settings", page: "settings" },
   ];
 
