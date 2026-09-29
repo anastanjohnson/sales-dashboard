@@ -3,3 +3,11 @@ dist/
 .env
 .DS_Store
 npm-debug.log*
+
+# Private migration exports and local deployment credentials
+migration-private/
+.env.*
+!.env.example
+.firebase/
+firebase-debug.log*
+*-service-account.json
