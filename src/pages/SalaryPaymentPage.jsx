@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Pencil, RefreshCw, Save, Trash2, UserPlus, WalletCards } from "lucide-react";
 
@@ -28,9 +29,9 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setError("");
     try {
       const [salaryResponse, paymentResponse, staffResponse] = await Promise.all([
-        fetch("/api/salary-payment-source", { credentials: "include" }),
-        fetch("/api/salary-payments", { credentials: "include" }),
-        canEnterSalary ? fetch("/api/salary-payment-staff", { credentials: "include" }) : Promise.resolve(null),
+        apiFetch("/api/salary-payment-source", { credentials: "include" }),
+        apiFetch("/api/salary-payments", { credentials: "include" }),
+        canEnterSalary ? apiFetch("/api/salary-payment-staff", { credentials: "include" }) : Promise.resolve(null),
       ]);
       const responses = [salaryResponse, paymentResponse, staffResponse].filter(Boolean);
       if (responses.some((response) => response.status === 401)) return window.location.reload();
@@ -72,7 +73,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setOpeningMonth(true);
     setError("");
     try {
-      const response = await fetch("/api/salary-months", {
+      const response = await apiFetch("/api/salary-months", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ year: 2026, month: newMonth }),
@@ -139,7 +140,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setSalaryEdit((current) => ({ ...current, saving: true }));
     setError("");
     try {
-      const response = await fetch("/api/salary-entry", {
+      const response = await apiFetch("/api/salary-entry", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -174,7 +175,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setRowStatus((current) => ({ ...current, [key]: "saving" }));
     setError("");
     try {
-      const response = await fetch("/api/salary-payments", {
+      const response = await apiFetch("/api/salary-payments", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -201,7 +202,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setRowStatus((current) => ({ ...current, [key]: "deleting" }));
     setError("");
     try {
-      const response = await fetch("/api/salary-entry", {
+      const response = await apiFetch("/api/salary-entry", {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -247,7 +248,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
     setEntryStatus("saving");
     setError("");
     try {
-      const response = await fetch("/api/salary-entry", {
+      const response = await apiFetch("/api/salary-entry", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
@@ -156,9 +157,9 @@ export default function WeeklyInsightsPage() {
     setRefreshError(false);
     try {
       const [response, benchmarkResponse, guestResponse] = await Promise.all([
-        fetch("/api/weekly-performance", { credentials: "include", cache: "no-store", signal: controller.signal }),
-        fetch("/api/weekly-benchmarks", { credentials: "include", cache: "no-store", signal: controller.signal }),
-        fetch("/api/weekly-guests", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        apiFetch("/api/weekly-performance", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        apiFetch("/api/weekly-benchmarks", { credentials: "include", cache: "no-store", signal: controller.signal }),
+        apiFetch("/api/weekly-guests", { credentials: "include", cache: "no-store", signal: controller.signal }),
       ]);
       if (response.status === 401 || benchmarkResponse.status === 401 || guestResponse.status === 401) return window.location.reload();
       if (!response.ok || !benchmarkResponse.ok || !guestResponse.ok) throw new Error("Unable to load weekly performance data.");

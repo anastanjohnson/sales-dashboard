@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarDays, Euro, Table2, TrendingDown, TrendingUp, UserPlus, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -78,9 +79,9 @@ export default function WeeklyGuestCountPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/weekly-performance", { credentials: "include" }),
-      fetch("/api/weekly-benchmarks", { credentials: "include" }),
-      fetch("/api/weekly-guests", { credentials: "include" }),
+      apiFetch("/api/weekly-performance", { credentials: "include" }),
+      apiFetch("/api/weekly-benchmarks", { credentials: "include" }),
+      apiFetch("/api/weekly-guests", { credentials: "include" }),
     ])
       .then(async ([response, benchmarkResponse, guestResponse]) => {
         if (response.status === 401 || benchmarkResponse.status === 401 || guestResponse.status === 401) return window.location.reload();

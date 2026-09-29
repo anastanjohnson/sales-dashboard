@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Table2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
@@ -74,7 +75,7 @@ export default function SalaryPage() {
   const loadSalaryData = async () => {
     setStatus("loading");
     try {
-      const response = await fetch("/api/salary", { credentials: "include" });
+      const response = await apiFetch("/api/salary", { credentials: "include" });
       if (response.status === 401) return window.location.reload();
       if (!response.ok) throw new Error("Unable to load salary data.");
       const data = await response.json();

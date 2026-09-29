@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "express": "npm:express@4.21.2",
+    "pg": "npm:pg@8.23.0",
+    "@noble/hashes/scrypt": "npm:@noble/hashes@1.8.0/scrypt"
+  }
+}

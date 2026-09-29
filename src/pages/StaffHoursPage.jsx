@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Clock3, RefreshCw, Table2, TriangleAlert, Users } from "lucide-react";
 
@@ -29,7 +30,7 @@ export default function StaffHoursPage() {
   const loadData = async () => {
     setStatus("loading");
     try {
-      const response = await fetch("/api/staff-hours", { credentials: "include" });
+      const response = await apiFetch("/api/staff-hours", { credentials: "include" });
       if (response.status === 401) return window.location.reload();
       if (!response.ok) throw new Error("Unable to load staff hours.");
       const data = await response.json();

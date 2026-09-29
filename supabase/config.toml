@@ -1,0 +1,7 @@
+project_id = "wwidrvwkfltwrexzxvyl"
+
+# Custom auth: scrypt password verification, opaque revocable server-side sessions,
+# role middleware, strict origin allowlist, and shared database rate limits.
+[functions.dashboard-api]
+verify_jwt = false
+entrypoint = "./functions/dashboard-api/index.ts"

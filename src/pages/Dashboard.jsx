@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowRight, Award, Banknote, BarChart3, Clock3, Euro, Gauge,
@@ -93,11 +94,11 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
     setStatus("loading");
     try {
       const responses = await Promise.all([
-        fetch("/api/salary", { credentials: "include" }),
-        fetch("/api/staff-hours", { credentials: "include" }),
-        fetch("/api/weekly-performance", { credentials: "include" }),
-        fetch("/api/weekly-benchmarks", { credentials: "include" }),
-        fetch("/api/weekly-guests", { credentials: "include" }),
+        apiFetch("/api/salary", { credentials: "include" }),
+        apiFetch("/api/staff-hours", { credentials: "include" }),
+        apiFetch("/api/weekly-performance", { credentials: "include" }),
+        apiFetch("/api/weekly-benchmarks", { credentials: "include" }),
+        apiFetch("/api/weekly-guests", { credentials: "include" }),
       ]);
       if (responses.some((response) => response.status === 401)) return window.location.reload();
       if (responses.some((response) => !response.ok)) throw new Error("Unable to load dashboard data.");

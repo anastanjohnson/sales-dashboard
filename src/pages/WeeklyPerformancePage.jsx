@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChartLine, Euro, Table2, TrendingDown, TrendingUp } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -48,8 +49,8 @@ export default function WeeklyPerformancePage() {
     setStatus("loading");
     try {
       const [response, benchmarkResponse] = await Promise.all([
-        fetch("/api/weekly-performance", { credentials: "include" }),
-        fetch("/api/weekly-benchmarks", { credentials: "include" }),
+        apiFetch("/api/weekly-performance", { credentials: "include" }),
+        apiFetch("/api/weekly-benchmarks", { credentials: "include" }),
       ]);
       if (response.status === 401 || benchmarkResponse.status === 401) return window.location.reload();
       if (!response.ok || !benchmarkResponse.ok) throw new Error("Unable to load weekly performance data.");

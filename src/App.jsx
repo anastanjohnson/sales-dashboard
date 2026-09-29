@@ -1,3 +1,4 @@
+import { apiFetch } from "./api.js";
 import { useEffect, useState } from "react";
 import Sidebar, { MobileNavigation } from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -38,14 +39,14 @@ export default function App() {
   }, [mobileMenuOpen]);
 
   useEffect(() => {
-    fetch("/api/session", { credentials: "include" })
+    apiFetch("/api/session", { credentials: "include" })
       .then((response) => response.json())
       .then((result) => setAuthState({ status: result.authenticated ? "authenticated" : "guest", role: result.role || null }))
       .catch(() => setAuthState({ status: "guest", role: null }));
   }, []);
 
   const logout = async () => {
-    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    await apiFetch("/api/logout", { method: "POST", credentials: "include" });
     setAuthState({ status: "guest", role: null });
   };
 

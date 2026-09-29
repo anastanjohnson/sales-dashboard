@@ -1,3 +1,4 @@
+import { apiFetch } from "../api.js";
 import { useState } from "react";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import "./AuthGate.css";
@@ -14,7 +15,7 @@ export default function AuthGate({ onAuthenticated }) {
     setError("");
     setLoading(true);
     try {
-      const response = await fetch("/api/login", {
+      const response = await apiFetch("/api/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

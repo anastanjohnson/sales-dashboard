@@ -1,0 +1,46 @@
+name: Firebase Hosting
+on:
+  push:
+    branches: [firebase-supabase]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Publish to Firebase Hosting after checks
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/firebase-api.test.mjs
+      - run: npm run build
+        env:
+          VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == 'refs/heads/firebase-supabase'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.FIREBASE_HOSTING_DEPLOY_CREDENTIAL }}'
+      - run: npx --yes firebase-tools@15.32.0 deploy --only hosting --project karikaala-sales-dashboard --non-interactive
+        env:
+          VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api
