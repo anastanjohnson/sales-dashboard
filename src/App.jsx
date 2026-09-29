@@ -69,10 +69,13 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activePage={activePage} onNavigate={navigate} />
+      <Sidebar activePage={activePage} onNavigate={navigate} theme={theme} onToggleTheme={toggleTheme} onLogout={logout} />
       <MobileNavigation
         activePage={activePage}
         onNavigate={navigate}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onLogout={logout}
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
       />

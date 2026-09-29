@@ -13,6 +13,7 @@ import {
     X,
 } from "lucide-react";
 import { useState } from "react";
+import { AccountActions } from "./Topbar";
 
 export const NAV_ITEMS = [
     { icon: LayoutGrid, label: "Dashboard", page: "overview" },
@@ -26,7 +27,7 @@ export const NAV_ITEMS = [
   { icon: Settings, label: "Settings", page: "settings" },
   ];
 
-export default function Sidebar({ activePage, onNavigate }) {
+export default function Sidebar({ activePage, onNavigate, theme, onToggleTheme, onLogout }) {
     const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -51,11 +52,12 @@ export default function Sidebar({ activePage, onNavigate }) {
                   </button>
                 ))}
             </nav>
+            <div className="sidebar__footer"><AccountActions theme={theme} onToggleTheme={onToggleTheme} onLogout={onLogout} /></div>
       </aside>
       );
 }
 
-export function MobileNavigation({ activePage, onNavigate, open, onClose }) {
+export function MobileNavigation({ activePage, onNavigate, open, onClose, theme, onToggleTheme, onLogout }) {
   const navigate = (page) => {
     onNavigate(page);
     onClose();
@@ -94,6 +96,7 @@ export function MobileNavigation({ activePage, onNavigate, open, onClose }) {
             </button>
           ))}
         </nav>
+        <div className="sidebar__footer"><AccountActions theme={theme} onToggleTheme={onToggleTheme} onLogout={onLogout} tabIndex={open ? 0 : -1} /></div>
       </aside>
     </>
   );
