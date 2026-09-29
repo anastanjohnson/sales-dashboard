@@ -1,6 +1,6 @@
 # Native Shift Planner integration
 
-Status: prepared for review; activation requires a server credential for the existing staff planner project and live verification. Do not deploy these branches until the connection is configured.
+Status: server connection configured; deployment and live verification in progress.
 
 The previous iframe has been replaced by React controls that inherit the dashboard font and CSS theme tokens. Features include week/day boards, open-shift filtering, editable shift hours/breaks/roles/notes, assignment checks, presets, previous-roster and standard templates, staff editing, monthly hours, availability, draft/publish snapshots, roster copying, staff login links, direct/group conversations, unread counts and message history.
 
@@ -14,7 +14,7 @@ Firebase Auth uses in-memory persistence in an isolated named app. Leaving the p
 
 ## Required server setup
 
-Create or supply an authorized signing credential from `karikaala-staff-planner`, not the dashboard hosting project. Configure PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON in the Render service's secret environment and the Supabase dashboard-api Edge Function secrets. Never use a VITE_ variable, commit it, return it to the browser, or paste it into chat. A missing/invalid credential returns 503 and no token.
+Create or supply an authorized signing credential from `karikaala-staff-planner`, not the dashboard hosting project. Configure PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON in the Render service's secret environment and the Supabase encrypted Vault secret `dashboard_planner_service_account` (or an Edge Function secret override). Never use a VITE_ variable, commit it, return it to the browser, or paste it into chat. A missing/invalid credential returns 503 and no token.
 
 After configuring the credential: deploy the dashboard-api function (including planner-session.js), merge the provider-specific branches and verify both websites with an admin session. Confirm Firestore accepts the manager token and that roster, staff, availability and chat reads succeed. Test mutation/notification behavior only in an emulator or explicitly authorized test data. Do not publish real rosters or send staff messages merely to verify deployment.
 
