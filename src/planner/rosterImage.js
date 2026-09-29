@@ -24,7 +24,7 @@ export async function rosterImage(snapshot) {
  ctx.fillStyle=colors.bg;ctx.fillRect(0,0,width,height);
  text('KARIKAALA · Staff plan',margin,65,32,700);
  text(`${dateLabel(snapshot.week,{day:'numeric',month:'long',year:'numeric'})} – ${dateLabel(addDays(snapshot.week,6),{day:'numeric',month:'long',year:'numeric'})}`,margin,103,22,500);
- text(`Published roster · Version ${snapshot.revision}`,margin,138,16,400,colors.muted);
+ text(`Published Version ${String(snapshot.revision).padStart(2,'0')}`,margin,138,16,400,colors.muted);
  groups.forEach((g,i)=>{const x=margin+i*(column+gap),y=180;box(x,y,column,boardHeight,colors.panel,colors.border);text(dateLabel(g.date,{weekday:'long'}),x+18,y+35,22,700);text(dateLabel(g.date,{day:'numeric',month:'long'}),x+18,y+64,17,400,colors.muted);ctx.fillStyle=colors.line;ctx.fillRect(x+18,y+82,column-36,3);let top=y+104;for(const card of g.cards){box(x+12,top,column-24,card.height,colors.card,colors.line);text(timeLabel(card.slot),x+26,top+31,19,700);let line=top+60;for(const name of card.names){text(name,x+26,line,20,700,colors.name);line+=26;}for(const detail of card.detail){text(detail,x+26,line,15,400,colors.muted);line+=21;}top+=card.height+12;}});
  text('Check your staff portal for the latest published roster.',margin,height-24,15,400,colors.muted);
  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Could not create roster image.')),'image/png'));

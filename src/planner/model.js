@@ -54,7 +54,7 @@ export function publish(p,w,staffTimeOff=[],now=new Date()) {
  const slots=inWeek(p,w);if(!slots.length)throw Error('Add shifts before publishing.');
  if(slots.some(s=>!s.staffId))throw Error('Assign all shifts before publishing.');
  for(const s of slots){const error=detailsProblem(s)||assignmentProblem(p,s,s.staffId,staffTimeOff);if(error)throw Error(`${s.date} ${timeLabel(s)}: ${error}`);}
- return {...p,published:{...p.published,[w]:{week:w,slots:structuredClone(slots),names:Object.fromEntries(p.staff.map(s=>[s.id,s.name])),publishedAt:now.toISOString(),revision:(p.published[w]?.revision||0)+1}},editing:p.editing.filter(x=>x!==w)};
+ return {...p,published:{...p.published,[w]:{week:w,slots:structuredClone(slots),names:Object.fromEntries(p.staff.map(s=>[s.id,s.name])),publishedAt:now.toISOString(),revision:(p.published[w]?.revision||0)+1,previous:p.published[w]?structuredClone({slots:p.published[w].slots,names:p.published[w].names,revision:p.published[w].revision}):null}},editing:p.editing.filter(x=>x!==w)};
 }
 export function availability(p,staffId,date,start,end,available) {
  if(!p.staff.some(s=>s.id===staffId))throw Error('Choose a staff member.');
@@ -69,7 +69,7 @@ export function monthlyHours(p,id,month) {
  const effective=[...p.slots.filter(s=>!locked(p,monday(s.date))),...Object.entries(p.published).filter(([w])=>!p.editing.includes(w)).flatMap(([,v])=>v.slots)];
  return effective.filter(s=>s.staffId===id).reduce((n,s)=>{const [a,b]=span(s);return n+Math.max(0,Math.min(b,to)-Math.max(a,from))/3600000*(duration(s)-s.breakMinutes)/duration(s);},0);
 }
-export function rosterText(p) {return `STAFF PLAN · ${p.week} – ${addDays(p.week,6)}\nPublished · version ${p.revision}\n`+p.slots.map(s=>`${s.date} · ${timeLabel(s)} · ${p.names[s.staffId]||'Unassigned'}${s.role?' · '+s.role:''}${s.breakMinutes?' · Break '+s.breakMinutes+' min':''}${s.notes?'\n'+s.notes:''}`).join('\n');}
+export function rosterText(p) {return `STAFF PLAN · ${p.week} – ${addDays(p.week,6)}\n${versionLabel(p.revision)}\n`+p.slots.map(s=>`${s.date} · ${timeLabel(s)} · ${p.names[s.staffId]||'Unassigned'}${s.role?' · '+s.role:''}${s.breakMinutes?' · Break '+s.breakMinutes+' min':''}${s.notes?'\n'+s.notes:''}`).join('\n');}
 
 export function setAvailability(p,staffTimeOff,staffId,date,start,end,available) {
  let next=availability(p,staffId,date,start,end,available);const clear=[];
@@ -83,4 +83,13 @@ export function setAvailability(p,staffTimeOff,staffId,date,start,end,available)
   if(to<b)next=availability(next,staffId,off.date,Math.max(0,(to-+day(off.date))/60000),off.end,false);
  }
  return {plan:next,clear};
+}
+
+export const versionLabel = revision => `Published Version ${String(revision).padStart(2,'0')}`;
+export function publicationChanges(snapshot) {
+ const previous=snapshot?.previous;
+ if(!previous)return {available:false,added:[],changed:[],removed:[]};
+ const old=new Map(previous.slots.map(s=>[s.id,s])),current=new Map(snapshot.slots.map(s=>[s.id,s]));
+ const fields=['date','start','end','nextDay','breakMinutes','role','notes','staffId'];
+ return {available:true,added:snapshot.slots.filter(s=>!old.has(s.id)),changed:snapshot.slots.filter(s=>old.has(s.id)&&(fields.some(k=>(s[k]??'')!==(old.get(s.id)[k]??''))||(snapshot.names[s.staffId]||'')!==(previous.names[old.get(s.id).staffId]||''))).map(after=>({before:old.get(after.id),after})),removed:previous.slots.filter(s=>!current.has(s.id))};
 }
