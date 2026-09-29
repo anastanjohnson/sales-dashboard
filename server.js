@@ -1,3 +1,4 @@
+import { plannerSessionHandler } from "./server/planner-session.js";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -149,10 +150,9 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://firestore.googleapis.com"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
-      frameSrc: ["https://anastanjohnson.github.io"],
       frameAncestors: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -303,6 +303,8 @@ const loginLimiter = rateLimit({
 });
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.post("/api/planner/session", requireAuth, requireAdmin, requireSameOrigin, paymentWriteLimiter, plannerSessionHandler(() => process.env.PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON));
+
 app.get("/api/session", (req, res) => {
   res.set("Cache-Control", "no-store");
   const session = getSession(req);

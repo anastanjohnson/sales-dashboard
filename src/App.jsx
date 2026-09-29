@@ -46,6 +46,7 @@ export default function App() {
   }, []);
 
   const logout = async () => {
+    await import("./planner/store").then(m => m.closePlannerSession()).catch(() => {});
     await apiFetch("/api/logout", { method: "POST", credentials: "include" });
     setAuthState({ status: "guest", role: null });
   };

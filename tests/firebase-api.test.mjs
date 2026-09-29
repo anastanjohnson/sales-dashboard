@@ -37,7 +37,7 @@ test.after(()=>server.close());
 let admin, payroll;
 test('anonymous cannot access any protected report or write route',async()=>{
  for(const path of ['salary','staff-hours','weekly-performance','weekly-guests','weekly-benchmarks','salary-payment-source','salary-payment-staff','salary-payments']) assert.equal((await request('/api/'+path)).status,401);
- for(const [path,method] of [['salary-entry','PUT'],['salary-entry','DELETE'],['salary-payments','PUT'],['salary-months','POST']]) assert.equal((await request('/api/'+path,{method,body:{}})).status,401);
+ for(const [path,method] of [['planner/session','POST'],['salary-entry','PUT'],['salary-entry','DELETE'],['salary-payments','PUT'],['salary-months','POST']]) assert.equal((await request('/api/'+path,{method,body:{}})).status,401);
  assert.equal(protectedReads,0);assert.equal(writes,0);
 });
 test('CORS rejects unapproved origins and never uses wildcard',async()=>{
@@ -53,6 +53,11 @@ test('existing scrypt login gives separate opaque, revocable sessions',async()=>
   if(username==='test-admin') admin=data.token;else payroll=data.token;
  }
  assert.equal((await request('/api/session',{token:admin})).headers.get('cache-control'),'no-store');
+});
+test('planner session bridge requires admin and configuration',async()=>{
+ assert.equal((await request('/api/planner/session',{token:payroll,method:'POST'})).status,403);
+ assert.equal((await request('/api/planner/session',{token:admin,method:'POST'})).status,503);
+ assert.equal((await request('/api/planner/session',{token:admin,method:'POST',requestOrigin:'https://evil.example'})).status,403);
 });
 test('salary-only role cannot read management reports; admin cannot edit salary entries',async()=>{
  const before=protectedReads;

@@ -23,7 +23,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/firebase-api.test.mjs
+      - run: node --test tests/firebase-api.test.mjs tests/planner.test.mjs
       - run: npm run build
         env:
           VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api

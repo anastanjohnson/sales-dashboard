@@ -1,4 +1,5 @@
 import express from "express";
+import { plannerSessionHandler } from "./planner-session.js";
 import { createSecurity } from "./security.js";
 import { mergeDailyRevenue, mergeDailyGuestRecords } from "./data/weeklyPerformanceUtils.js";
 import { weeklyGuestData } from "./data/weeklyGuestData.js";
@@ -27,6 +28,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10kb" }));
 const { requireAuth, requireAdmin, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, installAuth } = createSecurity(database, config, allowedOrigins);
 installAuth(app);
+app.post("/api/planner/session", requireAuth, requireAdmin, requireSameOrigin, paymentWriteLimiter, plannerSessionHandler(() => config.PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON));
 const salaryData = JSON.parse(config.SALARY_DATA_JSON);
 // Fresh authorized sheet periods take precedence over older source overrides.
 // Database salary entries and deletions are still applied last.
