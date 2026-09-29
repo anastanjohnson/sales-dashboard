@@ -28,7 +28,7 @@ jobs:
         env:
           VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api
   deploy:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == 'refs/heads/firebase-supabase'
+    if: github.ref == 'refs/heads/firebase-supabase' && ((github.event_name == 'workflow_dispatch' && inputs.deploy) || vars.FIREBASE_HOSTING_DEPLOY_ENABLED == 'true')
     needs: verify
     runs-on: ubuntu-latest
     steps:

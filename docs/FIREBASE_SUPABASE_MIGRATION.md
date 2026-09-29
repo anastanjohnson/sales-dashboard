@@ -39,7 +39,7 @@ export VITE_DASHBOARD_API_URL=https://wwidrvwkfltwrexzxvyl.supabase.co/functions
 npx firebase-tools@15.32.0 deploy --only hosting --project karikaala-sales-dashboard
 ```
 
-Alternatively, the GitHub workflow builds/tests pushes to this branch and offers a manual deployment action. Configure the repository secret `FIREBASE_HOSTING_DEPLOY_CREDENTIAL` with an approved deployment service-account JSON before running it with `deploy=true`. Prefer a dedicated Hosting deployment account with minimum required permissions; do not commit credentials. Credential provisioning requires owner approval. The workflow does not update Render or deploy Supabase functions.
+Alternatively, the GitHub workflow builds/tests pushes to this branch and offers a manual deployment action. Configure the repository secret `FIREBASE_HOSTING_DEPLOY_CREDENTIAL` with an approved deployment service-account JSON and set the repository variable `FIREBASE_HOSTING_DEPLOY_ENABLED=true` to deploy subsequent pushes to this branch. Manual dispatch with `deploy=true` is also supported once GitHub exposes that workflow on the default branch. Prefer a dedicated Hosting deployment account with minimum required permissions; do not commit credentials. Credential provisioning requires owner approval. The workflow does not update Render or deploy Supabase functions.
 
 The browser's Firebase console session does not authenticate the local Firebase CLI. Google Cloud IAM and Cloud Shell are currently unavailable in this browser, so deployment credential provisioning has not been completed.
 
