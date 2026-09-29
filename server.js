@@ -152,6 +152,7 @@ app.use(helmet({
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
+      frameSrc: ["https://anastanjohnson.github.io"],
       frameAncestors: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
