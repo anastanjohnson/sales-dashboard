@@ -15,3 +15,13 @@ test('planner tokens are signed, expire after 60 seconds and pin the existing ma
 test('missing connection fails closed without exposing credentials or login fields',()=>{let status,payload;const res={set(){},status(n){status=n;return this;},json(x){payload=x;}};plannerSessionHandler(()=>null)({},res);assert.equal(status,503);assert.equal('token'in payload,false);assert.match(payload.error,/no second login/);});
 
 test('clearing overnight staff availability preserves hours outside the selected range',()=>{const off=[{staffId:'a',date:'2026-09-28',start:0,end:1440},{staffId:'a',date:'2026-09-29',start:0,end:1440}];const result=M.setAvailability(base(),off,'a','2026-09-28',1380,1500,true);assert.deepEqual(result.clear.map(x=>x.date),['2026-09-28','2026-09-29']);assert.deepEqual(result.plan.timeOff.map(x=>[x.date,x.start,x.end]),[['2026-09-28',0,1380],['2026-09-29',60,1440]]);});
+
+test('publication versions preserve only the immediate baseline and classify roster changes',()=>{
+ let p=base();p.slots=[shift(),shift({id:'removed',date:'2026-10-01'})];p=M.publish(p,'2026-09-28');
+ assert.equal(M.versionLabel(p.published['2026-09-28'].revision),'Published Version 01');
+ assert.equal(M.publicationChanges(p.published['2026-09-28']).available,false);
+ p={...p,editing:['2026-09-28'],slots:[shift({staffId:'b',notes:'Updated'}),shift({id:'new',date:'2026-10-02'})]};p=M.publish(p,'2026-09-28');
+ const v2=p.published['2026-09-28'],diff=M.publicationChanges(v2);
+ assert.equal(M.versionLabel(v2.revision),'Published Version 02');assert.deepEqual(diff.added.map(s=>s.id),['new']);assert.deepEqual(diff.removed.map(s=>s.id),['removed']);assert.equal(diff.changed[0].before.staffId,'a');assert.equal(diff.changed[0].after.staffId,'b');
+ p=M.publish({...p,editing:['2026-09-28']},'2026-09-28');const v3=p.published['2026-09-28'];assert.equal(v3.previous.revision,2);assert.equal(v3.previous.previous,undefined);assert.equal(M.publicationChanges(v3).changed.length,0);assert.equal(v2.previous.slots[0].staffId,'a');
+});
