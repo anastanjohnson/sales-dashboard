@@ -11,6 +11,11 @@ export const timeLabel = s => `${clock(s.start)} – ${clock(s.end)}${s.nextDay?
 export const duration = s => s.end+(s.nextDay?1440:0)-s.start;
 export const inWeek = (p,w) => p.slots.filter(s=>monday(s.date)===w).sort((a,b)=>a.date.localeCompare(b.date)||a.start-b.start);
 export const locked = (p,w) => !!p.published[w]&&!p.editing.includes(w);
+export function nextUnpublishedWeek(p,w) {
+ let candidate=w;
+ for(let i=0;i<104;i++,candidate=addDays(candidate,7))if(!p.published[candidate])return candidate;
+ return candidate;
+}
 export const closed = d => [1,2].includes(weekday(d));
 export const standardPresets = [[660,1020],[720,1020],[960,1320],[1020,1320]].map(([start,end])=>({start,end,nextDay:false,breakMinutes:0,role:''}));
 export function normalizePlan(p) {
