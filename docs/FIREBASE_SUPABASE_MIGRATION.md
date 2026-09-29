@@ -8,7 +8,7 @@ Firebase project: `karikaala-sales-dashboard`. Supabase project: `wwidrvwkfltwre
 
 The Supabase `dashboard-api` Edge Function is deployed. The private Render environment snapshot was imported on 2026-09-29, excluding the Render database connection and session secret. Existing Supabase manual salary entries, opened months, payments and deletion records were retained. Render's database could not be accessed directly; its independent database edits have not been imported or reconciled. Existing Supabase records are the authoritative manual state for this migration.
 
-Firebase Hosting is not yet published. Deployment authentication and signed-in end-to-end verification remain outstanding. Do not retire Cloud Run or change DNS before successful verification.
+Firebase Hosting is published at https://karikaala-sales-dashboard.web.app/ (2026-09-29). GitHub Actions run 36558057156 completed successfully. Administrator login, logout, reporting, 2026-09-28 guest count 37, weekly guests 249, Shift Planner preview and bottom-left account controls were verified in the live browser. The second secure sign-in used the administrator account again; live restricted-account verification and isolated financial-write verification remain pending. Cloud Run has not been retired and DNS has not been changed.
 
 ## Backend and authentication
 
@@ -41,7 +41,9 @@ npx firebase-tools@15.32.0 deploy --only hosting --project karikaala-sales-dashb
 
 Alternatively, the GitHub workflow builds/tests pushes to this branch and offers a manual deployment action. Configure the repository secret `FIREBASE_HOSTING_DEPLOY_CREDENTIAL` with an approved deployment service-account JSON and set the repository variable `FIREBASE_HOSTING_DEPLOY_ENABLED=true` to deploy subsequent pushes to this branch. Manual dispatch with `deploy=true` is also supported once GitHub exposes that workflow on the default branch. Prefer a dedicated Hosting deployment account with minimum required permissions; do not commit credentials. Credential provisioning requires owner approval. The workflow does not update Render or deploy Supabase functions.
 
-The browser's Firebase console session does not authenticate the local Firebase CLI. Google Cloud IAM and Cloud Shell are currently unavailable in this browser, so deployment credential provisioning has not been completed.
+The owner approved generating a Firebase service-account key and storing it as the encrypted GitHub Actions secret. `FIREBASE_HOSTING_DEPLOY_ENABLED=true` is configured. Publishing runs on GitHub because this workspace cannot resolve Google deployment API hosts. Google Cloud IAM and Cloud Shell are unavailable in this browser.
+
+Security follow-up: the credential was unexpectedly included in a browser tool trace while the secret form was submitting. It was not committed to GitHub source code. Revoke and replace that credential, then update the encrypted deployment secret. Key revocation/rotation has not been completed.
 
 ## Maintenance
 
