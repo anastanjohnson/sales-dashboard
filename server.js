@@ -1,3 +1,4 @@
+import { applyVerifiedStaffHoursRefresh, summarizeStaffHours } from "./server/staff-hours-refresh.js";
 import { plannerSessionHandler } from "./server/planner-session.js";
 import crypto from "node:crypto";
 import path from "node:path";
@@ -58,7 +59,7 @@ const overriddenStaffHoursData = appendedStaffHoursData.map((period) => {
   return override ? { ...period, ...override } : period;
 });
 
-const normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
+let normalizedStaffHoursData = overriddenStaffHoursData.map((period) => {
   const exclusion = staffHoursExclusions.find((rule) =>
     Number(rule.year) === Number(period.year)
     && String(rule.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
@@ -83,6 +84,16 @@ dailyStaffHoursData.forEach((entry) => {
   if (index >= 0) normalizedStaffHoursData[index] = { ...normalizedStaffHoursData[index], ...entry };
   else normalizedStaffHoursData.push(entry);
 });
+// Per-period protected patches preserve all historical source layers and manual records.
+const verifiedHoursPatches = Object.keys(process.env)
+  .filter((key) => /^STAFF_HOURS_VERIFIED_REFRESH_\d{4}_\d{2}_JSON$/.test(key))
+  .sort()
+  .map((key) => JSON.parse(process.env[key]));
+const verifiedHoursRefresh = applyVerifiedStaffHoursRefresh(normalizedStaffHoursData, verifiedHoursPatches, staffHoursExclusions);
+normalizedStaffHoursData = verifiedHoursRefresh.periods;
+console.info("Staff hours published audit", JSON.stringify(normalizedStaffHoursData.map(summarizeStaffHours)));
+verifiedHoursRefresh.audits.forEach((audit) => console.info("Staff hours refresh audit", JSON.stringify(audit)));
+
 const weeklyPerformanceData = JSON.parse(process.env.WEEKLY_PERFORMANCE_DATA_JSON);
 const weeklyPerformanceAppend = JSON.parse(process.env.WEEKLY_PERFORMANCE_APPEND_JSON || "[]");
 const weeklyGuestAppendData = JSON.parse(process.env.WEEKLY_GUEST_APPEND_JSON || "[]");
