@@ -21,13 +21,14 @@ export function applyVerifiedStaffHoursRefresh(periods, patches, exclusions = []
     let status = "blocked-destination-changed";
     const excluded = new Set(exclusions.filter((rule) => monthKey(rule) === monthKey(patch))
       .flatMap((rule) => rule.names || []).map((name) => String(name).trim().toLowerCase()));
-    const valid = validEmployees(patch.employees) && validEmployees(patch.expectedEmployees)
-      && canonical(patch.employees.map((row) => ({ ...row, workingHours: 0 }))) === canonical(patch.expectedEmployees.map((row) => ({ ...row, workingHours: 0 })))
+    const expectedDigest = patch.expectedDigest || (validEmployees(patch.expectedEmployees) ? digest(patch.expectedEmployees) : null);
+    const valid = validEmployees(patch.employees) && /^[a-f0-9]{64}$/.test(expectedDigest || "")
       && /^\d{4}-\d{2}-\d{2}$/.test(patch.asOf || "");
     if (!valid) status = "blocked-invalid-patch";
     else if (patch.employees.some((row) => excluded.has(nameKey(row)))) status = "blocked-exclusion";
-    else if (current && (!current.asOf || current.asOf <= patch.asOf)
-      && (canonical(current.employees) === canonical(patch.expectedEmployees) || canonical(current.employees) === canonical(patch.employees))) {
+    else if (current && canonical(patch.employees.map((row) => ({ ...row, workingHours: 0 }))) === canonical((current.employees || []).map((row) => ({ ...row, workingHours: 0 })))
+      && (!current.asOf || current.asOf <= patch.asOf)
+      && (digest(current.employees) === expectedDigest || canonical(current.employees) === canonical(patch.employees))) {
       const source = new Map(patch.employees.map((row) => [nameKey(row), row]));
       result[index] = {
         ...current,
@@ -48,7 +49,9 @@ export function applyVerifiedStaffHoursRefresh(periods, patches, exclusions = []
       period: monthKey(patch), status,
       previousAsOf: current?.asOf ?? null,
       previousTotalHours: total(current?.employees),
-      expectedTotalHours: total(patch.expectedEmployees),
+      expectedTotalHours: patch.expectedEmployees ? total(patch.expectedEmployees) : null,
+      expectedDestinationDigest: expectedDigest,
+      previousDestinationDigest: digest(current?.employees),
       sourceTotalHours: total(patch.employees),
       totalHours: total(final?.employees), asOf: final?.asOf ?? null,
       employeeCount: final?.employees?.length ?? 0,
