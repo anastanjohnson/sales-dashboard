@@ -15,6 +15,9 @@ function getHoursLimit(name, month, year) {
   const normalizedName = String(name || "").trim().toLowerCase();
   const matchedName = Object.keys(STAFF_HOURS_LIMITS).find((staffName) => normalizedName.includes(staffName));
   const normalizedMonth = String(month || "").trim().slice(0, 3).toLowerCase();
+  const monthIndex = MONTHS.findIndex((value) => value.toLowerCase() === normalizedMonth);
+  const fromAugust2026 = Number(year) > 2026 || (Number(year) === 2026 && monthIndex >= 7);
+  if (/\b(?:freweyni|freweny)\b/.test(normalizedName) && fromAugust2026) return 14;
   if (matchedName === "thikalya" && Number(year) === 2026 && ["sep", "oct"].includes(normalizedMonth)) return 56;
   return matchedName ? STAFF_HOURS_LIMITS[matchedName] : DEFAULT_HOURS_LIMIT;
 }
@@ -126,7 +129,7 @@ export default function StaffHoursPage() {
       </div>
 
       <div className="toolbar">
-        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Selected month limits: <strong>Fawad unlimited · Dina 10 h · Thikalya {hours.format(getHoursLimit("thikalya", monthData.month, monthData.year))} h · Kirushalani & Suman 14 h · Others 43 h</strong></span></div>
+        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Selected month limits: <strong>Fawad unlimited · Dina 10 h · Thikalya {hours.format(getHoursLimit("thikalya", monthData.month, monthData.year))} h · Kirushalani & Suman 14 h · Freweyni {hours.format(getHoursLimit("freweyni", monthData.month, monthData.year))} h · Others 43 h</strong></span></div>
         <div className="toolbar__controls">
           <button className={"select-btn " + (view === "chart" ? "select-btn--active" : "")} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={"select-btn " + (view === "table" ? "select-btn--active" : "")} onClick={() => setView("table")}><Table2 size={14} />Table</button>
