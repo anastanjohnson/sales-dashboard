@@ -138,7 +138,7 @@ if (latestPublishedDate) {
     revenueWeeks: revenueWeeks.map((week) => ({
       id: week.id,
       startDate: week.startDate,
-      days: week.days.map((day) => ({ date: day.currentDate, revenue: day.currentRevenue })),
+      days: week.days.map((day) => ({ date: day.currentDate, revenue: day.currentRevenue, comparisonDate: day.comparisonDate, comparisonRevenue: day.comparisonRevenue })),
     })),
     guests: guestWeek?.currentCovers ?? null,
   }));
