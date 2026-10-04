@@ -26,6 +26,20 @@ export function applyVerifiedStaffHoursRefresh(periods, patches, exclusions = []
       && /^\d{4}-\d{2}-\d{2}$/.test(patch.asOf || "");
     if (!valid) status = "blocked-invalid-patch";
     else if (patch.employees.some((row) => excluded.has(nameKey(row)))) status = "blocked-exclusion";
+    else if (!current && expectedDigest === digest([])) {
+      result.push({
+        year: Number(patch.year),
+        month: patch.month,
+        asOf: patch.asOf,
+        partial: patch.partial,
+        source: patch.source,
+        employees: patch.employees.map(({ dailyHours, ...row }) => ({
+          ...row,
+          sourceDailyHours: dailyHours || [],
+        })),
+      });
+      status = "applied";
+    }
     else if (current && canonical(patch.employees.map((row) => ({ ...row, workingHours: 0 }))) === canonical((current.employees || []).map((row) => ({ ...row, workingHours: 0 })))
       && (!current.asOf || current.asOf <= patch.asOf)
       && (digest(current.employees) === expectedDigest || canonical(current.employees) === canonical(patch.employees))) {
@@ -44,7 +58,7 @@ export function applyVerifiedStaffHoursRefresh(periods, patches, exclusions = []
       };
       status = "applied";
     }
-    const final = result[index];
+    const final = result.find((period) => monthKey(period) === monthKey(patch));
     audits.push({
       period: monthKey(patch), status,
       previousAsOf: current?.asOf ?? null,
