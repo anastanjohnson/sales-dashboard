@@ -23,19 +23,31 @@ const app = express();
 const port = Number(process.env.PORT || 10000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const salaryData = JSON.parse(process.env.SALARY_DATA_JSON);
-// Fresh authorized sheet periods take precedence over older source overrides.
-// Database salary entries and deletions are still applied last.
-const salaryDataOverrides = [
+const salaryPeriodKey = (period) => `${Number(period.year)}-${String(period.month || "").slice(0, 3).toLowerCase()}`;
+const mergeSalaryPeriods = (base, patches) => {
+  const periods = base.map((period) => ({ ...period }));
+  patches.forEach((entry) => {
+    const index = periods.findIndex((period) => salaryPeriodKey(period) === salaryPeriodKey(entry));
+    if (index >= 0) periods[index] = { ...periods[index], ...entry };
+    else periods.push(entry);
+  });
+  return periods;
+};
+// Fresh authorized sheet periods can be published one period at a time without
+// replacing older protected configuration. Explicit manual overrides and
+// database entries/deletions remain authoritative.
+const salarySourceRefresh = [
   ...JSON.parse(process.env.SALARY_SOURCE_REFRESH_JSON || "[]"),
-  ...JSON.parse(process.env.SALARY_DATA_OVERRIDES_JSON || "[]"),
+  ...Object.keys(process.env)
+    .filter((key) => /^SALARY_SOURCE_REFRESH_\d{4}_\d{2}_JSON$/.test(key))
+    .sort()
+    .map((key) => JSON.parse(process.env[key])),
 ];
-const normalizedSalaryData = salaryData.map((period) => {
-  const override = salaryDataOverrides.find((entry) =>
-    Number(entry.year) === Number(period.year)
-    && String(entry.month || "").slice(0, 3).toLowerCase() === String(period.month || "").slice(0, 3).toLowerCase()
-  );
-  return override ? { ...period, ...override } : period;
-});
+const sourceRefreshedSalaryData = mergeSalaryPeriods(salaryData, salarySourceRefresh);
+const normalizedSalaryData = mergeSalaryPeriods(
+  sourceRefreshedSalaryData,
+  JSON.parse(process.env.SALARY_DATA_OVERRIDES_JSON || "[]"),
+);
 const salaryPaymentSourceData = JSON.parse(process.env.SALARY_PAYMENT_DATA_JSON);
 
 const staffHoursData = JSON.parse(process.env.STAFF_HOURS_DATA_JSON);
