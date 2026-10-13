@@ -11,6 +11,15 @@ import { mergeDailyRevenue, mergeDailyGuestRecords } from "./src/data/weeklyPerf
 import { weeklyGuestData } from "./src/data/weeklyGuestData.js";
 import { latestDailyRevenue, latestDailyGuests } from "./src/data/latestDailyData.js";
 
+const redirectTarget = process.env.RENDER_PUBLIC_REDIRECT_URL;
+if (redirectTarget === "https://karikaala-sales-dashboard.web.app/") {
+  const redirectApp = express();
+  redirectApp.disable("x-powered-by");
+  redirectApp.use((_req, res) => res.redirect(302, redirectTarget));
+  redirectApp.listen(Number(process.env.PORT || 10000), "0.0.0.0", () => {
+    console.info("Render entrypoint forwarding to the live dashboard.");
+  });
+} else {
 const { Pool } = pg;
 const required = ["DASHBOARD_USERNAME", "DASHBOARD_PASSWORD_HASH", "SALARY_PAYMENT_USERNAME", "SALARY_PAYMENT_PASSWORD_HASH", "SESSION_SECRET", "SALARY_DATA_JSON", "SALARY_PAYMENT_DATA_JSON", "STAFF_HOURS_DATA_JSON", "WEEKLY_PERFORMANCE_DATA_JSON", "WEEKLY_BENCHMARKS_DATA_JSON", "DATABASE_URL"];
 const missing = required.filter((key) => !process.env[key]);
@@ -689,3 +698,4 @@ start().catch((error) => {
   console.error("Unable to initialize the secure dashboard database:", error?.message || error);
   process.exit(1);
 });
+}
