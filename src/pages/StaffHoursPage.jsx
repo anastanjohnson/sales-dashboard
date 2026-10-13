@@ -1,5 +1,5 @@
 import { apiFetch } from "../api.js";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, Clock3, RefreshCw, Table2, TriangleAlert, Users } from "lucide-react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -16,6 +16,9 @@ function getHoursLimit(name, month, year) {
   const normalizedName = String(name || "").trim().toLowerCase();
   const matchedName = Object.keys(STAFF_HOURS_LIMITS).find((staffName) => normalizedName.includes(staffName));
   const normalizedMonth = String(month || "").trim().slice(0, 3).toLowerCase();
+  const monthIndex = MONTHS.findIndex((value) => value.toLowerCase() === normalizedMonth);
+  const fromAugust2026 = Number(year) > 2026 || (Number(year) === 2026 && monthIndex >= 7);
+  if (/\b(?:freweyni|freweny)\b/.test(normalizedName) && fromAugust2026) return 14;
   if (matchedName === "thikalya" && Number(year) === 2026 && ["sep", "oct"].includes(normalizedMonth)) return 56;
   return matchedName ? STAFF_HOURS_LIMITS[matchedName] : DEFAULT_HOURS_LIMIT;
 }
@@ -27,22 +30,50 @@ export default function StaffHoursPage() {
   const [view, setView] = useState("chart");
   const [status, setStatus] = useState("loading");
 
-  const loadData = async () => {
-    setStatus("loading");
+  const dataRef = useRef([]);
+  const selectedPeriodRef = useRef(null);
+  const inFlight = useRef(false);
+  const [refreshError, setRefreshError] = useState(false);
+  const periodKey = (row) => row ? `${row.year}-${String(row.month).slice(0, 3).toLowerCase()}` : null;
+
+  const loadData = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    if (!dataRef.current.length) setStatus("loading");
     try {
-      const response = await apiFetch("/api/staff-hours", { credentials: "include" });
+      const response = await apiFetch("/api/staff-hours", { credentials: "include", cache: "no-store" });
       if (response.status === 401) return window.location.reload();
       if (!response.ok) throw new Error("Unable to load staff hours.");
       const data = await response.json();
+      if (!Array.isArray(data) || !data.length) throw new Error("No staff hours returned.");
+      const selectedIndex = data.findIndex((row) => periodKey(row) === selectedPeriodRef.current);
+      const nextIndex = selectedIndex >= 0 ? selectedIndex : Math.max(0, data.length - 1);
+      dataRef.current = data;
+      selectedPeriodRef.current = periodKey(data[nextIndex]);
       setStaffHoursData(data);
-      setSelectedMonth(Math.max(0, data.length - 1));
+      setSelectedMonth(nextIndex);
+      setRefreshError(false);
       setStatus("ready");
     } catch {
-      setStatus("error");
+      setRefreshError(true);
+      if (!dataRef.current.length) setStatus("error");
+    } finally {
+      inFlight.current = false;
     }
-  };
+  }, []);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    const refreshVisible = () => { if (!document.hidden) loadData(); };
+    const timer = window.setInterval(refreshVisible, 60_000);
+    window.addEventListener("focus", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, [loadData]);
 
   const monthData = staffHoursData[selectedMonth];
   const staff = useMemo(() => (monthData?.employees || [])
@@ -86,17 +117,20 @@ export default function StaffHoursPage() {
         <div className="dashboard__header-actions"><button className="btn btn--ghost" onClick={loadData}><RefreshCw size={15} />Refresh</button></div>
       </div>
 
+      {refreshError && <p role="status">The latest check failed. Showing the last loaded hours; the page will retry automatically.</p>}
+      <p className="dashboard__subtitle">Checks for published hours every minute and when you return to this page.</p>
+
       <div className="salary-month-picker" role="group" aria-label="Select staff hours month">
         {MONTHS.map((month) => {
           const dataIndex = staffHoursData.findIndex((row) => row.year === 2026 && String(row.month).slice(0, 3).toLowerCase() === month.toLowerCase());
           const available = dataIndex >= 0;
           const selected = available && selectedMonth === dataIndex;
-          return <button type="button" key={month} className={"salary-month-button " + (selected ? "salary-month-button--active" : "")} disabled={!available} aria-pressed={selected} onClick={() => setSelectedMonth(dataIndex)}>{month}</button>;
+          return <button type="button" key={month} className={"salary-month-button " + (selected ? "salary-month-button--active" : "")} disabled={!available} aria-pressed={selected} onClick={() => { selectedPeriodRef.current = periodKey(staffHoursData[dataIndex]); setSelectedMonth(dataIndex); }}>{month}</button>;
         })}
       </div>
 
       <div className="toolbar">
-        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Selected month limits: <strong>Fawad unlimited · Dina 10 h · Thikalya {hours.format(getHoursLimit("thikalya", monthData.month, monthData.year))} h · Kirushalani & Suman 14 h · Others 43 h</strong></span></div>
+        <div className="staff-hours-threshold"><Clock3 size={15} /><span>Selected month limits: <strong>Fawad unlimited · Dina 10 h · Thikalya {hours.format(getHoursLimit("thikalya", monthData.month, monthData.year))} h · Kirushalani & Suman 14 h · Freweyni {hours.format(getHoursLimit("freweyni", monthData.month, monthData.year))} h · Others 43 h</strong></span></div>
         <div className="toolbar__controls">
           <button className={"select-btn " + (view === "chart" ? "select-btn--active" : "")} onClick={() => setView("chart")}><BarChart3 size={14} />Bar Chart</button>
           <button className={"select-btn " + (view === "table" ? "select-btn--active" : "")} onClick={() => setView("table")}><Table2 size={14} />Table</button>

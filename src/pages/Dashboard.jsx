@@ -28,9 +28,13 @@ const hours = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 const DEFAULT_HOURS_LIMIT = 43;
 const STAFF_HOURS_LIMITS = { fawad: null, dina: 10, thikalya: 14, kirushalani: 14, suman: 14 };
 
-const getHoursLimit = (name) => {
+const getHoursLimit = (name, month, year) => {
   const normalized = String(name || "").trim().toLowerCase();
   const match = Object.keys(STAFF_HOURS_LIMITS).find((key) => normalized.includes(key));
+  const key = String(month || "").slice(0, 3).toLowerCase();
+  const monthIndex = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(key);
+  if (/\b(?:freweyni|freweny)\b/.test(normalized) && (Number(year) > 2026 || (Number(year) === 2026 && monthIndex >= 7))) return 14;
+  if (match === "thikalya" && Number(year) === 2026 && ["sep", "oct"].includes(key)) return 56;
   return match ? STAFF_HOURS_LIMITS[match] : DEFAULT_HOURS_LIMIT;
 };
 
@@ -161,7 +165,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   const latestStaffHours = liveData.staffHours.at(-1);
   const staffSummary = (latestStaffHours?.employees || []).reduce((summary, employee) => {
     const worked = Math.max(0, Number(employee.workingHours) || 0);
-    const limit = getHoursLimit(employee.name);
+    const limit = getHoursLimit(employee.name, latestStaffHours.month, latestStaffHours.year);
     const extra = limit == null ? 0 : Math.max(0, worked - limit);
     summary.total += worked;
     summary.extra += extra;

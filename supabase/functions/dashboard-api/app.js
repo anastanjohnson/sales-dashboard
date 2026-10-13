@@ -1,4 +1,5 @@
 import express from "express";
+import crypto from "node:crypto";
 import { plannerSessionHandler } from "./planner-session.js";
 import { createSecurity } from "./security.js";
 import { mergeDailyRevenue, mergeDailyGuestRecords } from "./data/weeklyPerformanceUtils.js";
@@ -43,6 +44,13 @@ const normalizedSalaryData = salaryData.map((period) => {
   );
   return override ? { ...period, ...override } : period;
 });
+// Source refreshes can introduce a newly recorded month without replacing history.
+for (const period of JSON.parse(config.SALARY_SOURCE_REFRESH_JSON || "[]")) {
+  if (!normalizedSalaryData.some((entry) => Number(entry.year) === Number(period.year)
+    && String(entry.month).slice(0, 3).toLowerCase() === String(period.month).slice(0, 3).toLowerCase())) {
+    normalizedSalaryData.push(period);
+  }
+}
 const salaryPaymentSourceData = JSON.parse(config.SALARY_PAYMENT_DATA_JSON);
 
 const staffHoursData = JSON.parse(config.STAFF_HOURS_DATA_JSON);
@@ -125,6 +133,24 @@ const refreshedWeeklyGuestData = mergeDailyGuestRecords(
   weeklyGuestData, weeklyGuestAppendData, weeklyBenchmarksData,
   [...JSON.parse(config.WEEKLY_GUEST_DAILY_JSON || "[]"), ...latestDailyGuests],
 );
+
+// Aggregate audit of the exact immutable datasets returned by the protected routes.
+// No employee identifiers, salary details, credentials, or session values are logged.
+const roundAudit = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
+const hoursAudit = normalizedStaffHoursData.filter((period) => Number(period.year) === 2026
+  && ["sep", "oct"].includes(String(period.month).slice(0, 3).toLowerCase())).map((period) => ({
+  year: period.year, month: period.month, asOf: period.asOf, partial: period.partial,
+  totalHours: roundAudit((period.employees || []).reduce((sum, row) => sum + Number(row.workingHours || 0), 0)),
+  employeeCount: period.employees?.length || 0,
+  digest: crypto.createHash("sha256").update(JSON.stringify(period)).digest("hex"),
+}));
+const revenueAudit = refreshedWeeklyPerformanceData.filter((week) => week.startDate >= "2026-10-01")
+  .map((week) => ({ startDate: week.startDate, endDate: week.endDate, asOf: week.asOf, partial: week.partial,
+    currentRevenue: roundAudit(week.days.reduce((sum, day) => sum + (day.currentRevenue || 0), 0)),
+    days: week.days.map(({currentDate, currentRevenue, comparisonRevenue}) => ({currentDate,currentRevenue,comparisonRevenue})),
+  }));
+console.info("Dashboard published audit " + JSON.stringify({ version: "2026-10-13-refresh", hours: hoursAudit, revenue: revenueAudit }));
+
 const monthKey = (value) => String(value || "").trim().slice(0, 3).toLowerCase();
 const findSalaryPaymentEmployee = (sourceData, { year, month, employeeName, department }) => {
   const period = sourceData.find((entry) => Number(entry.year) === Number(year) && monthKey(entry.month) === monthKey(month));

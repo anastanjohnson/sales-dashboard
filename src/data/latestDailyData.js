@@ -57,6 +57,46 @@ export const latestDailyRevenue = [
   {
     "date": "2026-09-28",
     "revenue": 1365
+  },
+  {
+    "date": "2026-10-01",
+    "revenue": 1090
+  },
+  {
+    "date": "2026-10-02",
+    "revenue": 1891.49
+  },
+  {
+    "date": "2026-10-03",
+    "revenue": 4405.6
+  },
+  {
+    "date": "2026-10-04",
+    "revenue": 2480.8
+  },
+  {
+    "date": "2026-10-05",
+    "revenue": 731
+  },
+  {
+    "date": "2026-10-08",
+    "revenue": 1538.7
+  },
+  {
+    "date": "2026-10-09",
+    "revenue": 3640.4
+  },
+  {
+    "date": "2026-10-10",
+    "revenue": 5337
+  },
+  {
+    "date": "2026-10-11",
+    "revenue": 5545.8
+  },
+  {
+    "date": "2026-10-12",
+    "revenue": 1423.85
   }
 ];
 export const latestDailyGuests = [
@@ -131,5 +171,30 @@ export const latestDailyGuests = [
     "date": "2026-09-28",
     "currentCovers": 37,
     "currentCoversSource": "User-confirmed on 2026-09-29"
+  },
+  {
+    "date": "2026-10-01",
+    "currentCovers": 29,
+    "currentCoversSource": "User-confirmed on 2026-10-02"
+  },
+  {
+    "date": "2026-10-02",
+    "currentCovers": 40,
+    "currentCoversSource": "User-confirmed on 2026-10-06"
+  },
+  {
+    "date": "2026-10-03",
+    "currentCovers": 129,
+    "currentCoversSource": "User-confirmed on 2026-10-06"
+  },
+  {
+    "date": "2026-10-04",
+    "currentCovers": 61,
+    "currentCoversSource": "User-confirmed on 2026-10-06"
+  },
+  {
+    "date": "2026-10-05",
+    "currentCovers": 15,
+    "currentCoversSource": "User-confirmed on 2026-10-06"
   }
 ];
