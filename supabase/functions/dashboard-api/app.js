@@ -149,7 +149,7 @@ const revenueAudit = refreshedWeeklyPerformanceData.filter((week) => week.startD
     currentRevenue: roundAudit(week.days.reduce((sum, day) => sum + (day.currentRevenue || 0), 0)),
     days: week.days.map(({currentDate, currentRevenue, comparisonRevenue}) => ({currentDate,currentRevenue,comparisonRevenue})),
   }));
-console.info("Dashboard published audit " + JSON.stringify({ version: "2026-10-19-refresh", hours: hoursAudit, revenue: revenueAudit }));
+console.info("Dashboard published audit " + JSON.stringify({ version: "2026-10-20-refresh", hours: hoursAudit, revenue: revenueAudit }));
 
 const monthKey = (value) => String(value || "").trim().slice(0, 3).toLowerCase();
 const findSalaryPaymentEmployee = (sourceData, { year, month, employeeName, department }) => {
@@ -290,9 +290,7 @@ app.get("/api/salary-payment-source", requireAuth, async (req, res, next) => {
         }
       }
     }
-    res.json(req.session.role === "admin"
-      ? periods.filter((period) => !(Number(period.year) === 2026 && monthKey(period.month) === "sep"))
-      : periods);
+    res.json(periods);
   }
   catch (error) { next(error); }
 });
