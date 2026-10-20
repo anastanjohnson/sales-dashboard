@@ -323,6 +323,12 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
               const status = rowStatus[key];
               const locked = Boolean(values.locked || status === "saved");
               const complete = values.paidAmount !== "" && Boolean(values.paidDate);
+              const paymentHint = !locked && !complete
+                ? values.paidAmount === "" && !values.paidDate
+                  ? "Enter paid amount and payment date to save."
+                  : !values.paidDate ? "Enter payment date to save." : "Enter paid amount to save."
+                : "";
+              const paymentHintId = `payment-hint-${encodeURIComponent(key)}`;
               const busy = status === "saving" || status === "deleting";
               const editing = canEnterSalary && salaryEdit?.key === key;
               const editFormId = `salary-edit-${encodeURIComponent(key)}`;
@@ -337,10 +343,10 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
                 <td>{editing ? <form id={editFormId} className="salary-payment-actions" onSubmit={(event) => saveSalaryEdit(event, row)}>
                   <button type="submit" className="salary-payment-save" disabled={salaryEdit.saving}><Save size={15} />{salaryEdit.saving ? "Saving…" : "Save salary"}</button>
                   <button type="button" className="salary-payment-edit" onClick={() => { setSalaryEdit(null); setError(""); }} disabled={salaryEdit.saving}>Cancel</button>
-                </form> : <div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <>
+                </form> : <div className="salary-payment-actions"><button type="button" className={`salary-payment-save ${locked ? "salary-payment-save--saved" : ""}`} onClick={() => saveRow(row)} disabled={busy || locked || !complete} aria-label={`Save payment for ${row.employeeName}`} aria-describedby={paymentHint ? paymentHintId : undefined} title={paymentHint || undefined}>{locked ? <><Check size={15} />Saved</> : <><Save size={15} />{status === "saving" ? "Saving…" : "Save"}</>}</button>{canEnterSalary && <>
                   <button type="button" className="salary-payment-edit" onClick={() => startSalaryEdit(row)} disabled={busy || Boolean(salaryEdit) || entryStatus === "saving" || openingMonth || Object.values(rowStatus).includes("deleting")} aria-label={`Edit salary and tips for ${row.employeeName}`}><Pencil size={15} />Edit</button>
                   <button type="button" className="salary-payment-delete" onClick={() => deleteRow(row)} disabled={busy || Boolean(salaryEdit)} aria-label={`Delete salary entry for ${row.employeeName}`}><Trash2 size={15} />{status === "deleting" ? "Deleting…" : "Delete"}</button>
-                </>}</div>}</td>
+                </>}</div>}{!editing && !busy && paymentHint && <small id={paymentHintId} role="status" style={{ display: "block", marginTop: "6px", maxWidth: "190px", color: "var(--text-secondary, #6b7280)", lineHeight: 1.4 }}>{paymentHint}</small>}</td>
               </tr>;
             })}</tbody>
             <tfoot><tr><td colSpan="3">Total</td><td className="salary-payment-table__total">{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
