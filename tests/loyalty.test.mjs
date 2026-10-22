@@ -22,7 +22,7 @@ test('exclude cancelled, no show, future and invalid visits; deduplicate and sor
 });
 test('latest, previous and gap use full history, without conflating loyalty scans',()=>{
   const g=guestSummary({name:'Test',loyaltyCheckins:20,visits:[{date:'2026-10-11',time:'13:00',status:'scanned'},{date:'2026-10-18',time:'18:00',status:'scanned'}]},new Date('2026-10-22T12:00:00Z'));
-  assert.equal(g.latest.date,'2026-10-18');assert.equal(g.previous.date,'2026-10-11');assert.equal(g.gapDays,7);assert.equal(g.daysSinceVisit,4);assert.equal(g.visits.length,2);
+  assert.equal(g.latest.date,'2026-10-18');assert.equal(g.previousScan.date,'2026-10-11');assert.equal(g.previous,null);assert.equal(g.gapDays,null);assert.equal(g.daysSinceVisit,4);assert.equal(g.visits.length,2);
 });
 test('tracking starts inclusively at 10 October 12:33 using staff displayed time',()=>{
   const rows=[['2026-10-09','19:00'],['2026-10-10','12:32'],['2026-10-10',null],['2026-10-10','12:33'],['2026-10-10','15:23'],['2026-10-11',null]]
@@ -32,4 +32,18 @@ test('tracking starts inclusively at 10 October 12:33 using staff displayed time
   assert.equal(visits.at(-1).date,'2026-10-10');assert.equal(visits.at(-1).time,'12:33');
   const g=guestSummary({visits:[{date:'2026-10-09',time:'19:00',status:'scanned'},{date:'2026-10-10',time:'12:33',status:'scanned'}]},new Date('2026-10-22T12:00:00Z'));
   assert.equal(g.visits.length,1);assert.equal(g.previous,null);assert.equal(g.gapDays,null);
+});
+
+test('previous visit uses completed matched OpenTable history before the latest scan, including pre-cutoff dates',()=>{
+ const guest={passCode:'TEST-1',visits:[{date:'2026-10-19',time:'11:56',status:'scanned'},{date:'2026-10-18',time:'17:42',status:'scanned'}],openTableHistory:{matchedPassCode:'TEST-1',visits:[
+ {date:'2026-09-11',time:'18:30',status:'finished'},
+ {date:'2026-10-19',time:'18:30',status:'finished'},
+ {date:'2026-10-05',time:'18:30',status:'cancelled'},
+ {date:'2026-10-10',time:'18:30',status:'no-show'},
+ {date:'2026-10-25',time:'18:30',status:'finished'},
+ {date:'2026-09-31',time:'18:30',status:'finished'}]}};
+ const result=guestSummary(guest,new Date('2026-10-22T12:00:00Z'));
+ assert.equal(result.previous.date,'2026-09-11');assert.equal(result.previous.time,'18:30');assert.equal(result.gapDays,38);
+ assert.equal(result.previousScan.date,'2026-10-18');assert.equal(result.visits.length,2);
+ assert.equal(guestSummary({...guest,openTableHistory:{...guest.openTableHistory,matchedPassCode:'OTHER'}}).previous,null);
 });

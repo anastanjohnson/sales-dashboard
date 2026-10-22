@@ -49,9 +49,22 @@ export function preference(visits, field) {
 }
 export function guestSummary(guest, now = new Date()) {
   const visits = normalizeVisits(guest.visits, now);
-  const latest = visits[0] || null, previous = visits[1] || null;
+  const latest = visits[0] || null, previousScan = visits[1] || null;
+  // Scan cutoff defines this report's loyalty cohort, not OpenTable history.
+  const previous = previousOpenTableVisit(guest, latest);
   const gapDays = latest && previous ? Math.round((Date.parse(latest.date) - Date.parse(previous.date)) / 86400000) : null;
   const daysSinceVisit = latest ? Math.round((Date.parse(berlinToday(now)) - Date.parse(latest.date)) / 86400000) : null;
-  return { ...guest, visits, latest, previous, gapDays, daysSinceVisit,
+  return { ...guest, visits, latest, previousScan, previous, gapDays, daysSinceVisit,
     period: preference(visits, 'period'), dayType: preference(visits, 'dayType'), slot: preference(visits, 'slot') };
+}
+export function previousOpenTableVisit(guest, latestScan) {
+  const history = guest.openTableHistory;
+  if (!latestScan || !history || history.matchedPassCode !== guest.passCode) return null;
+  return (history.visits || []).filter(v => {
+    if (!['finished', 'completed'].includes(String(v.status || '').toLowerCase())) return false;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v.date || '') || v.date >= latestScan.date) return false;
+    const date = new Date(`${v.date}T12:00:00Z`);
+    return Number.isFinite(+date) && date.toISOString().slice(0,10) === v.date
+      && (v.time == null || /^([01]\d|2[0-3]):[0-5]\d$/.test(v.time));
+  }).sort((a,b) => `${b.date}T${b.time || '00:00'}`.localeCompare(`${a.date}T${a.time || '00:00'}`))[0] || null;
 }
