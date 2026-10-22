@@ -47,3 +47,15 @@ test('previous visit uses completed matched OpenTable history before the latest 
  assert.equal(result.previousScan.date,'2026-10-18');assert.equal(result.visits.length,2);
  assert.equal(guestSummary({...guest,openTableHistory:{...guest.openTableHistory,matchedPassCode:'OTHER'}}).previous,null);
 });
+
+test('visitor bars group by Monday weeks and month/year with unique pass counts',async()=>{
+ const {visitorChart,shiftChartDate}=await import('../src/loyalty/visitorChart.js');
+ const guests=[{passCode:'A',visits:[{date:'2026-10-18'},{date:'2026-10-18'},{date:'2026-10-19'}]},{passCode:'B',visits:[{date:'2026-10-19'},{date:'2026-11-01'}]}];
+ const daily=visitorChart(guests,'2026-10-19','day');
+ assert.equal(daily.start,'2026-10-19');assert.equal(daily.end,'2026-10-25');assert.equal(daily.rows[0].guests,2);assert.equal(daily.rows.length,7);
+ const weekly=visitorChart(guests,'2026-10-22','week');
+ assert.equal(weekly.guests,2);assert.equal(weekly.scans,4);assert.equal(weekly.rows.find(r=>r.key==='2026-10-12').guests,1);
+ assert.equal(weekly.rows.find(r=>r.key==='2026-10-19').guests,2);
+ const monthly=visitorChart(guests,'2026-10-22','month');assert.equal(monthly.rows.length,12);assert.equal(monthly.rows[9].guests,2);assert.equal(monthly.rows[10].guests,1);assert.equal(monthly.guests,2);
+ assert.equal(shiftChartDate('2026-01-31','week',1),'2026-02-01');assert.equal(shiftChartDate('2026-10-19','day',-1),'2026-10-12');
+});
