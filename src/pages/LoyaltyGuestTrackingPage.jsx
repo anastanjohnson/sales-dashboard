@@ -3,6 +3,7 @@ import { RefreshCw, Search, Users, CalendarDays, Clock3, ChevronDown, ChevronUp,
 import { apiFetch } from '../api.js';
 import { MONTH_PERIODS, DAY_TYPES, TIME_SLOTS, guestSummary, distribution } from '../loyalty/model.js';
 import './LoyaltyGuestTrackingPage.css';
+import LoyaltyAttendance from './LoyaltyAttendance.jsx';
 
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const formatDate = date => date ? dateFormat.format(new Date(`${date}T12:00:00Z`)) : '—';
@@ -58,6 +59,7 @@ export default function LoyaltyGuestTrackingPage() {
         [Clock3,'Returning guests',number.format(filtered.filter(g=>g.previous).length),'Previous completed OpenTable visit'],
       ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{data.connectionPending ? '—' : value}</strong><small>{note}</small></section>)}</div>
       {matched < guests.length && <p className="loyalty-message">A previous OpenTable visit is available for {number.format(matched)} of {number.format(guests.length)} guests. Unmatched history does not mean the guest has never visited.</p>}
+      <LoyaltyAttendance guests={guests}/>
       <div className="loyalty-filters">
         <label className="loyalty-search"><span><Search size={14}/>Find guest</span><input placeholder="Name, phone, email or pass code" value={query} onChange={e=>setQuery(e.target.value)}/></label>
         <label><span>Month</span><select value={month} onChange={e=>setMonth(e.target.value)}><option value="">All months</option>{months.map(m=><option key={m}>{m}</option>)}</select></label>
