@@ -32,7 +32,7 @@ export default function LoyaltyGuestTrackingPage() {
   },[]);
   useEffect(() => { load(); },[load]);
   useEffect(() => { setPage(0); setExpanded(null); },[query,month,period,dayType,slot,history]);
-  const guests = useMemo(() => (data?.guests || []).map(g => guestSummary(g)),[data]);
+  const guests = useMemo(() => (data?.guests || []).map(g => guestSummary(g)).filter(g => g.visits.length > 0),[data]);
   const months = useMemo(() => [...new Set(guests.flatMap(g => g.visits.map(v => v.date.slice(0,7))))].sort().reverse(),[guests]);
   const filtered = useMemo(() => guests.filter(g => {
     if (query && !`${g.name} ${g.passCode} ${g.phone || ''} ${g.email || ''}`.toLowerCase().includes(query.toLowerCase().trim())) return false;
@@ -44,7 +44,7 @@ export default function LoyaltyGuestTrackingPage() {
   const matched = guests.filter(g=>g.visits.length).length;
   const pages = Math.max(1,Math.ceil(filtered.length/25));
   return <div className="dashboard loyalty-tracking">
-    <div className="dashboard__header"><div><h1>Loyalty Guest Tracking</h1><p className="dashboard__subtitle">Track scanned loyalty passes, return visits and visiting habits.</p></div>
+    <div className="dashboard__header"><div><h1>Loyalty Guest Tracking</h1><p className="dashboard__subtitle">Tracking from 10 October 2026 at 12:33, including that scan.</p></div>
       <button className="btn btn--ghost" onClick={load} disabled={loading}><RefreshCw size={15}/>{loading ? 'Loading…':'Refresh'}</button></div>
     <div className="loyalty-source"><span>Guest list: <a href="https://loyalty.karikaala.de/staff" target="_blank" rel="noreferrer">ARASAVAI <ExternalLink size={12}/></a> · Source: staff scan log · Times as displayed in staff terminal</span>
       <span>{data?.updatedAt ? `Imported ${new Date(data.updatedAt).toLocaleString('en-GB',{timeZone:'Europe/Berlin'})}`:'Waiting for first import'}</span></div>
@@ -71,13 +71,13 @@ export default function LoyaltyGuestTrackingPage() {
         <Pattern title="Weekday or weekend" values={distribution(selectedVisits,'dayType',DAY_TYPES)} total={selectedVisits.length}/>
         <Pattern title="Visiting time slots" values={distribution(selectedVisits,'slot',[...TIME_SLOTS,'Time unknown'])} total={selectedVisits.length}/>
       </div>
-      <section className="loyalty-list"><div className="loyalty-list-head"><h2>Guest scan history</h2><span>{number.format(filtered.length)} guests · Latest and previous visits use all recorded history</span></div>
+      <section className="loyalty-list"><div className="loyalty-list-head"><h2>Guest scan history</h2><span>{number.format(filtered.length)} guests · Latest and previous scans since 10 Oct 2026, 12:33</span></div>
         <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest visit</th><th>Previous visit</th><th>Visits</th><th>Return gap</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>
           <tbody>{filtered.slice(page*25,(page+1)*25).map(g=><GuestRow key={g.id || g.passCode} guest={g} open={expanded === g.passCode} onToggle={()=>setExpanded(expanded === g.passCode ? null:g.passCode)}/>)}</tbody></table></div>
         {!filtered.length && <p className="loyalty-empty">{guests.length ? 'No guests match these filters.':'No loyalty guest list has been imported yet.'}</p>}
         <div className="loyalty-pagination"><span>Page {page+1} of {pages}</span><button className="btn btn--ghost" disabled={page===0} onClick={()=>setPage(p=>p-1)}>Previous</button><button className="btn btn--ghost" disabled={page>=pages-1} onClick={()=>setPage(p=>p+1)}>Next</button></div>
       </section>
-      <p className="loyalty-footnote">Patterns use recorded loyalty scans from the staff terminal. Scan time may differ from arrival time. A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
+      <p className="loyalty-footnote">Patterns use loyalty scans from 10 October 2026 at 12:33 onward, including that scan. Earlier scans are excluded. Scan time may differ from arrival time. A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
     </>}
   </div>;
 }

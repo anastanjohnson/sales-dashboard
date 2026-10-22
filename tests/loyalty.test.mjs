@@ -17,10 +17,19 @@ test('exclude cancelled, no show, future and invalid visits; deduplicate and sor
   const rows=[{id:'a',date:'2026-10-18',time:'18:00',status:'seated'},{id:'a',date:'2026-10-18',time:'18:00',status:'seated'},
     {date:'2026-10-19',status:'cancelled'},{date:'2026-10-19',status:'no-show'},{date:'2026-12-01',status:'completed'},
     {date:'2026-02-30',status:'completed'},{date:'2026-10-20',time:'24:30',status:'completed'},
-    {date:'2026-10-09',time:null,status:'completed'}];
+    {date:'2026-10-11',time:null,status:'completed'}];
   const visits=normalizeVisits(rows,new Date('2026-10-22T12:00:00Z'));assert.equal(visits.length,2);assert.equal(visits[0].date,'2026-10-18');assert.equal(visits[1].slot,'Time unknown');
 });
 test('latest, previous and gap use full history, without conflating loyalty scans',()=>{
-  const g=guestSummary({name:'Test',loyaltyCheckins:20,visits:[{date:'2026-10-09',time:'13:00',status:'completed'},{date:'2026-10-18',time:'18:00',status:'completed'}]},new Date('2026-10-22T12:00:00Z'));
-  assert.equal(g.latest.date,'2026-10-18');assert.equal(g.previous.date,'2026-10-09');assert.equal(g.gapDays,9);assert.equal(g.daysSinceVisit,4);assert.equal(g.visits.length,2);
+  const g=guestSummary({name:'Test',loyaltyCheckins:20,visits:[{date:'2026-10-11',time:'13:00',status:'scanned'},{date:'2026-10-18',time:'18:00',status:'scanned'}]},new Date('2026-10-22T12:00:00Z'));
+  assert.equal(g.latest.date,'2026-10-18');assert.equal(g.previous.date,'2026-10-11');assert.equal(g.gapDays,7);assert.equal(g.daysSinceVisit,4);assert.equal(g.visits.length,2);
+});
+test('tracking starts inclusively at 10 October 12:33 using staff displayed time',()=>{
+  const rows=[['2026-10-09','19:00'],['2026-10-10','12:32'],['2026-10-10',null],['2026-10-10','12:33'],['2026-10-10','15:23'],['2026-10-11',null]]
+    .map(([date,time])=>({date,time,status:'scanned'}));
+  const visits=normalizeVisits(rows,new Date('2026-10-22T12:00:00Z'));
+  assert.equal(visits.length,3);
+  assert.equal(visits.at(-1).date,'2026-10-10');assert.equal(visits.at(-1).time,'12:33');
+  const g=guestSummary({visits:[{date:'2026-10-09',time:'19:00',status:'scanned'},{date:'2026-10-10',time:'12:33',status:'scanned'}]},new Date('2026-10-22T12:00:00Z'));
+  assert.equal(g.visits.length,1);assert.equal(g.previous,null);assert.equal(g.gapDays,null);
 });
