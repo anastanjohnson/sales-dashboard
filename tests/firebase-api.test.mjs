@@ -36,7 +36,7 @@ async function request(path, {token, body, method='GET', requestOrigin=origin}={
 test.after(()=>server.close());
 let admin, payroll;
 test('anonymous cannot access any protected report or write route',async()=>{
- for(const path of ['salary','staff-hours','weekly-performance','weekly-guests','weekly-benchmarks','salary-payment-source','salary-payment-staff','salary-payments']) assert.equal((await request('/api/'+path)).status,401);
+ for(const path of ['loyalty-tracking','salary','staff-hours','weekly-performance','weekly-guests','weekly-benchmarks','salary-payment-source','salary-payment-staff','salary-payments']) assert.equal((await request('/api/'+path)).status,401);
  for(const [path,method] of [['planner/session','POST'],['salary-entry','PUT'],['salary-entry','DELETE'],['salary-payments','PUT'],['salary-months','POST']]) assert.equal((await request('/api/'+path,{method,body:{}})).status,401);
  assert.equal(protectedReads,0);assert.equal(writes,0);
 });
@@ -61,11 +61,13 @@ test('planner session bridge requires admin and configuration',async()=>{
 });
 test('salary-only role cannot read management reports; admin cannot edit salary entries',async()=>{
  const before=protectedReads;
- for(const path of ['salary','staff-hours','weekly-performance','weekly-guests','weekly-benchmarks']) assert.equal((await request('/api/'+path,{token:payroll})).status,403);
+ for(const path of ['loyalty-tracking','salary','staff-hours','weekly-performance','weekly-guests','weekly-benchmarks']) assert.equal((await request('/api/'+path,{token:payroll})).status,403);
  assert.equal(protectedReads,before);
  for(const [path,method] of [['salary-entry','PUT'],['salary-entry','DELETE'],['salary-months','POST']]) assert.equal((await request('/api/'+path,{token:admin,method,body:{}})).status,403);
  assert.equal((await request('/api/salary-payment-staff',{token:payroll})).status,200);
  assert.equal((await request('/api/staff-hours',{token:admin})).status,200);
+ const loyalty=await request('/api/loyalty-tracking',{token:admin}); assert.equal(loyalty.status,200); assert.deepEqual((await loyalty.json()).guests,[]);
+ assert.equal(loyalty.headers.get('cache-control'),'no-store');
  assert.equal(writes,0);
 });
 test('invalid amounts and dates cannot write; tampered sessions cannot authenticate',async()=>{
@@ -82,3 +84,4 @@ test('shared login counter limits repeated attempts',async()=>{
  limits.set('login:unknown',8);
  assert.equal((await request('/api/login',{method:'POST',body:{username:'nobody',password}})).status,429);
 });
+

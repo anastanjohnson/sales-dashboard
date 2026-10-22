@@ -8,6 +8,7 @@ import SalaryPage from "./SalaryPage";
 import SalaryPaymentPage from "./SalaryPaymentPage";
 import StaffHoursPage from "./StaffHoursPage";
 import { lazy, Suspense } from "react";
+const LoyaltyGuestTrackingPage = lazy(() => import("./LoyaltyGuestTrackingPage"));
 const ShiftPlannerPage = lazy(() => import("./ShiftPlannerPage"));
 import SalesPage from "./SalesPage";
 import WeeklyInsightsPage from "./WeeklyInsightsPage";
@@ -128,6 +129,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
   if (activePage === "sales") return <SalesPage />;
   if (activePage === "weekly-performance") return <WeeklyInsightsPage />;
   if (activePage === "repeated-guests") return <RepeatedGuestPage />;
+  if (activePage === "loyalty-tracking") return <Suspense fallback={<p role="status">Loading loyalty guests…</p>}><LoyaltyGuestTrackingPage /></Suspense>;
   if (activePage === "settings") return <SettingsPage theme={theme} onToggleTheme={onToggleTheme} />;
 
   const sales2026 = salesData.filter((row) => row.year === 2026);
@@ -224,3 +226,4 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
     </div>
   );
 }
+

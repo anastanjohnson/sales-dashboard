@@ -423,6 +423,12 @@ app.put("/api/salary-payments", requireAuth, requireSameOrigin, paymentWriteLimi
     next(error);
   }
 });
+app.get("/api/loyalty-tracking", requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const result = await database.query("SELECT value FROM dashboard_private.firebase_config WHERE id = 'loyalty-tracking-v1'");
+    res.json(result.rows[0]?.value || { guests: [], updatedAt: null, source: "loyalty-staff-scans" });
+  } catch (error) { next(error); }
+});
 app.get("/api/staff-hours", requireAuth, requireAdmin, (_req, res) => res.json(normalizedStaffHoursData));
 app.get("/api/weekly-performance", requireAuth, requireAdmin, (_req, res) => res.json(refreshedWeeklyPerformanceData));
 app.get("/api/weekly-guests", requireAuth, requireAdmin, (_req, res) => res.json(refreshedWeeklyGuestData));
@@ -437,4 +443,5 @@ app.use((error, _req, res, _next) => {
 });
 return app;
 }
+
 

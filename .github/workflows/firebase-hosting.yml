@@ -23,7 +23,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/firebase-api.test.mjs tests/planner.test.mjs
+      - run: node --test tests/firebase-api.test.mjs tests/planner.test.mjs tests/loyalty.test.mjs
       - run: npm run build
         env:
           VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api
@@ -44,3 +44,4 @@ jobs:
       - run: npx --yes firebase-tools@15.32.0 deploy --only hosting --project karikaala-sales-dashboard --non-interactive
         env:
           VITE_DASHBOARD_API_URL: https://wwidrvwkfltwrexzxvyl.supabase.co/functions/v1/dashboard-api
+

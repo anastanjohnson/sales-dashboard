@@ -5,6 +5,7 @@ import {
     RefreshCcw,
     Banknote,
     WalletCards,
+    Users,
     Clock3,
     CalendarDays,
     Settings,
@@ -20,6 +21,7 @@ export const NAV_ITEMS = [
   { icon: Euro, label: "Sales Revenue", page: "sales" },
     { icon: ChartLine, label: "Weekly Performance", page: "weekly-performance" },
     { icon: RefreshCcw, label: "Repeated Guest", page: "repeated-guests" },
+    { icon: Users, label: "Loyalty Guest Tracking", page: "loyalty-tracking" },
     { icon: Banknote, label: "Salary", page: "sales-salary" },
     { icon: WalletCards, label: "Salary Payment", page: "salary-payment" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
@@ -101,3 +103,4 @@ export function MobileNavigation({ activePage, onNavigate, open, onClose, theme,
     </>
   );
 }
+
