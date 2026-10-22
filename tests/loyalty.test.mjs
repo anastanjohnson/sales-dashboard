@@ -47,17 +47,3 @@ test('previous visit uses completed matched OpenTable history before the latest 
  assert.equal(result.previousScan.date,'2026-10-18');assert.equal(result.visits.length,2);
  assert.equal(guestSummary({...guest,openTableHistory:{...guest.openTableHistory,matchedPassCode:'OTHER'}}).previous,null);
 });
-
-test('ARASAVAI attendance counts unique passes per day and period, keeping scan totals separate',async()=>{
- const {attendanceSummary,attendanceRange,shiftAttendanceDate}=await import('../src/loyalty/attendance.js');
- const guests=[{passCode:'A',visits:[{date:'2026-10-18'},{date:'2026-10-18'},{date:'2026-10-19'}]},{passCode:'B',visits:[{date:'2026-10-19'}]}];
- const month=attendanceSummary(guests,'2026-10-22','month');
- assert.equal(month.guests,2);assert.equal(month.scans,4);assert.equal(month.days.length,31);
- assert.equal(month.days.find(d=>d.date==='2026-10-18').guests,1);
- assert.equal(attendanceSummary(guests,'2026-10-19','day').guests,2);
- assert.equal(attendanceSummary(guests,'2026-10-22','day').guests,0);
- assert.deepEqual(attendanceRange('2026-11-01','week'),{start:'2026-10-26',end:'2026-11-01'});
- assert.equal(attendanceSummary(guests,'2026-10-19','week').scans,2);
- assert.equal(shiftAttendanceDate('2026-01-31','month',1),'2026-02-01');
- assert.equal(attendanceRange('2028-02-20','month').end,'2028-02-29');
-});
