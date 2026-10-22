@@ -22,6 +22,7 @@ export default function LoyaltyGuestTrackingPage() {
     setLoading(true); setError('');
     try {
       const response = await apiFetch('/api/loyalty-tracking', { credentials:'include' });
+      if (response.status === 404) { setData({ guests: [], connectionPending: true }); return; }
       if (!response.ok) throw new Error(response.status === 401 ? 'Please sign in again to view loyalty guests.' : 'Loyalty records could not be loaded. Please try again.');
       const result = await response.json();
       if (!Array.isArray(result.guests)) throw new Error('The loyalty data format could not be read.');
@@ -49,12 +50,13 @@ export default function LoyaltyGuestTrackingPage() {
       <span>{data?.updatedAt ? `Imported ${new Date(data.updatedAt).toLocaleString('en-GB',{timeZone:'Europe/Berlin'})}`:'Waiting for first import'}</span></div>
     {error && <p className="loyalty-message" role="alert">{error}</p>}
     {data && <>
+      {data.connectionPending && <p className="loyalty-message" role="status">The tracking tab is ready. Connecting the loyalty scan records to this dashboard is awaiting approval. Visit history and patterns will appear after the connection is enabled.</p>}
       <div className="loyalty-stats">{[
         [Users,'Loyalty guests',number.format(guests.length),'Passes with recorded scans'],
         [CalendarDays,'With scan history',number.format(matched),`${number.format(guests.length-matched)} without recorded scans`],
         [CalendarDays,'Visits in selection',number.format(selectedVisits.length),'Recorded loyalty scans'],
         [Clock3,'Returning guests',number.format(filtered.filter(g=>g.visits.length>1).length),'2+ recorded scans'],
-      ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{value}</strong><small>{note}</small></section>)}</div>
+      ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{data.connectionPending ? '—' : value}</strong><small>{note}</small></section>)}</div>
       {matched < guests.length && <p className="loyalty-message">Scan history is available for {number.format(matched)} of {number.format(guests.length)} guests. Pending scan history does not mean the guest has never visited.</p>}
       <div className="loyalty-filters">
         <label className="loyalty-search"><span><Search size={14}/>Find guest</span><input placeholder="Name, phone, email or pass code" value={query} onChange={e=>setQuery(e.target.value)}/></label>
