@@ -72,12 +72,12 @@ export default function LoyaltyGuestTrackingPage() {
         <Pattern title="Visiting time slots" values={distribution(selectedVisits,'slot',[...TIME_SLOTS,'Time unknown'])} total={selectedVisits.length}/>
       </div>
       <section className="loyalty-list"><div className="loyalty-list-head"><h2>Guest scan history</h2><span>{number.format(filtered.length)} guests · Previous visits come from OpenTable History, including dates before tracking began</span></div>
-        <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest loyalty scan</th><th>Previous visit · OpenTable</th><th>Scans</th><th>Gap to latest scan</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>
+        <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest loyalty scan</th><th>Previous visit · OpenTable</th><th>Scans</th><th title="Calendar days between the latest loyalty scan date and the previous OpenTable visit date">Days between visits</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>
           <tbody>{filtered.slice(page*25,(page+1)*25).map(g=><GuestRow key={g.id || g.passCode} guest={g} open={expanded === g.passCode} onToggle={()=>setExpanded(expanded === g.passCode ? null:g.passCode)}/>)}</tbody></table></div>
         {!filtered.length && <p className="loyalty-empty">{guests.length ? 'No guests match these filters.':'No loyalty guest list has been imported yet.'}</p>}
         <div className="loyalty-pagination"><span>Page {page+1} of {pages}</span><button className="btn btn--ghost" disabled={page===0} onClick={()=>setPage(p=>p-1)}>Previous</button><button className="btn btn--ghost" disabled={page>=pages-1} onClick={()=>setPage(p=>p+1)}>Next</button></div>
       </section>
-      <p className="loyalty-footnote">Patterns use loyalty scans from 10 October 2026 at 12:33 onward, including that scan. Earlier scans are excluded. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 10 October. Scan time may differ from arrival time. The gap measures calendar days from that visit to the latest scan. A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
+      <p className="loyalty-footnote">Patterns use loyalty scans from 10 October 2026 at 12:33 onward, including that scan. Earlier scans are excluded. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 10 October. Scan time may differ from arrival time. Days between visits is the difference between the two displayed visit dates (latest loyalty scan minus previous OpenTable visit). A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
     </>}
   </div>;
 }
