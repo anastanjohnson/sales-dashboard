@@ -59,3 +59,11 @@ test('visitor bars group by Monday weeks and month/year with unique pass counts'
  const monthly=visitorChart(guests,'2026-10-22','month');assert.equal(monthly.rows.length,12);assert.equal(monthly.rows[9].guests,2);assert.equal(monthly.rows[10].guests,1);assert.equal(monthly.guests,2);
  assert.equal(shiftChartDate('2026-01-31','week',1),'2026-02-01');assert.equal(shiftChartDate('2026-10-19','day',-1),'2026-10-12');
 });
+
+test('pre-opening scans remain in history but are excluded from valid visiting time slots',async()=>{
+ const {TIME_SLOTS}=await import('../src/loyalty/model.js');
+ assert.equal(visitSlot('11:59'),'Time needs verification');assert.equal(visitSlot('12:00'),'12:00–14:59');
+ assert.equal(visitSlot('17:59'),'15:00–17:59');assert.equal(visitSlot('21:00'),'21:00 onward');
+ const visits=normalizeVisits([{date:'2026-10-19',time:'11:55',status:'scanned'},{date:'2026-10-18',time:'17:52',status:'scanned'}],new Date('2026-10-22T12:00:00Z'));
+ assert.equal(visits.length,2);assert.equal(visits.filter(v=>TIME_SLOTS.includes(v.slot)).length,1);
+});

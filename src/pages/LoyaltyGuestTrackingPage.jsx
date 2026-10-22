@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Search, Users, CalendarDays, Clock3, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { apiFetch } from '../api.js';
 import { MONTH_PERIODS, DAY_TYPES, TIME_SLOTS, guestSummary, distribution } from '../loyalty/model.js';
 import './LoyaltyGuestTrackingPage.css';
@@ -9,11 +10,16 @@ const dateFormat = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'sh
 const formatDate = date => date ? dateFormat.format(new Date(`${date}T12:00:00Z`)) : '—';
 const stamp = visit => visit ? `${formatDate(visit.date)} · ${visit.time || 'Time unknown'}` : 'No recorded scan';
 const number = new Intl.NumberFormat('en-GB');
-function Pattern({ title, values, total }) {
-  return <section className="loyalty-pattern"><h2>{title}</h2>{values.map(({label,count}) => <div className="loyalty-bar" key={label}>
-    <div><span>{label}</span><strong>{count} <small>({total ? Math.round(count / total * 100) : 0}%)</small></strong></div>
-    <progress max={Math.max(total,1)} value={count} aria-label={label} />
-  </div>)}</section>;
+const pieColors = ['var(--series-1)', 'var(--series-2)', 'var(--series-3, #e0ad4e)', 'var(--series-4, #e97870)', 'var(--series-5, #559fdb)'];
+const percentage = (count,total) => `${total ? (count/total*100).toFixed(1) : '0.0'}%`;
+function Pattern({ title, values, note }) {
+  const total = values.reduce((sum,v)=>sum+v.count,0);
+  const slices = values.map((v,i)=>({...v,color:pieColors[i%pieColors.length]})).filter(v=>v.count>0);
+  return <section className="loyalty-pattern loyalty-pie"><h2>{title}</h2>
+    {total ? <ResponsiveContainer width="100%" height={220}><PieChart accessibilityLayer><Pie data={slices} dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={72} stroke="var(--surface)" strokeWidth={2} isAnimationActive={false} labelLine={{stroke:'var(--text-muted)'}} label={({cx,cy,midAngle,outerRadius,value})=>{const angle=-midAngle*Math.PI/180;const x=cx+(outerRadius+20)*Math.cos(angle),y=cy+(outerRadius+20)*Math.sin(angle);return <text x={x} y={y} fill="var(--text-primary)" textAnchor={x>cx?'start':'end'} dominantBaseline="central" fontSize={12} fontWeight={700}>{percentage(value,total)}</text>;}}>{slices.map(v=><Cell key={v.label} fill={v.color}/>)}</Pie><Tooltip formatter={(value,name)=>[`${value} scans · ${percentage(value,total)}`,name]} contentStyle={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,color:'var(--text-primary)'}}/></PieChart></ResponsiveContainer> : <p className="loyalty-empty">No eligible scan times in this selection.</p>}
+    <ul className="loyalty-pie-legend">{values.map((v,i)=><li key={v.label}><span className="loyalty-pie-dot" style={{background:pieColors[i%pieColors.length]}}/><span>{v.label}</span><strong>{percentage(v.count,total)}</strong><small>{v.count} scans</small></li>)}</ul>
+    {note && <p className="loyalty-pie-note">{note}</p>}
+  </section>;
 }
 export default function LoyaltyGuestTrackingPage() {
   const [data, setData] = useState(null), [loading,setLoading] = useState(true), [error,setError] = useState('');
@@ -65,13 +71,13 @@ export default function LoyaltyGuestTrackingPage() {
         <label><span>Month</span><select value={month} onChange={e=>setMonth(e.target.value)}><option value="">All months</option>{months.map(m=><option key={m}>{m}</option>)}</select></label>
         <label><span>Part of month</span><select value={period} onChange={e=>setPeriod(e.target.value)}><option value="">All periods</option>{MONTH_PERIODS.map(v=><option key={v}>{v}</option>)}</select></label>
         <label><span>Day</span><select value={dayType} onChange={e=>setDayType(e.target.value)}><option value="">All days</option>{DAY_TYPES.map(v=><option key={v}>{v}</option>)}</select></label>
-        <label><span>Visiting time</span><select value={slot} onChange={e=>setSlot(e.target.value)}><option value="">All times</option>{[...TIME_SLOTS,'Time unknown'].map(v=><option key={v}>{v}</option>)}</select></label>
+        <label><span>Visiting time</span><select value={slot} onChange={e=>setSlot(e.target.value)}><option value="">All times</option>{[...TIME_SLOTS,'Time unknown','Time needs verification'].map(v=><option key={v}>{v}</option>)}</select></label>
         <label><span>History</span><select value={history} onChange={e=>setHistory(e.target.value)}><option value="all">All guests</option><option value="matched">With visit history</option><option value="pending">Pending history</option></select></label>
       </div>
       <div className="loyalty-patterns">
-        <Pattern title="Part of month" values={distribution(selectedVisits,'period',MONTH_PERIODS)} total={selectedVisits.length}/>
-        <Pattern title="Weekday or weekend" values={distribution(selectedVisits,'dayType',DAY_TYPES)} total={selectedVisits.length}/>
-        <Pattern title="Visiting time slots" values={distribution(selectedVisits,'slot',[...TIME_SLOTS,'Time unknown'])} total={selectedVisits.length}/>
+        <Pattern title="Part of month" values={distribution(selectedVisits,'period',MONTH_PERIODS)}/>
+        <Pattern title="Weekday or weekend" values={distribution(selectedVisits,'dayType',DAY_TYPES)}/>
+        <Pattern title="Visiting time slots" values={distribution(selectedVisits,'slot',TIME_SLOTS)} note={`${selectedVisits.filter(v=>!TIME_SLOTS.includes(v.slot)).length} scans excluded: before 12:00 or time unknown. Percentages use only scans from 12:00 onward. Weekend opening: 12:00. Scan times may differ from arrival times.`}/>
       </div>
       <section className="loyalty-list"><div className="loyalty-list-head"><h2>Guest scan history</h2><span>{number.format(filtered.length)} guests · Previous visits come from OpenTable History, including dates before tracking began</span></div>
         <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest loyalty scan</th><th>Previous visit · OpenTable</th><th>Scans</th><th title="Calendar days between the latest loyalty scan date and the previous OpenTable visit date">Days between visits</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>

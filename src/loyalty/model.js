@@ -1,6 +1,6 @@
 export const MONTH_PERIODS = ['Beginning · 1–10', 'Middle · 11–20', 'End · 21–month end'];
 export const DAY_TYPES = ['Weekday · Mon–Thu', 'Weekend · Fri–Sun'];
-export const TIME_SLOTS = ['Before 12:00', '12:00–14:59', '15:00–17:59', '18:00–20:59', '21:00 onward'];
+export const TIME_SLOTS = ['12:00–14:59', '15:00–17:59', '18:00–20:59', '21:00 onward'];
 // Inclusive boundary in the staff terminal's displayed date and time.
 export const TRACKING_START = '2026-10-10T12:33';
 const completedStatuses = new Set(['scanned', 'completed', 'seated', 'finished', 'paid', 'left', 'abgeschlossen', 'platziert']);
@@ -15,7 +15,8 @@ export function visitDayType(date) {
 export function visitSlot(time) {
   if (!/^\d{2}:\d{2}$/.test(time || '')) return 'Time unknown';
   const hour = Number(time.slice(0, 2));
-  return TIME_SLOTS[hour < 12 ? 0 : hour < 15 ? 1 : hour < 18 ? 2 : hour < 21 ? 3 : 4];
+  if (hour < 12) return 'Time needs verification';
+  return TIME_SLOTS[hour < 15 ? 0 : hour < 18 ? 1 : hour < 21 ? 2 : 3];
 }
 export function berlinToday(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
