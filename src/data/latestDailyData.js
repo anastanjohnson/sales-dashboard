@@ -3,6 +3,30 @@
 // OpenTable comparison uses equivalent weekdays in 2025; no guest personal data.
 export const latestDailyRevenue = [
   {
+    "date": "2026-09-03",
+    "revenue": 1360.2
+  },
+  {
+    "date": "2026-09-04",
+    "revenue": 2271
+  },
+  {
+    "date": "2026-09-05",
+    "revenue": 3624
+  },
+  {
+    "date": "2026-09-06",
+    "revenue": 3988.3
+  },
+  {
+    "date": "2026-09-07",
+    "revenue": 585
+  },
+  {
+    "date": "2026-09-10",
+    "revenue": 718
+  },
+  {
     "date": "2026-09-11",
     "revenue": 2258.6
   },
@@ -121,8 +145,13 @@ export const latestDailyRevenue = [
   {
     "date": "2026-10-22",
     "revenue": 1086
+  },
+  {
+    "date": "2026-10-23",
+    "revenue": 2568.09
   }
 ];
+
 export const latestDailyGuests = [
   {
     "comparisonCovers": 88,
@@ -222,5 +251,3 @@ export const latestDailyGuests = [
     "currentCoversSource": "User-confirmed on 2026-10-06"
   }
 ];
-
-
