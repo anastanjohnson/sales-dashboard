@@ -153,6 +153,10 @@ export const latestDailyRevenue = [
   {
     "date": "2026-10-24",
     "revenue": 4414.1
+  },
+  {
+    "date": "2026-10-25",
+    "revenue": 7024.9
   }
 ];
 
