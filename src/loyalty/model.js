@@ -41,6 +41,20 @@ export function normalizeVisits(visits = [], now = new Date()) {
 export function distribution(visits, field, labels) {
   return labels.map(label => ({ label, count: visits.filter(v => v[field] === label).length }));
 }
+// Choose the first eligible scan before applying report filters, so a later
+// repeat cannot become another counted visit in a different week or time slot.
+export function monthlyVisits(visits = []) {
+  const months = new Map();
+  for (const visit of visits) {
+    const month = visit.date.slice(0, 7), first = months.get(month);
+    if (!first || `${visit.date}T${visit.time || '00:00'}` < `${first.date}T${first.time || '00:00'}`) months.set(month, visit);
+  }
+  return [...months.values()].sort((a,b) => a.date.localeCompare(b.date));
+}
+export function matchesVisitFilters(visit, {month = '', period = '', dayType = '', slot = ''} = {}) {
+  return (!month || visit.date.startsWith(month)) && (!period || visit.period === period)
+    && (!dayType || visit.dayType === dayType) && (!slot || visit.slot === slot);
+}
 export function preference(visits, field) {
   if (!visits.length) return 'Pending history';
   const counts = new Map();
@@ -50,13 +64,14 @@ export function preference(visits, field) {
 }
 export function guestSummary(guest, now = new Date()) {
   const visits = normalizeVisits(guest.visits, now);
+  const countedVisits = monthlyVisits(visits);
   const latest = visits[0] || null, previousScan = visits[1] || null;
   // Scan cutoff defines this report's loyalty cohort, not OpenTable history.
   const previous = previousOpenTableVisit(guest, latest);
   const gapDays = latest && previous ? Math.round((Date.parse(latest.date) - Date.parse(previous.date)) / 86400000) : null;
   const daysSinceVisit = latest ? Math.round((Date.parse(berlinToday(now)) - Date.parse(latest.date)) / 86400000) : null;
-  return { ...guest, visits, latest, previousScan, previous, gapDays, daysSinceVisit,
-    period: preference(visits, 'period'), dayType: preference(visits, 'dayType'), slot: preference(visits, 'slot') };
+  return { ...guest, visits, countedVisits, latest, previousScan, previous, gapDays, daysSinceVisit,
+    period: preference(countedVisits, 'period'), dayType: preference(countedVisits, 'dayType'), slot: preference(countedVisits, 'slot') };
 }
 export function previousOpenTableVisit(guest, latestScan) {
   const history = guest.openTableHistory;

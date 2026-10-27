@@ -1,3 +1,4 @@
+import { monthlyVisits } from './model.js';
 const at = date => new Date(`${date}T12:00:00Z`);
 const iso = date => date.toISOString().slice(0,10);
 const shiftDays = (date, days) => { const d=at(date); d.setUTCDate(d.getUTCDate()+days); return iso(d); };
@@ -15,15 +16,15 @@ export function visitorChart(guests,date,view='day') {
     start=monday(date);end=shiftDays(start,6);
     for(let key=start;key<=end;key=shiftDays(key,1))buckets.push({key,label:new Intl.DateTimeFormat('en-GB',{weekday:'short',timeZone:'UTC'}).format(at(key))});
   }
-  const map=new Map(buckets.map(b=>[b.key,{...b,passes:new Set(),scans:0}])),passes=new Set();
-  let scans=0;
-  for(const guest of guests) for(const visit of guest.visits) {
+  const map=new Map(buckets.map(b=>[b.key,{...b,passes:new Set(),visits:0}])),passes=new Set();
+  let visits=0;
+  for(const guest of guests) for(const visit of monthlyVisits(guest.visits)) {
     if(visit.date<start||visit.date>end)continue;
     const key=view==='month'?visit.date.slice(0,7):view==='week'?monday(visit.date):visit.date;
     const bucket=map.get(key);if(!bucket)continue;
-    bucket.passes.add(guest.passCode);bucket.scans++;passes.add(guest.passCode);scans++;
+    bucket.passes.add(guest.passCode);bucket.visits++;passes.add(guest.passCode);visits++;
   }
-  return {start,end,guests:passes.size,scans,rows:[...map.values()].map(({passes,...b})=>({...b,guests:passes.size}))};
+  return {start,end,guests:passes.size,visits,rows:[...map.values()].map(({passes,...b})=>({...b,guests:passes.size}))};
 }
 export function shiftChartDate(date,view,direction) {
   const d=at(date);

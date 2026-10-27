@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MONTH_PERIODS, DAY_TYPES, visitPeriod, visitDayType, visitSlot, normalizeVisits, guestSummary } from '../src/loyalty/model.js';
+import { MONTH_PERIODS, DAY_TYPES, visitPeriod, visitDayType, visitSlot, normalizeVisits, guestSummary, monthlyVisits, matchesVisitFilters } from '../src/loyalty/model.js';
 test('month boundaries never overlap',()=>{
   for(const [day,group] of [[1,0],[10,0],[11,1],[20,1],[21,2],[31,2]]) assert.equal(visitPeriod(`2026-10-${String(day).padStart(2,'0')}`),MONTH_PERIODS[group]);
 });
@@ -52,10 +52,10 @@ test('visitor bars group by Monday weeks and month/year with unique pass counts'
  const {visitorChart,shiftChartDate}=await import('../src/loyalty/visitorChart.js');
  const guests=[{passCode:'A',visits:[{date:'2026-10-18'},{date:'2026-10-18'},{date:'2026-10-19'}]},{passCode:'B',visits:[{date:'2026-10-19'},{date:'2026-11-01'}]}];
  const daily=visitorChart(guests,'2026-10-19','day');
- assert.equal(daily.start,'2026-10-19');assert.equal(daily.end,'2026-10-25');assert.equal(daily.rows[0].guests,2);assert.equal(daily.rows.length,7);
+ assert.equal(daily.start,'2026-10-19');assert.equal(daily.end,'2026-10-25');assert.equal(daily.rows[0].guests,1);assert.equal(daily.rows.length,7);
  const weekly=visitorChart(guests,'2026-10-22','week');
- assert.equal(weekly.guests,2);assert.equal(weekly.scans,4);assert.equal(weekly.rows.find(r=>r.key==='2026-10-12').guests,1);
- assert.equal(weekly.rows.find(r=>r.key==='2026-10-19').guests,2);
+ assert.equal(weekly.guests,2);assert.equal(weekly.visits,2);assert.equal(weekly.rows.find(r=>r.key==='2026-10-12').guests,1);
+ assert.equal(weekly.rows.find(r=>r.key==='2026-10-19').guests,1);
  const monthly=visitorChart(guests,'2026-10-22','month');assert.equal(monthly.rows.length,12);assert.equal(monthly.rows[9].guests,2);assert.equal(monthly.rows[10].guests,1);assert.equal(monthly.guests,2);
  assert.equal(shiftChartDate('2026-01-31','week',1),'2026-02-01');assert.equal(shiftChartDate('2026-10-19','day',-1),'2026-10-12');
 });
@@ -66,4 +66,35 @@ test('pre-opening scans remain in history but are excluded from valid visiting t
  assert.equal(visitSlot('17:59'),'15:00–17:59');assert.equal(visitSlot('21:00'),'21:00 onward');
  const visits=normalizeVisits([{date:'2026-10-19',time:'11:55',status:'scanned'},{date:'2026-10-18',time:'17:52',status:'scanned'}],new Date('2026-10-22T12:00:00Z'));
  assert.equal(visits.length,2);assert.equal(visits.filter(v=>TIME_SLOTS.includes(v.slot)).length,1);
+});
+
+
+test('monthly counts use first eligible scan before filters and preserve the original history',()=>{
+ const g=guestSummary({passCode:'A',visits:[
+  {date:'2026-10-19',time:'11:56',status:'scanned'},
+  {date:'2026-10-09',time:'18:00',status:'scanned'},
+  {date:'2026-10-18',time:'17:42',status:'scanned'},
+  {date:'2026-11-15',time:'16:00',status:'scanned'},
+  {date:'2026-11-01',time:'12:30',status:'scanned'},
+  {date:'2027-10-01',time:'14:00',status:'scanned'}
+ ]},new Date('2027-10-27T12:00:00Z'));
+ assert.equal(g.visits.length,5);
+ assert.equal(g.latest.date,'2027-10-01');
+ assert.deepEqual(g.countedVisits.map(v=>v.date),['2026-10-18','2026-11-01','2027-10-01']);
+ assert.equal(g.countedVisits.filter(v=>matchesVisitFilters(v,{month:'2026-10'})).length,1);
+ assert.equal(g.countedVisits.filter(v=>matchesVisitFilters(v,{month:'2026-10',dayType:DAY_TYPES[0]})).length,0);
+ assert.equal(g.countedVisits.filter(v=>matchesVisitFilters(v,{month:'2026-10',slot:'15:00–17:59'})).length,1);
+ assert.deepEqual(monthlyVisits([]),[]);
+});
+
+test('eight guests with ten scans produce eight monthly visits across chart buckets',async()=>{
+ const {visitorChart}=await import('../src/loyalty/visitorChart.js');
+ const dates=[['18','19'],['16','19'],['19'],['18'],['10'],['10'],['22'],['23']];
+ const guests=dates.map((days,i)=>guestSummary({passCode:`test-${i}`,visits:days.map(day=>({date:`2026-10-${day}`,time:'15:00',status:'scanned'}))},new Date('2026-10-27T12:00:00Z')));
+ assert.equal(guests.flatMap(g=>g.visits).length,10);
+ assert.equal(guests.flatMap(g=>g.countedVisits).length,8);
+ const chart=visitorChart(guests,'2026-10-27','week');
+ assert.equal(chart.guests,8);assert.equal(chart.visits,8);
+ assert.equal(chart.rows.reduce((total,row)=>total+row.guests,0),8);
+ assert.deepEqual(chart.rows.map(r=>r.guests),[0,2,3,3,0]);
 });
