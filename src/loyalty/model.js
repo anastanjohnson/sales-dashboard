@@ -55,6 +55,18 @@ export function matchesVisitFilters(visit, {month = '', period = '', dayType = '
   return (!month || visit.date.startsWith(month)) && (!period || visit.period === period)
     && (!dayType || visit.dayType === dayType) && (!slot || visit.slot === slot);
 }
+export function dinerTotals(visits = []) {
+  const parties = new Map();
+  let matchedVisits = 0;
+  for (const visit of visits) {
+    const party = visit.openTableParty;
+    if (party?.status !== 'verified' || !party.reservationId || !Number.isInteger(party.size) || party.size < 1) continue;
+    matchedVisits++;
+    // Two loyalty passes may belong to the same reservation. Count its diners once.
+    parties.set(party.reservationId, Math.max(parties.get(party.reservationId) || 0, party.size));
+  }
+  return { total: [...parties.values()].reduce((sum,size)=>sum+size,0), matchedVisits, pendingVisits: visits.length-matchedVisits, parties: parties.size };
+}
 export function preference(visits, field) {
   if (!visits.length) return 'Pending history';
   const counts = new Map();

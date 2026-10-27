@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Search, Users, CalendarDays, Clock3, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { RefreshCw, Search, Users, CalendarDays, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { apiFetch } from '../api.js';
-import { MONTH_PERIODS, DAY_TYPES, TIME_SLOTS, guestSummary, distribution, matchesVisitFilters } from '../loyalty/model.js';
+import { MONTH_PERIODS, DAY_TYPES, TIME_SLOTS, guestSummary, distribution, matchesVisitFilters, dinerTotals } from '../loyalty/model.js';
 import './LoyaltyGuestTrackingPage.css';
 import LoyaltyVisitorChart from './LoyaltyVisitorChart.jsx';
 
@@ -48,6 +48,9 @@ export default function LoyaltyGuestTrackingPage() {
     return g.countedVisits.some(v => matchesVisitFilters(v, {month, period, dayType, slot}));
   }).sort((a,b) => (b.latest?.date || '').localeCompare(a.latest?.date || '') || a.name.localeCompare(b.name)),[guests,query,month,period,dayType,slot,history]);
   const selectedVisits = filtered.flatMap(g => g.countedVisits.filter(v => matchesVisitFilters(v, {month, period, dayType, slot})));
+  const diners = dinerTotals(selectedVisits);
+  const reportVisits = filtered.flatMap(g => g.reservationReport?.visits || []).filter(v => v.status === 'finished');
+  const reportDiners = reportVisits.reduce((sum,v)=>sum+v.size,0);
   const matched = guests.filter(g=>g.previous).length;
   const pages = Math.max(1,Math.ceil(filtered.length/25));
   return <div className="dashboard loyalty-tracking">
@@ -62,9 +65,14 @@ export default function LoyaltyGuestTrackingPage() {
         [Users,'Loyalty guests',number.format(guests.length),'Passes with recorded scans'],
         [CalendarDays,'OpenTable history matched',number.format(matched),`${number.format(guests.length-matched)} awaiting previous visit`],
         [CalendarDays,'Visits in selection',number.format(selectedVisits.length),'Each guest counted once per month'],
-        [Clock3,'Returning guests',number.format(filtered.filter(g=>g.previous).length),'Previous completed OpenTable visit'],
+        [Users,'Total diners',diners.pendingVisits ? `${number.format(diners.total)} verified` : number.format(diners.total),`${diners.matchedVisits} of ${selectedVisits.length} visits matched${diners.pendingVisits ? ` · ${diners.pendingVisits} pending` : ''} · Includes companions`],
       ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{data.connectionPending ? '—' : value}</strong><small>{note}</small></section>)}</div>
       {matched < guests.length && <p className="loyalty-message">A previous OpenTable visit is available for {number.format(matched)} of {number.format(guests.length)} guests. Unmatched history does not mean the guest has never visited.</p>}
+      <section className="loyalty-list"><div className="loyalty-list-head"><h2>OpenTable visits · 2026</h2><span>Completed bookings for the guests matching the filters · 1 January–31 December 2026</span></div><div className="loyalty-stats">{[
+        [CalendarDays,'Completed bookings',reportVisits.length,'Includes visits before loyalty tracking'],
+        [Users,'Total diners · 2026',reportDiners,'Sum of recorded reservation sizes'],
+        [Users,'Additional diners · 2026',reportDiners-reportVisits.length,'Party size minus one booking guest per visit']
+      ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{number.format(value)}</strong><small>{note}</small></section>)}</div><p className="loyalty-footnote">These historical totals cover 2026, independently of the monthly loyalty scan counts. Repeat bookings are included. Diners are covers, not unique people. Party sizes use OpenTable’s Size column; children mentioned only in notes are not added.</p></section>
       <LoyaltyVisitorChart guests={guests}/>
       <div className="loyalty-filters">
         <label className="loyalty-search"><span><Search size={14}/>Find guest</span><input placeholder="Name, phone, email or pass code" value={query} onChange={e=>setQuery(e.target.value)}/></label>
@@ -80,20 +88,22 @@ export default function LoyaltyGuestTrackingPage() {
         <Pattern title="Visiting time slots" values={distribution(selectedVisits,'slot',TIME_SLOTS)} note={`${selectedVisits.filter(v=>!TIME_SLOTS.includes(v.slot)).length} monthly visits excluded: first scan before 12:00 or time unknown. Percentages use only first monthly scans from 12:00 onward. Weekend opening: 12:00. Scan times may differ from arrival times.`}/>
       </div>
       <section className="loyalty-list"><div className="loyalty-list-head"><h2>Guest scan history</h2><span>{number.format(filtered.length)} guests · Previous visits come from OpenTable History, including dates before tracking began</span></div>
-        <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest loyalty scan</th><th>Previous visit · OpenTable</th><th>Counted visits</th><th title="Calendar days between the latest loyalty scan date and the previous OpenTable visit date">Days between visits</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>
-          <tbody>{filtered.slice(page*25,(page+1)*25).map(g=><GuestRow key={g.id || g.passCode} guest={g} countedVisitCount={g.countedVisits.filter(v=>matchesVisitFilters(v,{month,period,dayType,slot})).length} open={expanded === g.passCode} onToggle={()=>setExpanded(expanded === g.passCode ? null:g.passCode)}/>)}</tbody></table></div>
+        <div className="loyalty-table-wrap"><table><thead><tr><th>Guest / Pass</th><th>Latest loyalty scan</th><th>Previous visit · OpenTable</th><th>Counted visits</th><th>Diners · OpenTable</th><th title="Calendar days between the latest loyalty scan date and the previous OpenTable visit date">Days between visits</th><th>Usual month period</th><th>Usual day</th><th>Usual time</th><th>History</th></tr></thead>
+          <tbody>{filtered.slice(page*25,(page+1)*25).map(g=><GuestRow key={g.id || g.passCode} guest={g} countedVisits={g.countedVisits.filter(v=>matchesVisitFilters(v,{month,period,dayType,slot}))} open={expanded === g.passCode} onToggle={()=>setExpanded(expanded === g.passCode ? null:g.passCode)}/>)}</tbody></table></div>
         {!filtered.length && <p className="loyalty-empty">{guests.length ? 'No guests match these filters.':'No loyalty guest list has been imported yet.'}</p>}
         <div className="loyalty-pagination"><span>Page {page+1} of {pages}</span><button className="btn btn--ghost" disabled={page===0} onClick={()=>setPage(p=>p-1)}>Previous</button><button className="btn btn--ghost" disabled={page>=pages-1} onClick={()=>setPage(p=>p+1)}>Next</button></div>
       </section>
-      <p className="loyalty-footnote">Each guest counts once per calendar month, using their first eligible scan for visit totals, charts and patterns. Repeat scans remain in the expanded history only. Tracking starts on 10 October 2026 at 12:33, including that scan. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 10 October. Scan time may differ from arrival time. Days between visits is the difference between the two displayed visit dates (latest loyalty scan minus previous OpenTable visit). A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
+      <p className="loyalty-footnote">Total diners includes the loyalty guest and companions from verified OpenTable party sizes for counted visits. Shared reservations count once; unmatched visits are pending, not zero. Each guest counts once per calendar month, using their first eligible scan for visit totals, charts and patterns. Repeat scans remain in the expanded history only. Tracking starts on 10 October 2026 at 12:33, including that scan. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 10 October. Scan time may differ from arrival time. Days between visits is the difference between the two displayed visit dates (latest loyalty scan minus previous OpenTable visit). A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
     </>}
   </div>;
 }
-function GuestRow({guest:g,countedVisitCount,open,onToggle}) {
-  return <><tr><td><strong>{g.name}</strong><small>{g.passCode}</small></td><td>{stamp(g.latest)}{g.latest && <small>{g.daysSinceVisit} days ago</small>}</td><td>{g.previous ? stamp(g.previous):'Not yet matched'}{g.previous && <small>OpenTable · Finished visit</small>}</td><td>{countedVisitCount || '—'}</td><td>{g.gapDays == null ? '—':`${g.gapDays} ${g.gapDays === 1 ? 'day' : 'days'}`}</td><td>{g.period}</td><td>{g.dayType}</td><td>{g.slot}</td><td><button className="loyalty-detail" onClick={onToggle} aria-expanded={open} aria-label={`Visit history for ${g.name}`}>{open ? <ChevronUp size={15}/>:<ChevronDown size={15}/>}</button></td></tr>
-    {open && <tr className="loyalty-expanded"><td colSpan={9}><div className="loyalty-guest-detail"><h3>{g.name} · Loyalty scans & previous visit</h3><p>All original scans are retained here. Only the first scan in each calendar month counts in the report.</p><p>{g.phone || 'No phone recorded'} · {g.passCode}</p>
+function GuestRow({guest:g,countedVisits,open,onToggle}) {
+  const diners = dinerTotals(countedVisits);
+  return <><tr><td><strong>{g.name}</strong><small>{g.passCode}</small></td><td>{stamp(g.latest)}{g.latest && <small>{g.daysSinceVisit} days ago</small>}</td><td>{g.previous ? stamp(g.previous):'Not yet matched'}{g.previous && <small>OpenTable · Finished visit</small>}</td><td>{countedVisits.length || '—'}</td><td>{diners.matchedVisits ? `${diners.total}${diners.pendingVisits ? ' verified' : ''}` : 'Not yet verified'}{diners.pendingVisits > 0 && <small>{diners.pendingVisits} pending</small>}</td><td>{g.gapDays == null ? '—':`${g.gapDays} ${g.gapDays === 1 ? 'day' : 'days'}`}</td><td>{g.period}</td><td>{g.dayType}</td><td>{g.slot}</td><td><button className="loyalty-detail" onClick={onToggle} aria-expanded={open} aria-label={`Visit history for ${g.name}`}>{open ? <ChevronUp size={15}/>:<ChevronDown size={15}/>}</button></td></tr>
+    {open && <tr className="loyalty-expanded"><td colSpan={10}><div className="loyalty-guest-detail"><h3>{g.name} · Loyalty scans & previous visit</h3><p>All original scans are retained here. Only the first scan in each calendar month counts in the report.</p><p>{g.phone || 'No phone recorded'} · {g.passCode}</p>
       <p><strong>Previous visit · OpenTable History:</strong> {g.previous ? stamp(g.previous) : 'Not yet matched'}</p>{g.previous && <p>Matched by pass code and phone. This completed visit can be earlier than the loyalty tracking start date.</p>}
       {g.visits.length ? <ol>{g.visits.map((v,i)=><li key={v.id || `${v.date}-${v.time}`}><strong>{stamp(v)}</strong><span>{v.period} · {v.dayType} · {v.slot}{v.cashier ? ` · Scanned by ${v.cashier}` : ''}</span>{i===0 && <small>Latest recorded scan</small>}</li>)}</ol>:<p>No scans have been imported for this pass yet.</p>}
+      {g.reservationReport && <><h3>Completed OpenTable bookings · 2026</h3><ol>{g.reservationReport.visits.map(v=><li key={v.reservationId}><strong>{stamp(v)}</strong><span>{v.size} diners · {v.size-1} additional · Finished</span></li>)}</ol></>}
       {g.openTableProfileUrl && <a href={g.openTableProfileUrl} target="_blank" rel="noreferrer">Open guest in OpenTable <ExternalLink size={12}/></a>}
     </div></td></tr>}</>;
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MONTH_PERIODS, DAY_TYPES, visitPeriod, visitDayType, visitSlot, normalizeVisits, guestSummary, monthlyVisits, matchesVisitFilters } from '../src/loyalty/model.js';
+import { MONTH_PERIODS, DAY_TYPES, visitPeriod, visitDayType, visitSlot, normalizeVisits, guestSummary, monthlyVisits, matchesVisitFilters, dinerTotals } from '../src/loyalty/model.js';
 test('month boundaries never overlap',()=>{
   for(const [day,group] of [[1,0],[10,0],[11,1],[20,1],[21,2],[31,2]]) assert.equal(visitPeriod(`2026-10-${String(day).padStart(2,'0')}`),MONTH_PERIODS[group]);
 });
@@ -97,4 +97,13 @@ test('eight guests with ten scans produce eight monthly visits across chart buck
  assert.equal(chart.guests,8);assert.equal(chart.visits,8);
  assert.equal(chart.rows.reduce((total,row)=>total+row.guests,0),8);
  assert.deepEqual(chart.rows.map(r=>r.guests),[0,2,3,3,0]);
+});
+
+
+test('diner totals include companions, flag unmatched visits and deduplicate shared bookings',()=>{
+ const visit=(reservationId,size,status='verified')=>({openTableParty:{reservationId,size,status}});
+ assert.deepEqual(dinerTotals([visit('a',2),visit('b',6),visit('c',3),visit('d',2),{},{},{},{}]),{total:13,matchedVisits:4,pendingVisits:4,parties:4});
+ assert.deepEqual(dinerTotals([visit('a',2),visit('a',2)]),{total:2,matchedVisits:2,pendingVisits:0,parties:1});
+ assert.deepEqual(dinerTotals([visit('a',0),visit('b',2,'pending'),visit('',3),visit('c',2.5)]),{total:0,matchedVisits:0,pendingVisits:4,parties:0});
+ assert.deepEqual(dinerTotals([]),{total:0,matchedVisits:0,pendingVisits:0,parties:0});
 });
