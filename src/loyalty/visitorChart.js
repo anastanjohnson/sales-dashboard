@@ -1,4 +1,4 @@
-import { monthlyVisits } from './model.js';
+import { monthlyVisits, TRACKING_START } from './model.js';
 const at = date => new Date(`${date}T12:00:00Z`);
 const iso = date => date.toISOString().slice(0,10);
 const shiftDays = (date, days) => { const d=at(date); d.setUTCDate(d.getUTCDate()+days); return iso(d); };
@@ -16,7 +16,10 @@ export function visitorChart(guests,date,view='day') {
     start=monday(date);end=shiftDays(start,6);
     for(let key=start;key<=end;key=shiftDays(key,1))buckets.push({key,label:new Intl.DateTimeFormat('en-GB',{weekday:'short',timeZone:'UTC'}).format(at(key))});
   }
-  const map=new Map(buckets.map(b=>[b.key,{...b,passes:new Set(),visits:0}])),passes=new Set();
+  const trackingDate=TRACKING_START.slice(0,10);
+  start=start<trackingDate?trackingDate:start;
+  const visibleBuckets=buckets.filter(b=>view==='month'?b.key>=trackingDate.slice(0,7):view==='week'?shiftDays(b.key,6)>=trackingDate:b.key>=trackingDate);
+  const map=new Map(visibleBuckets.map(b=>[b.key,{...b,passes:new Set(),visits:0}])),passes=new Set();
   let visits=0;
   for(const guest of guests) for(const visit of monthlyVisits(guest.visits)) {
     if(visit.date<start||visit.date>end)continue;

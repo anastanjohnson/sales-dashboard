@@ -2,7 +2,7 @@ export const MONTH_PERIODS = ['Beginning · 1–10', 'Middle · 11–20', 'End �
 export const DAY_TYPES = ['Weekday · Mon–Thu', 'Weekend · Fri–Sun'];
 export const TIME_SLOTS = ['12:00–14:59', '15:00–17:59', '18:00–20:59', '21:00 onward'];
 // Inclusive boundary in the staff terminal's displayed date and time.
-export const TRACKING_START = '2026-10-10T12:33';
+export const TRACKING_START = '2026-10-12T00:00';
 const completedStatuses = new Set(['scanned', 'completed', 'seated', 'finished', 'paid', 'left', 'abgeschlossen', 'platziert']);
 export function visitPeriod(date) {
   const day = Number(date.slice(8, 10));

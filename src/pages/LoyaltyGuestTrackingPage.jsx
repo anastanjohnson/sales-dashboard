@@ -52,7 +52,7 @@ export default function LoyaltyGuestTrackingPage() {
   const matched = guests.filter(g=>g.previous).length;
   const pages = Math.max(1,Math.ceil(filtered.length/25));
   return <div className="dashboard loyalty-tracking">
-    <div className="dashboard__header"><div><h1>Loyalty Guest Tracking</h1><p className="dashboard__subtitle">Tracking from 10 October 2026 at 12:33, including that scan.</p></div>
+    <div className="dashboard__header"><div><h1>Loyalty Guest Tracking</h1><p className="dashboard__subtitle">Tracking from 12 October 2026.</p></div>
       <button className="btn btn--ghost" onClick={load} disabled={loading}><RefreshCw size={15}/>{loading ? 'Loading…':'Refresh'}</button></div>
     <div className="loyalty-source"><span>Guest list: <a href="https://loyalty.karikaala.de/staff" target="_blank" rel="noreferrer">ARASAVAI <ExternalLink size={12}/></a> · Scans: staff terminal · Previous visit: OpenTable History</span>
       <span>{data?.updatedAt ? `Imported ${new Date(data.updatedAt).toLocaleString('en-GB',{timeZone:'Europe/Berlin'})}`:'Waiting for first import'}</span></div>
@@ -86,7 +86,7 @@ export default function LoyaltyGuestTrackingPage() {
         {!filtered.length && <p className="loyalty-empty">{guests.length ? 'No guests match these filters.':'No loyalty guest list has been imported yet.'}</p>}
         <div className="loyalty-pagination"><span>Page {page+1} of {pages}</span><button className="btn btn--ghost" disabled={page===0} onClick={()=>setPage(p=>p-1)}>Previous</button><button className="btn btn--ghost" disabled={page>=pages-1} onClick={()=>setPage(p=>p+1)}>Next</button></div>
       </section>
-      <p className="loyalty-footnote">Total diners includes the loyalty guest and companions from verified OpenTable party sizes for counted visits. Shared reservations count once; unmatched visits are pending, not zero. Each guest counts once per calendar month, using their first eligible scan for visit totals, charts and patterns. Repeat scans remain in the expanded history only. Tracking starts on 10 October 2026 at 12:33, including that scan. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 10 October. Scan time may differ from arrival time. Days between visits is the difference between the two displayed visit dates (latest loyalty scan minus previous OpenTable visit). A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
+      <p className="loyalty-footnote">Total diners includes the loyalty guest and companions from verified OpenTable party sizes for counted visits. Shared reservations count once; unmatched visits are pending, not zero. Each guest counts once per calendar month, using their first eligible scan for visit totals, charts and patterns. Repeat scans remain in the expanded history only. Tracking starts on 12 October 2026. Previous visit uses the latest completed OpenTable visit before the latest scan date, including history before 12 October. Scan time may differ from arrival time. Days between visits is the difference between the two displayed visit dates (latest loyalty scan minus previous OpenTable visit). A tie shows both preferences. Refresh reloads the latest imported records; this is not an automatic connection to the loyalty app.</p>
     </>}
   </div>;
 }
