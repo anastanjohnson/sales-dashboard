@@ -49,8 +49,6 @@ export default function LoyaltyGuestTrackingPage() {
   }).sort((a,b) => (b.latest?.date || '').localeCompare(a.latest?.date || '') || a.name.localeCompare(b.name)),[guests,query,month,period,dayType,slot,history]);
   const selectedVisits = filtered.flatMap(g => g.countedVisits.filter(v => matchesVisitFilters(v, {month, period, dayType, slot})));
   const diners = dinerTotals(selectedVisits);
-  const reportVisits = filtered.flatMap(g => g.reservationReport?.visits || []).filter(v => v.status === 'finished');
-  const reportDiners = reportVisits.reduce((sum,v)=>sum+v.size,0);
   const matched = guests.filter(g=>g.previous).length;
   const pages = Math.max(1,Math.ceil(filtered.length/25));
   return <div className="dashboard loyalty-tracking">
@@ -68,11 +66,6 @@ export default function LoyaltyGuestTrackingPage() {
         [Users,'Total diners',diners.pendingVisits ? `${number.format(diners.total)} verified` : number.format(diners.total),`${diners.matchedVisits} of ${selectedVisits.length} visits matched${diners.pendingVisits ? ` · ${diners.pendingVisits} pending` : ''} · Includes companions`],
       ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{data.connectionPending ? '—' : value}</strong><small>{note}</small></section>)}</div>
       {matched < guests.length && <p className="loyalty-message">A previous OpenTable visit is available for {number.format(matched)} of {number.format(guests.length)} guests. Unmatched history does not mean the guest has never visited.</p>}
-      <section className="loyalty-list"><div className="loyalty-list-head"><h2>OpenTable visits · 2026</h2><span>Completed bookings for the guests matching the filters · 1 January–31 December 2026</span></div><div className="loyalty-stats">{[
-        [CalendarDays,'Completed bookings',reportVisits.length,'Includes visits before loyalty tracking'],
-        [Users,'Total diners · 2026',reportDiners,'Sum of recorded reservation sizes'],
-        [Users,'Additional diners · 2026',reportDiners-reportVisits.length,'Party size minus one booking guest per visit']
-      ].map(([Icon,label,value,note])=><section key={label}><Icon size={18}/><span>{label}</span><strong>{number.format(value)}</strong><small>{note}</small></section>)}</div><p className="loyalty-footnote">These historical totals cover 2026, independently of the monthly loyalty scan counts. Repeat bookings are included. Diners are covers, not unique people. Party sizes use OpenTable’s Size column; children mentioned only in notes are not added.</p></section>
       <LoyaltyVisitorChart guests={guests}/>
       <div className="loyalty-filters">
         <label className="loyalty-search"><span><Search size={14}/>Find guest</span><input placeholder="Name, phone, email or pass code" value={query} onChange={e=>setQuery(e.target.value)}/></label>
