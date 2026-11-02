@@ -27,7 +27,7 @@ export const NAV_ITEMS = [
     { icon: WalletCards, label: "Salary Payment", page: "salary-payment" },
     { icon: Clock3, label: "Staff Hours", page: "staff-hours" },
     { icon: CalendarDays, label: "Shift Planner", page: "shift-planner" },
-    { icon: Utensils, label: "Monthly Menu Refresh", page: "monthly-menu-refresh" },
+    { icon: Utensils, label: "Monthly Menu", page: "monthly-menu-refresh" },
   { icon: Settings, label: "Settings", page: "settings" },
   ];
 

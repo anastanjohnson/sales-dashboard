@@ -1,7 +1,6 @@
 .menu-refresh-layout { container: menu-refresh / inline-size; width: 100%; min-width: 0; }
 .menu-refresh { display: flex; flex-direction: column; gap: 12px; width: 100%; min-width: 0; height: auto; min-height: 0; }
 .menu-refresh > * { min-width: 0; flex-shrink: 0; }
-.sidebar__item[title="Monthly Menu Refresh"] { white-space: normal; line-height: 1.35; }
 .menu-refresh h1, .menu-refresh h2, .menu-refresh p { margin-top: 0; }
 .menu-refresh h2 { margin-bottom: 4px; font-size: 19px; }
 .menu-refresh__header h1 { font-size: 26px; line-height: 1.25; margin-bottom: 5px; }
