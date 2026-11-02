@@ -189,7 +189,7 @@ export default function MonthlyMenuRefreshPage() {
     dirty.current = false; setNotice(""); load();
   };
 
-  return <div className="dashboard menu-refresh">
+  return <div className="menu-refresh-layout"><div className={`dashboard menu-refresh${poolOpen ? " menu-refresh--config-open" : ""}`}>
     <header className="dashboard__header menu-refresh__header">
       <div><h1>Monthly Menu Refresh</h1><p className="dashboard__subtitle">Plan the monthly AYCE menu rotation.</p></div>
       <div className="menu-refresh__header-actions">
@@ -209,7 +209,7 @@ export default function MonthlyMenuRefreshPage() {
       <div className="menu-refresh__special-icon"><Utensils size={26} aria-hidden="true" /></div>
       <div><span className="menu-refresh__special-kicker">Seasonal menu</span><h2 id="menu-refresh-special-title">{specialMenu.title}</h2><p className="menu-refresh__special-month">{monthTitle(month)}</p><p className="menu-refresh__special-note">Regular menu rotation is paused for this month.</p></div>
     </section> : loading ? <section className="menu-refresh__card menu-refresh__empty" role="status">Loading menu rotation…</section> : !snapshot ? <section className="menu-refresh__card menu-refresh__empty">Unable to load this month. Use Refresh to try again.</section> : <>
-      <section className="menu-refresh__card menu-refresh__rotation">
+      <section className={`menu-refresh__card menu-refresh__rotation${canConfigure ? "" : " menu-refresh__rotation--chef"}`}>
         <div className="menu-refresh__rotation-top"><div><h2>Menu Rotation</h2><p>{monthTitle(month)}</p></div>
           {canConfigure ? <div className="menu-refresh__target-control">
             <label htmlFor="menu-refresh-target">Items to change</label>
@@ -237,19 +237,19 @@ export default function MonthlyMenuRefreshPage() {
 
       <section className="menu-refresh__card menu-refresh__changes">
         <div className="menu-refresh__section-heading"><h2>{monthTitle(month)} changes</h2><span>{completed} of {snapshot.targetCount} replacements entered</span></div>
-        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table"><thead><tr className="menu-refresh__group-head"><th colSpan="4">Current AYCE item</th><th colSpan="2">New menu item</th></tr><tr><th scope="col">#</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">Food name</th><th scope="col">New food name</th><th scope="col">Chef guidance</th></tr></thead><tbody>{rows.map((row, index) => {
+        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table" role="table" aria-label={`${monthTitle(month)} food changes`}><colgroup><col className="menu-refresh__column--number" /><col className="menu-refresh__column--category" /><col className="menu-refresh__column--subcategory" /><col className="menu-refresh__column--food" /><col className="menu-refresh__column--new" /><col className="menu-refresh__column--guidance" /></colgroup><thead role="rowgroup"><tr className="menu-refresh__group-head" role="row"><th colSpan="4">Current AYCE item</th><th colSpan="2">New menu item</th></tr><tr role="row"><th scope="col">#</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">Food name</th><th scope="col">New food name</th><th scope="col">Chef guidance</th></tr></thead><tbody role="rowgroup">{rows.map((row, index) => {
           const item = itemById.get(row.currentItemId);
           const filter = filters[index] || { category: item?.category || "", subcategory: item?.subcategory || "" };
           const categoryItems = chefItems.filter((candidate) => candidate.category === filter.category);
           const subcategories = [...new Set(categoryItems.map((candidate) => candidate.subcategory).filter(Boolean))];
           const foodOptions = categoryItems.filter((candidate) => candidate.subcategory === filter.subcategory && (candidate.id === row.currentItemId || !selectedIds.has(candidate.id)));
-          return <tr key={index}>
-            <td>{String(index + 1).padStart(2, "0")}</td>
-            <td><label className="sr-only" htmlFor={`menu-refresh-category-${index}`}>Category for row {index + 1}</label><select id={`menu-refresh-category-${index}`} value={filter.category} onChange={(event) => updateFilter(index, "category", event.target.value)} disabled={blocked}><option value="">Choose category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></td>
-            <td><label className="sr-only" htmlFor={`menu-refresh-subcategory-${index}`}>Subcategory for row {index + 1}</label><select id={`menu-refresh-subcategory-${index}`} value={filter.subcategory} onChange={(event) => updateFilter(index, "subcategory", event.target.value)} disabled={blocked || !filter.category}><option value="">{filter.category ? "Choose subcategory" : "Choose category first"}</option>{subcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></td>
-            <td><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, newFoodName: "" })} disabled={blocked || !filter.category || !filter.subcategory} aria-describedby={filter.category && filter.subcategory ? `menu-refresh-food-count-${index}` : undefined}><option value="">{!filter.category ? "Choose category first" : !filter.subcategory ? "Choose subcategory first" : "Select current food"}</option>{foodOptions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select>{filter.category && filter.subcategory && <small id={`menu-refresh-food-count-${index}`} className="menu-refresh__food-count">{foodOptions.length} {foodOptions.length === 1 ? "food" : "foods"} available</small>}</td>
-            <td><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td>
-            <td><ChefGuidance item={item} /></td>
+          return <tr key={index} role="row" className={item ? "menu-refresh__row--selected" : ""}>
+            <td role="cell" data-label="Change"><span className="menu-refresh__number-wrap">{String(index + 1).padStart(2, "0")}{item && <span className="menu-refresh__selected-mark" role="img" aria-label="Current food selected"><Check size={12} aria-hidden="true" /></span>}</span></td>
+            <td role="cell" data-label="Category"><label className="sr-only" htmlFor={`menu-refresh-category-${index}`}>Category for row {index + 1}</label><select id={`menu-refresh-category-${index}`} value={filter.category} onChange={(event) => updateFilter(index, "category", event.target.value)} disabled={blocked}><option value="">Choose category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></td>
+            <td role="cell" data-label="Subcategory"><label className="sr-only" htmlFor={`menu-refresh-subcategory-${index}`}>Subcategory for row {index + 1}</label><select id={`menu-refresh-subcategory-${index}`} value={filter.subcategory} onChange={(event) => updateFilter(index, "subcategory", event.target.value)} disabled={blocked || !filter.category}><option value="">{filter.category ? "Choose subcategory" : "Choose category first"}</option>{subcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></td>
+            <td role="cell" data-label="Current food"><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, newFoodName: "" })} disabled={blocked || !filter.category || !filter.subcategory} aria-describedby={filter.category && filter.subcategory ? `menu-refresh-food-count-${index}` : undefined}><option value="">{!filter.category ? "Choose category first" : !filter.subcategory ? "Choose subcategory first" : "Select current food"}</option>{foodOptions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select>{filter.category && filter.subcategory && <small id={`menu-refresh-food-count-${index}`} className="menu-refresh__food-count">{foodOptions.length} {foodOptions.length === 1 ? "food" : "foods"} available</small>}</td>
+            <td role="cell" data-label="New food name"><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td>
+            <td role="cell" data-label="Chef guidance"><ChefGuidance item={item} /></td>
           </tr>;
         })}</tbody></table></div> : <div className="menu-refresh__empty"><Utensils size={28} /><strong>{snapshot.configured ? "No menu changes planned for this month." : "This month is waiting for Anastan’s configuration."}</strong><p>{canConfigure ? "Set the item count and enable the foods the chef can choose, then save the configuration." : "The chef’s rows will appear when Anastan saves the monthly target and available dishes."}</p></div>}
         <p className="menu-refresh__helper"><Info size={15} />Choose a category, then a subcategory, then the current food. Dietary and spice guidance fills automatically.</p>
@@ -257,5 +257,5 @@ export default function MonthlyMenuRefreshPage() {
       </section>
       <p className="menu-refresh__source">AYCE food reference: <a href="https://karikaala.de/speisekarte/" target="_blank" rel="noreferrer">KARIKAALA website</a>. Dietary and spice guidance describes the current dish; missing ratings remain unspecified.</p>
     </>}
-  </div>;
+  </div></div>;
 }
