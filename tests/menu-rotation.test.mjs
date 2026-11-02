@@ -4,6 +4,7 @@ import {
   MenuRotationError, activeRows, configureRotation, defaultRotation,
   installMenuRotationRoutes, rotationResponse, saveRotationRows, validateMonth,
 } from "../supabase/functions/dashboard-api/menu-rotation.js";
+import { getSpecialMenu } from "../supabase/functions/dashboard-api/menu-calendar.js";
 
 const catalog = [{ id: "one", name: "First dish" }, { id: "two", name: "Second dish" }, { id: "three", name: "Third dish" }];
 const month = "2026-11";
@@ -12,6 +13,47 @@ const setup = (targetCount = 2) => configureRotation(defaultRotation(month), {
   month, version: 0, targetCount, allowedItemIds: catalog.map(item => item.id),
 }, catalog, owner);
 const errorWith = (status, pattern) => error => error instanceof MenuRotationError && error.status === status && pattern.test(error.message);
+
+const specialMenus = [
+  ["12", "Christmas & New Year Special Menu", "Christmas & New Year"],
+  ["01", "Pongal Special Menu", "Pongal"],
+  ["02", "Valentine Special Menu", "Valentine"],
+  ["03", "Easter Special Menu", "Easter"],
+];
+test("the restaurant's four special-menu months recur every year", () => {
+  for (const year of [2026, 2027, 2030]) for (const [number, title, shortLabel] of specialMenus) {
+    assert.deepEqual(getSpecialMenu(`${year}-${number}`), { title, shortLabel });
+  }
+  for (const value of ["2026-04", "2026-11", "2027-04", "2027-11", "2026-00", undefined]) assert.equal(getSpecialMenu(value), null);
+});
+test("special-menu responses pause rotation without changing stored settings", () => {
+  for (const [number, title] of specialMenus) for (const role of [owner, chef]) {
+    const state = { ...setup(), month: `2027-${number}`, rows: [{ currentItemId: "one", newFoodName: "Saved replacement" }, { currentItemId: "two", newFoodName: "Another saved replacement" }] };
+    const before = structuredClone(state);
+    const response = rotationResponse(state, role, catalog);
+    assert.equal(response.specialMenu.title, title);
+    assert.equal(response.rotationEnabled, false);
+    assert.equal(response.targetCount, 0);
+    assert.deepEqual(response.rows, []);
+    assert.deepEqual(response.allowedItemIds, []);
+    assert.deepEqual(response.catalog, []);
+    assert.equal(response.canConfigure, role === owner);
+    assert.deepEqual(state, before);
+  }
+  for (const value of ["2026-04", "2026-11"]) {
+    const response = rotationResponse({ ...setup(), month: value }, owner, catalog);
+    assert.equal(response.rotationEnabled, true); assert.equal(response.specialMenu, null);
+    assert.equal(response.targetCount, 2); assert.equal(response.rows.length, 2); assert.equal(response.catalog.length, 3);
+  }
+});
+test("pure configuration and row saves reject recurring special-menu months", () => {
+  for (const [number, title] of specialMenus) {
+    const specialMonth = `2027-${number}`, state = { ...setup(), month: specialMonth };
+    const expected = error => error instanceof MenuRotationError && error.status === 403 && error.message === `${title} is scheduled for this month. Regular menu rotation is paused.`;
+    assert.throws(() => configureRotation(state, { month: specialMonth, version: 1, targetCount: 1, allowedItemIds: ["one"] }, catalog, owner), expected);
+    for (const role of [owner, chef]) assert.throws(() => saveRotationRows(state, { month: specialMonth, version: 1, rows: activeRows(state) }, role), expected);
+  }
+});
 
 test("months are isolated and calendar values are validated", () => {
   for (const value of ["2026-11", "2000-01", "2100-12"]) assert.equal(validateMonth(value), value);
@@ -134,4 +176,30 @@ test("API returns 409 when a second writer wins after the initial read", async (
   const result = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: 1, rows: [{ currentItemId: "one", newFoodName: "New" }] } });
   assert.equal(result.code, 409);
   assert.equal(api.records.get(month).rows[0].newFoodName, "");
+});
+test("API special-menu writes are blocked before database reads and preserve records", async () => {
+  const api = apiHarness();
+  for (const [number] of specialMenus) api.records.set(`2027-${number}`, {
+    month: `2027-${number}`, target_count: 1, allowed_item_ids: ["one"],
+    rows: [{ currentItemId: "one", newFoodName: "Previously saved replacement" }], version: 3, updated_at: "2026-11-02T12:00:00.000Z",
+  });
+  const before = structuredClone(api.records);
+  for (const [number, title] of specialMenus) {
+    const specialMonth = `2027-${number}`;
+    const config = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month: specialMonth, version: 3, targetCount: 1, allowedItemIds: ["one"] } });
+    assert.equal(config.code, 403); assert.match(config.body.error, /Regular menu rotation is paused/);
+    for (const role of [owner, chef]) {
+      const result = await api.request("PUT", "/api/menu-refresh/rows", { role, body: { month: specialMonth, version: 3, rows: [{ currentItemId: "one", newFoodName: "Changed" }] } });
+      assert.equal(result.code, 403); assert.ok(result.body.error.startsWith(title));
+    }
+  }
+  assert.deepEqual(api.counts(), { reads: 0, writes: 0 });
+  assert.deepEqual(api.records, before);
+  for (const [number, title] of specialMenus) {
+    const response = await api.request("GET", "/api/menu-refresh", { role: chef, query: { month: `2027-${number}` } });
+    assert.equal(response.code, 200); assert.equal(response.body.specialMenu.title, title);
+    assert.equal(response.body.rotationEnabled, false); assert.equal(response.body.targetCount, 0);
+    assert.deepEqual(response.body.rows, []); assert.deepEqual(response.body.catalog, []);
+  }
+  assert.equal(api.counts().writes, 0); assert.deepEqual(api.records, before);
 });

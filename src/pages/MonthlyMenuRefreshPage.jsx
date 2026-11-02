@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Flame, Info, LockKeyhole, RefreshCw, Save, Search, Utensils } from "lucide-react";
 import { apiFetch } from "../api.js";
+import { getSpecialMenu } from "../../supabase/functions/dashboard-api/menu-calendar.js";
 import "./MonthlyMenuRefreshPage.css";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -64,6 +65,7 @@ export default function MonthlyMenuRefreshPage() {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState("");
   const [poolOpen, setPoolOpen] = useState(false);
+  const specialMenu = getSpecialMenu(month) || (snapshot?.month === month ? snapshot.specialMenu : null);
   const activeMonth = useRef(month);
   activeMonth.current = month;
   const requestNumber = useRef(0);
@@ -126,7 +128,7 @@ export default function MonthlyMenuRefreshPage() {
   };
 
   const save = async (kind) => {
-    if (!snapshot || saving || error?.status === 409) return;
+    if (!snapshot || specialMenu || snapshot.rotationEnabled === false || saving || error?.status === 409) return;
     setSaving(kind); setError(null); setNotice("");
     requestNumber.current += 1;
     try {
@@ -155,7 +157,7 @@ export default function MonthlyMenuRefreshPage() {
   const remaining = chefItems.filter((item) => !selectedIds.has(item.id)).length;
   const filteredCatalog = catalog.filter((item) => `${item.name} ${item.category} ${item.subcategory}`.toLowerCase().includes(search.trim().toLowerCase()));
   const checked = new Set(allowed);
-  const canConfigure = snapshot?.canConfigure === true;
+  const canConfigure = !specialMenu && snapshot?.canConfigure === true;
   const blocked = Boolean(saving) || error?.status === 409;
 
   const updateRow = (index, patch) => { setNotice(""); setRows((previous) => previous.map((row, i) => i === index ? { ...row, ...patch } : row)); };
@@ -174,13 +176,17 @@ export default function MonthlyMenuRefreshPage() {
       </div>
     </header>
 
-    <nav className="menu-refresh__months" aria-label="Current and upcoming menu refresh months">{planningMonths.map(({ value, label, year }) => (
-      <button type="button" key={value} aria-label={`${label} ${year}`} aria-pressed={value === month} className={value === month ? "is-active" : ""} onClick={() => changeMonth(value)} disabled={Boolean(saving)}><span>{label}</span><small>{year}</small></button>
-    ))}</nav>
+    <nav className="menu-refresh__months" aria-label="Current and upcoming menu refresh months">{planningMonths.map(({ value, label, year }) => {
+      const seasonal = getSpecialMenu(value);
+      return <button type="button" key={value} aria-label={`${monthTitle(value)}${seasonal ? ` — ${seasonal.title}` : ""}`} title={seasonal?.title || monthTitle(value)} aria-pressed={value === month} className={`${value === month ? "is-active" : ""} ${seasonal ? "menu-refresh__month--special" : ""}`} onClick={() => changeMonth(value)} disabled={Boolean(saving)}><span>{label}</span><small>{year}</small>{seasonal && <span className="menu-refresh__special-tag">{seasonal.shortLabel}</span>}</button>;
+    })}</nav>
 
     {error && <div className="menu-refresh__alert" role="alert"><AlertTriangle size={18} /><div>{error.status === 409 ? "This month was updated in another login. Reload the saved version before making more changes. Your unsaved entries are still visible." : error.message}</div><button type="button" onClick={reloadSaved} disabled={Boolean(saving)}>Reload saved version</button></div>}
     {notice && <div className="menu-refresh__notice" role="status"><Check size={17} />{notice}</div>}
-    {loading ? <section className="menu-refresh__card menu-refresh__empty" role="status">Loading menu rotation…</section> : !snapshot ? <section className="menu-refresh__card menu-refresh__empty">Unable to load this month. Use Refresh to try again.</section> : <>
+    {specialMenu ? <section className="menu-refresh__card menu-refresh__special-card" aria-labelledby="menu-refresh-special-title">
+      <div className="menu-refresh__special-icon"><Utensils size={26} aria-hidden="true" /></div>
+      <div><span className="menu-refresh__special-kicker">Seasonal menu</span><h2 id="menu-refresh-special-title">{specialMenu.title}</h2><p className="menu-refresh__special-month">{monthTitle(month)}</p><p className="menu-refresh__special-note">Regular menu rotation is paused for this month.</p></div>
+    </section> : loading ? <section className="menu-refresh__card menu-refresh__empty" role="status">Loading menu rotation…</section> : !snapshot ? <section className="menu-refresh__card menu-refresh__empty">Unable to load this month. Use Refresh to try again.</section> : <>
       <section className="menu-refresh__card menu-refresh__rotation">
         <div className="menu-refresh__rotation-top"><div><h2>Menu Rotation</h2><p>{monthTitle(month)}</p></div>
           {canConfigure ? <div className="menu-refresh__target-control">

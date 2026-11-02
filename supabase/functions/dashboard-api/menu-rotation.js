@@ -1,5 +1,7 @@
 // Shared by the cookie-based Node server and the authenticated Supabase API.
 // The existing salary-payment account is Anastan; the admin account fulfils rotations.
+import { getSpecialMenu } from "./menu-calendar.js";
+
 const OWNER_ROLE = "salary-payment";
 const ACCESS_ROLES = new Set([OWNER_ROLE, "admin"]);
 const EMPTY_ROW = () => ({ currentItemId: "", newFoodName: "" });
@@ -8,6 +10,10 @@ export class MenuRotationError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
 const fail = (message, status) => { throw new MenuRotationError(message, status); };
+function requireRotationEnabled(month) {
+  const specialMenu = getSpecialMenu(month);
+  if (specialMenu) fail(`${specialMenu.title} is scheduled for this month. Regular menu rotation is paused.`, 403);
+}
 export function validateMonth(value) {
   if (typeof value !== "string" || !/^(?:20\d\d|2100)-(?:0[1-9]|1[0-2])$/.test(value)) fail("Choose a valid month between 2000 and 2100.");
   return value;
@@ -34,14 +40,17 @@ export function deserializeRotation(row, month) {
 }
 export function rotationResponse(state, role, catalog) {
   const canConfigure = role === OWNER_ROLE;
+  const specialMenu = getSpecialMenu(state.month);
+  if (specialMenu) return { ...state, canConfigure, specialMenu, rotationEnabled: false,
+    targetCount: 0, rows: [], allowedItemIds: [], catalog: [] };
   const allowed = new Set(state.allowedItemIds);
-  return { ...state, rows: activeRows(state), canConfigure,
+  return { ...state, rows: activeRows(state), canConfigure, specialMenu: null, rotationEnabled: true,
     catalog: canConfigure ? catalog : catalog.filter(item => allowed.has(item.id)) };
 }
 export function configureRotation(state, body, catalog, role) {
   if (role !== OWNER_ROLE) fail("Only Anastan can configure the monthly rotation.", 403);
   bodyShape(body, ["month", "targetCount", "allowedItemIds", "version"]);
-  validateMonth(body.month); validateVersion(body.version);
+  validateMonth(body.month); requireRotationEnabled(body.month); validateVersion(body.version);
   if (body.month !== state.month) fail("The selected month does not match this rotation.");
   if (body.version !== state.version) fail("This month changed in another login. Refresh before saving.", 409);
   if (!Number.isInteger(body.targetCount) || body.targetCount < 0 || body.targetCount > catalog.length) fail(`Items to change must be a whole number from 0 to ${catalog.length}.`);
@@ -62,7 +71,7 @@ export function configureRotation(state, body, catalog, role) {
 export function saveRotationRows(state, body, role) {
   if (!ACCESS_ROLES.has(role)) fail("Menu rotation access is required.", 403);
   bodyShape(body, ["month", "version", "rows"]);
-  validateMonth(body.month); validateVersion(body.version);
+  validateMonth(body.month); requireRotationEnabled(body.month); validateVersion(body.version);
   if (body.month !== state.month) fail("The selected month does not match this rotation.");
   if (!state.configured) fail("Anastan must configure this month before changes can be saved.", 409);
   if (body.version !== state.version) fail("This month changed in another login. Refresh before saving.", 409);
@@ -113,12 +122,14 @@ export function installMenuRotationRoutes(app, { database, tableName, requireAut
   }));
   app.put("/api/menu-refresh/config", requireAuth, requireOwner, requireSameOrigin, writeLimiter, asyncRoute(async (req, res) => {
     const month = validateMonth(req.body?.month);
+    requireRotationEnabled(month);
     const state = await read(month);
     const next = configureRotation(state, req.body, catalog, req.session.role);
     res.set("Cache-Control", "no-store").json(rotationResponse(await persist(next, state.version), req.session.role, catalog));
   }));
   app.put("/api/menu-refresh/rows", requireAuth, requireAccess, requireSameOrigin, writeLimiter, asyncRoute(async (req, res) => {
     const month = validateMonth(req.body?.month);
+    requireRotationEnabled(month);
     const state = await read(month);
     const next = saveRotationRows(state, req.body, req.session.role);
     res.set("Cache-Control", "no-store").json(rotationResponse(await persist(next, state.version), req.session.role, catalog));
