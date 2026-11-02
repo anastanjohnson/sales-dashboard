@@ -172,7 +172,6 @@ p.menu-refresh__muted { margin: 12px 0 0; }
 }
 
 .menu-refresh__number-wrap { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-.menu-refresh__selected-mark { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 17px; height: 17px; border: 1px solid var(--accent); border-radius: 50%; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); }
 .menu-refresh__table tbody tr.menu-refresh__row--selected td { background: color-mix(in srgb, var(--accent) 5%, var(--surface)); border-top: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); border-bottom: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); }
 .menu-refresh__table tbody tr.menu-refresh__row--selected td:first-child { border-left: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
 .menu-refresh__table tbody tr.menu-refresh__row--selected td:last-child { border-right: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
@@ -247,4 +246,26 @@ p.menu-refresh__muted { margin: 12px 0 0; }
   .menu-refresh__rotation-summary { grid-template-columns: minmax(0,1fr); }
   .menu-refresh__summary-availability { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--border); }
   .menu-refresh__summary-main .menu-refresh__metrics span:first-child { width: auto; }
+}
+
+.menu-refresh__row-status { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; max-width: 100%; width: fit-content; margin-top: 6px; padding: 3px 7px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text-secondary); font-size: 12px; line-height: 1.35; }
+.menu-refresh__row-status svg { flex-shrink: 0; }
+.menu-refresh__row-status--done { border-color: color-mix(in srgb, var(--good) 55%, var(--border)); background: var(--good-bg); color: var(--good); }
+.menu-refresh__row-status--in-progress, .menu-refresh__row-status--ready, .menu-refresh__row-status--unsaved { border-color: #ad792e; color: #93611c; background: #b07a220d; }
+.menu-refresh__row-status--ready, .menu-refresh__row-status--unsaved { font-weight: 600; }
+.menu-refresh__row-status--not-started { color: var(--text-muted); }
+:root[data-theme="dark"] .menu-refresh__row-status--done { color: #8fe0a1; border-color: #477b51; }
+:root[data-theme="dark"] .menu-refresh__row-status--in-progress, :root[data-theme="dark"] .menu-refresh__row-status--ready, :root[data-theme="dark"] .menu-refresh__row-status--unsaved { color: #edc37b; border-color: #86642f; background: #b07a2212; }
+.menu-refresh__status-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 15px; color: var(--text-muted); font-size: 12px; }
+.menu-refresh__status-summary > span { display: inline-flex; align-items: center; gap: 5px; }
+.menu-refresh__status-summary .menu-refresh__summary-done { color: var(--good); }
+.menu-refresh__status-summary .menu-refresh__summary-progress { color: #93611c; }
+:root[data-theme="dark"] .menu-refresh__status-summary .menu-refresh__summary-done { color: #8fe0a1; }
+:root[data-theme="dark"] .menu-refresh__status-summary .menu-refresh__summary-progress { color: #edc37b; }
+.menu-refresh__table tbody tr.menu-refresh__row--done td { background: color-mix(in srgb, var(--good) 5%, var(--surface)); border-top-color: color-mix(in srgb, var(--good) 65%, var(--border)); border-bottom-color: color-mix(in srgb, var(--good) 65%, var(--border)); }
+.menu-refresh__table tbody tr.menu-refresh__row--done td:first-child { border-left-color: color-mix(in srgb, var(--good) 65%, var(--border)); }
+.menu-refresh__table tbody tr.menu-refresh__row--done td:last-child { border-right-color: color-mix(in srgb, var(--good) 65%, var(--border)); }
+@container menu-refresh (max-width: 1040px) {
+  .menu-refresh__table tbody tr.menu-refresh__row--done { border-color: color-mix(in srgb, var(--good) 65%, var(--border)); background: color-mix(in srgb, var(--good) 5%, var(--surface)); }
+  .menu-refresh__table tbody tr.menu-refresh__row--done td { background: transparent; }
 }
