@@ -18,7 +18,7 @@ export default function Topbar({ theme, onToggleTheme, onLogout, onOpenMenu, men
   );
   return (
     <header className="topbar">
-      <div className="topbar__restricted-title">KARIKAALA · Salary Payment</div>
+      <div className="topbar__restricted-title">KARIKAALA · Anastan</div>
       <AccountActions theme={theme} onToggleTheme={onToggleTheme} onLogout={onLogout} />
     </header>
   );

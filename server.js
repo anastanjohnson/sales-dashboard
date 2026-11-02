@@ -1,3 +1,5 @@
+import { installMenuRotationRoutes } from "./supabase/functions/dashboard-api/menu-rotation.js";
+import { ayceMenuCatalog } from "./supabase/functions/dashboard-api/data/ayceMenu.js";
 import { plannerSessionHandler } from "./server/planner-session.js";
 import crypto from "node:crypto";
 import path from "node:path";
@@ -159,6 +161,7 @@ app.use(helmet({
     },
   },
 }));
+app.use("/api/menu-refresh", express.json({ limit: "64kb" }));
 app.use(express.json({ limit: "10kb" }));
 
 const parseCookies = (header = "") =>
@@ -301,6 +304,8 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many login attempts. Please try again later." },
 });
+
+installMenuRotationRoutes(app, { database, tableName: "public.menu_rotation_months", requireAuth, requireSameOrigin, writeLimiter: paymentWriteLimiter, catalog: ayceMenuCatalog });
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.post("/api/planner/session", requireAuth, requireAdmin, requireSameOrigin, paymentWriteLimiter, plannerSessionHandler(() => process.env.PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON));
@@ -612,6 +617,18 @@ const seedInitialSalaryPayments = async () => {
 };
 
 const start = async () => {
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS public.menu_rotation_months (
+      month text PRIMARY KEY CHECK (month ~ '^(20[0-9]{2}|2100)-(0[1-9]|1[0-2])$'),
+      target_count integer NOT NULL DEFAULT 0 CHECK (target_count >= 0),
+      allowed_item_ids jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(allowed_item_ids) = 'array'),
+      rows jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(rows) = 'array'),
+      version integer NOT NULL DEFAULT 1 CHECK (version > 0),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    ALTER TABLE public.menu_rotation_months ENABLE ROW LEVEL SECURITY;
+    REVOKE ALL ON public.menu_rotation_months FROM PUBLIC;
+  `);
   await database.query(`
     CREATE TABLE IF NOT EXISTS salary_months (
       period_year INTEGER NOT NULL CHECK (period_year = 2026),

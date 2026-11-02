@@ -1,3 +1,5 @@
+import { installMenuRotationRoutes } from "./menu-rotation.js";
+import { ayceMenuCatalog } from "./data/ayceMenu.js";
 import express from "express";
 import crypto from "node:crypto";
 import { plannerSessionHandler } from "./planner-session.js";
@@ -26,9 +28,11 @@ app.use((req, res, next) => {
   req.url = req.url.replace(/^\/dashboard-api(?=\/|$)/, "") || "/";
   next();
 });
+app.use("/api/menu-refresh", express.json({ limit: "64kb" }));
 app.use(express.json({ limit: "10kb" }));
 const { requireAuth, requireAdmin, requireSalaryPayment, requireSameOrigin, paymentWriteLimiter, installAuth } = createSecurity(database, config, allowedOrigins);
 installAuth(app);
+installMenuRotationRoutes(app, { database, tableName: "dashboard_private.menu_rotation_months", requireAuth, requireSameOrigin, writeLimiter: paymentWriteLimiter, catalog: ayceMenuCatalog });
 app.post("/api/planner/session", requireAuth, requireAdmin, requireSameOrigin, paymentWriteLimiter, plannerSessionHandler(() => config.PLANNER_FIREBASE_SERVICE_ACCOUNT_JSON));
 const salaryData = JSON.parse(config.SALARY_DATA_JSON);
 // Fresh authorized sheet periods take precedence over older source overrides.
@@ -443,5 +447,6 @@ app.use((error, _req, res, _next) => {
 });
 return app;
 }
+
 
 

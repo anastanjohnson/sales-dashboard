@@ -6,6 +6,7 @@ import AuthGate from "./components/AuthGate";
 import Dashboard from "./pages/Dashboard";
 import "./theme.css";
 import "./layout.css";
+import "./pages/MonthlyMenuRefreshPage.css";
 
 export default function App() {
   const [activePage, setActivePage] = useState("overview");
@@ -61,10 +62,15 @@ export default function App() {
   if (authState.status !== "authenticated") return <AuthGate onAuthenticated={(role) => setAuthState({ status: "authenticated", role })} />;
 
   if (authState.role === "salary-payment") {
+    const restrictedPage = activePage === "monthly-menu-refresh" ? "monthly-menu-refresh" : "salary-payment";
     return (
       <div className="restricted-app">
         <Topbar theme={theme} onToggleTheme={toggleTheme} onLogout={logout} restricted />
-        <main className="app-content"><Dashboard activePage="salary-payment" theme={theme} onToggleTheme={toggleTheme} role={authState.role} /></main>
+        <nav className="anastan-workspace-nav" aria-label="Anastan workspace">
+          <button type="button" aria-pressed={restrictedPage === "salary-payment"} onClick={() => navigate("salary-payment")}>Salary Payment</button>
+          <button type="button" aria-pressed={restrictedPage === "monthly-menu-refresh"} onClick={() => navigate("monthly-menu-refresh")}>Monthly Menu Refresh</button>
+        </nav>
+        <main className="app-content"><Dashboard activePage={restrictedPage} theme={theme} onToggleTheme={toggleTheme} role={authState.role} /></main>
       </div>
     );
   }

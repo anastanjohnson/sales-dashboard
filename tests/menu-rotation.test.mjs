@@ -1,0 +1,137 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  MenuRotationError, activeRows, configureRotation, defaultRotation,
+  installMenuRotationRoutes, rotationResponse, saveRotationRows, validateMonth,
+} from "../supabase/functions/dashboard-api/menu-rotation.js";
+
+const catalog = [{ id: "one", name: "First dish" }, { id: "two", name: "Second dish" }, { id: "three", name: "Third dish" }];
+const month = "2026-11";
+const owner = "salary-payment", chef = "admin";
+const setup = (targetCount = 2) => configureRotation(defaultRotation(month), {
+  month, version: 0, targetCount, allowedItemIds: catalog.map(item => item.id),
+}, catalog, owner);
+const errorWith = (status, pattern) => error => error instanceof MenuRotationError && error.status === status && pattern.test(error.message);
+
+test("months are isolated and calendar values are validated", () => {
+  for (const value of ["2026-11", "2000-01", "2100-12"]) assert.equal(validateMonth(value), value);
+  for (const value of ["2026-00", "2026-13", "1999-11", "2101-01", "2026-1", undefined, [month]]) assert.throws(() => validateMonth(value), MenuRotationError);
+  assert.deepEqual(activeRows(defaultRotation(month)), []);
+});
+test("only Anastan can set the monthly count or dish pool", () => {
+  assert.throws(() => configureRotation(defaultRotation(month), { month, version: 0, targetCount: 1, allowedItemIds: ["one"] }, catalog, chef), errorWith(403, /Only Anastan/));
+  const state = setup();
+  assert.equal(state.targetCount, 2);
+  assert.equal(activeRows(state).length, 2);
+  assert.equal(state.version, 1);
+});
+test("target and allowed dishes must form a valid current menu selection", () => {
+  const base = { month, version: 0, targetCount: 2, allowedItemIds: ["one", "two"] };
+  for (const patch of [{ targetCount: 1.5 }, { targetCount: -1 }, { targetCount: 4 }, { allowedItemIds: ["one"] }, { allowedItemIds: ["one", "one"] }, { allowedItemIds: ["one", "invented"] }]) {
+    assert.throws(() => configureRotation(defaultRotation(month), { ...base, ...patch }, catalog, owner), MenuRotationError);
+  }
+});
+test("Admin only receives enabled dishes and a fixed target", () => {
+  const state = configureRotation(defaultRotation(month), { month, version: 0, targetCount: 1, allowedItemIds: ["two"] }, catalog, owner);
+  const response = rotationResponse(state, chef, catalog);
+  assert.equal(response.canConfigure, false);
+  assert.equal(response.targetCount, 1);
+  assert.deepEqual(response.catalog, [catalog[1]]);
+  assert.equal(rotationResponse(state, owner, catalog).catalog.length, 3);
+});
+test("chef can save partial drafts but cannot inject a disabled or duplicate dish", () => {
+  const state = configureRotation(defaultRotation(month), { month, version: 0, targetCount: 2, allowedItemIds: ["one", "two"] }, catalog, owner);
+  const rows = [{ currentItemId: "one", newFoodName: "  Replacement  " }, { currentItemId: "", newFoodName: "" }];
+  assert.equal(saveRotationRows(state, { month, version: 1, rows }, chef).rows[0].newFoodName, "Replacement");
+  for (const bad of [
+    [{ currentItemId: "three", newFoodName: "X" }, rows[1]],
+    [rows[0], { currentItemId: "one", newFoodName: "Y" }],
+    [{ currentItemId: "", newFoodName: "X" }, rows[1]],
+    [rows[0]],
+    [{ currentItemId: "one", newFoodName: "X".repeat(161) }, rows[1]],
+  ]) assert.throws(() => saveRotationRows(state, { month, version: 1, rows: bad }, chef), MenuRotationError);
+  assert.throws(() => saveRotationRows(state, { month, version: 1, rows, targetCount: 9 }, chef), MenuRotationError);
+});
+test("saved rows survive a lowered target and return when it increases", () => {
+  let state = saveRotationRows(setup(), { month, version: 1, rows: [{ currentItemId: "one", newFoodName: "A" }, { currentItemId: "two", newFoodName: "B" }] }, chef);
+  state = configureRotation(state, { month, version: 2, targetCount: 1, allowedItemIds: ["one", "two"] }, catalog, owner);
+  assert.equal(activeRows(state).length, 1);
+  assert.equal(state.rows[1].newFoodName, "B");
+  state = saveRotationRows(state, { month, version: 3, rows: [{ currentItemId: "one", newFoodName: "A changed" }] }, chef);
+  state = configureRotation(state, { month, version: 4, targetCount: 2, allowedItemIds: ["one", "two"] }, catalog, owner);
+  assert.deepEqual(activeRows(state).map(row => row.newFoodName), ["A changed", "B"]);
+});
+test("configuration cannot silently remove a selected dish", () => {
+  const state = saveRotationRows(setup(), { month, version: 1, rows: [{ currentItemId: "one", newFoodName: "A" }, { currentItemId: "", newFoodName: "" }] }, chef);
+  assert.throws(() => configureRotation(state, { month, version: 2, targetCount: 1, allowedItemIds: ["two"] }, catalog, owner), errorWith(400, /selected dish/));
+});
+test("restoring saved inactive rows cannot introduce duplicate active dishes", () => {
+  let state = saveRotationRows(setup(), { month, version: 1, rows: [{ currentItemId: "one", newFoodName: "A" }, { currentItemId: "two", newFoodName: "B" }] }, chef);
+  state = configureRotation(state, { month, version: 2, targetCount: 1, allowedItemIds: ["one", "two"] }, catalog, owner);
+  state = saveRotationRows(state, { month, version: 3, rows: [{ currentItemId: "two", newFoodName: "A changed" }] }, chef);
+  assert.throws(() => configureRotation(state, { month, version: 4, targetCount: 2, allowedItemIds: ["one", "two"] }, catalog, owner), errorWith(400, /same dish twice/));
+  assert.deepEqual(state.rows.map(row => row.newFoodName), ["A changed", "B"]);
+  state = saveRotationRows(state, { month, version: 4, rows: [{ currentItemId: "", newFoodName: "" }] }, chef);
+  state = configureRotation(state, { month, version: 5, targetCount: 2, allowedItemIds: ["one", "two"] }, catalog, owner);
+  assert.equal(activeRows(state)[1].newFoodName, "B");
+});
+test("a stale saved version is rejected for config and chef changes", () => {
+  const state = setup();
+  assert.throws(() => configureRotation(state, { month, version: 0, targetCount: 1, allowedItemIds: ["one"] }, catalog, owner), errorWith(409, /changed/));
+  assert.throws(() => saveRotationRows(state, { month, version: 0, rows: activeRows(state) }, chef), errorWith(409, /changed/));
+});
+
+function apiHarness() {
+  const routes = new Map(), records = new Map(); let readCount = 0, writeCount = 0, conflict = false;
+  const app = { get(path, ...handlers) { routes.set(`GET ${path}`, handlers); }, put(path, ...handlers) { routes.set(`PUT ${path}`, handlers); } };
+  const database = { async query(sql, values) {
+    if (sql.startsWith("SELECT")) { readCount++; return { rows: records.has(values[0]) ? [structuredClone(records.get(values[0]))] : [] }; }
+    writeCount++;
+    const existing = records.get(values[0]);
+    if (conflict) { conflict = false; return { rows: [] }; }
+    if (existing && existing.version !== values[5]) return { rows: [] };
+    const row = { month: values[0], target_count: values[1], allowed_item_ids: JSON.parse(values[2]), rows: JSON.parse(values[3]), version: values[4], updated_at: "2026-11-02T12:00:00.000Z" };
+    records.set(values[0], row); return { rows: [structuredClone(row)] };
+  } };
+  const requireAuth = (req, res, next) => req.session ? next() : res.status(401).json({ error: "Authentication required" });
+  const requireSameOrigin = (req, res, next) => req.origin === "same" ? next() : res.status(403).json({ error: "Invalid origin" });
+  installMenuRotationRoutes(app, { database, tableName: "dashboard_private.menu_rotation_months", requireAuth, requireSameOrigin, writeLimiter: (_req, _res, next) => next(), catalog });
+  async function request(method, path, { role, body, origin = "same", query = { month } } = {}) {
+    const req = { session: role ? { role } : null, body, query, origin };
+    const res = { code: 200, headers: {}, status(code) { this.code = code; return this; }, set(key, value) { this.headers[key] = value; return this; }, json(value) { this.body = value; return this; } };
+    for (const handler of routes.get(`${method} ${path}`)) {
+      let continued = false, failure;
+      await handler(req, res, error => { continued = true; failure = error; });
+      if (failure) throw failure;
+      if (!continued) break;
+    }
+    return res;
+  }
+  return { request, records, counts: () => ({ reads: readCount, writes: writeCount }), conflictNextWrite() { conflict = true; } };
+}
+test("API blocks anonymous and chef configuration before database access", async () => {
+  const api = apiHarness();
+  assert.equal((await api.request("GET", "/api/menu-refresh")).code, 401);
+  assert.equal((await api.request("PUT", "/api/menu-refresh/config", { role: chef, body: {} })).code, 403);
+  assert.equal((await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: {}, origin: "other" })).code, 403);
+  assert.deepEqual(api.counts(), { reads: 0, writes: 0 });
+});
+test("API shares the configured target with Admin and isolates months", async () => {
+  const api = apiHarness();
+  const empty = await api.request("GET", "/api/menu-refresh", { role: chef });
+  assert.equal(empty.body.configured, false); assert.equal(empty.headers["Cache-Control"], "no-store");
+  const saved = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: 0, targetCount: 1, allowedItemIds: ["one", "two"] } });
+  assert.equal(saved.code, 200); assert.equal(saved.body.version, 1);
+  const read = await api.request("GET", "/api/menu-refresh", { role: chef });
+  assert.equal(read.body.targetCount, 1); assert.equal(read.body.catalog.length, 2); assert.equal(read.body.canConfigure, false);
+  const other = await api.request("GET", "/api/menu-refresh", { role: chef, query: { month: "2026-12" } });
+  assert.equal(other.body.targetCount, 0);
+});
+test("API returns 409 when a second writer wins after the initial read", async () => {
+  const api = apiHarness();
+  await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: 0, targetCount: 1, allowedItemIds: ["one"] } });
+  api.conflictNextWrite();
+  const result = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: 1, rows: [{ currentItemId: "one", newFoodName: "New" }] } });
+  assert.equal(result.code, 409);
+  assert.equal(api.records.get(month).rows[0].newFoodName, "");
+});

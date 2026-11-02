@@ -10,6 +10,7 @@ import StaffHoursPage from "./StaffHoursPage";
 import { lazy, Suspense } from "react";
 const LoyaltyGuestTrackingPage = lazy(() => import("./LoyaltyGuestTrackingPage"));
 const ShiftPlannerPage = lazy(() => import("./ShiftPlannerPage"));
+const MonthlyMenuRefreshPage = lazy(() => import("./MonthlyMenuRefreshPage"));
 import SalesPage from "./SalesPage";
 import WeeklyInsightsPage from "./WeeklyInsightsPage";
 import RepeatedGuestPage from "./RepeatedGuestPage";
@@ -124,6 +125,7 @@ export default function Dashboard({ activePage, theme, onToggleTheme, onNavigate
 
   if (activePage === "sales-salary") return <SalaryPage />;
   if (activePage === "salary-payment") return <SalaryPaymentPage canEnterSalary={role === "salary-payment"} />;
+  if (activePage === "monthly-menu-refresh") return <Suspense fallback={<p role="status">Loading monthly menu refresh…</p>}><MonthlyMenuRefreshPage /></Suspense>;
   if (activePage === "staff-hours") return <StaffHoursPage />;
   if (activePage === "shift-planner") return <Suspense fallback={<p role="status">Loading planner…</p>}><ShiftPlannerPage /></Suspense>;
   if (activePage === "sales") return <SalesPage />;
