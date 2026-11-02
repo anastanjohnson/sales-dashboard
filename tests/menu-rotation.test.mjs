@@ -147,11 +147,12 @@ test("a stale saved version is rejected for config and chef changes", () => {
 });
 
 function apiHarness() {
-  const routes = new Map(), records = new Map(); let readCount = 0, writeCount = 0, conflict = false;
+  const routes = new Map(), records = new Map(), serializedRowWrites = []; let readCount = 0, writeCount = 0, conflict = false;
   const app = { get(path, ...handlers) { routes.set(`GET ${path}`, handlers); }, put(path, ...handlers) { routes.set(`PUT ${path}`, handlers); } };
   const database = { async query(sql, values) {
     if (sql.startsWith("SELECT")) { readCount++; return { rows: records.has(values[0]) ? [structuredClone(records.get(values[0]))] : [] }; }
     writeCount++;
+    serializedRowWrites.push(values[3]);
     const existing = records.get(values[0]);
     if (conflict) { conflict = false; return { rows: [] }; }
     if (existing && existing.version !== values[5]) return { rows: [] };
@@ -172,7 +173,7 @@ function apiHarness() {
     }
     return res;
   }
-  return { request, records, counts: () => ({ reads: readCount, writes: writeCount }), conflictNextWrite() { conflict = true; } };
+  return { request, records, serializedRowWrites, counts: () => ({ reads: readCount, writes: writeCount }), conflictNextWrite() { conflict = true; } };
 }
 test("API blocks anonymous and chef configuration before database access", async () => {
   const api = apiHarness();
@@ -213,6 +214,38 @@ test("API persists availability and exposes a read-only value to Admin", async (
   assert.equal(stale.code, 409); assert.equal(api.records.get(month).available_at, configured.body.availableAt);
   const cleared = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { ...settings, version: 3, availableAt: null } });
   assert.equal(cleared.code, 200); assert.equal(cleared.body.availableAt, null);
+});
+test("replacement names survive Save, GET reload, later editing and configuration saves", async () => {
+  const api = apiHarness();
+  const availableAt = "2026-11-10T14:30:00.000Z";
+  await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: 0, targetCount: 2, allowedItemIds: ["one", "two"], availableAt } });
+  const initialRows = [{ currentItemId: "one", newFoodName: "Seafood Pepper Biriyani" }, { currentItemId: "two", newFoodName: "" }];
+  const saved = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: 1, rows: initialRows } });
+  assert.equal(saved.code, 200); assert.deepEqual(saved.body.rows, initialRows);
+  // This is the actual SQL parameter sent to $4::jsonb, not a JSON-encoded string nested in JSONB.
+  assert.equal(typeof api.serializedRowWrites.at(-1), "string");
+  assert.deepEqual(JSON.parse(api.serializedRowWrites.at(-1)), initialRows);
+  assert.ok(Array.isArray(api.records.get(month).rows));
+  assert.deepEqual(Object.keys(api.records.get(month).rows[0]).sort(), ["currentItemId", "newFoodName"]);
+  for (const role of [chef, owner]) {
+    const reloaded = await api.request("GET", "/api/menu-refresh", { role });
+    assert.deepEqual(reloaded.body.rows, initialRows);
+    assert.equal(reloaded.body.availableAt, availableAt);
+  }
+  const reloaded = await api.request("GET", "/api/menu-refresh", { role: chef });
+  const editedRows = structuredClone(reloaded.body.rows);
+  editedRows[0].newFoodName = "Seafood Coconut Biriyani";
+  const edited = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: reloaded.body.version, rows: editedRows } });
+  assert.equal(edited.code, 200); assert.deepEqual(edited.body.rows, editedRows);
+  assert.equal(edited.body.availableAt, availableAt);
+  const secondReload = await api.request("GET", "/api/menu-refresh", { role: chef });
+  assert.deepEqual(secondReload.body.rows, editedRows);
+  const config = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: secondReload.body.version, targetCount: 2, allowedItemIds: ["one", "two", "three"] } });
+  assert.equal(config.code, 200);
+  const afterConfiguration = await api.request("GET", "/api/menu-refresh", { role: chef });
+  assert.deepEqual(afterConfiguration.body.rows, editedRows);
+  assert.equal(afterConfiguration.body.availableAt, availableAt);
+  assert.equal(api.records.get(month).rows[0].newFoodName, "Seafood Coconut Biriyani");
 });
 test("invalid availability cannot write any configuration", async () => {
   const api = apiHarness();
