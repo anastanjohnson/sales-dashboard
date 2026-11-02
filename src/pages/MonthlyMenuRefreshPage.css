@@ -83,7 +83,7 @@ p.menu-refresh__muted { margin: 12px 0 0; }
 .menu-refresh__spice svg { color: #db7554; }
 .menu-refresh__helper { display: flex; align-items: flex-start; gap: 7px; color: var(--text-muted); font-size: 12px; line-height: 1.5; margin: 8px 0; }
 .menu-refresh__helper svg { flex-shrink: 0; margin-top: 1px; }
-.menu-refresh__save-bar { position: sticky; bottom: 0; z-index: 3; flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+.menu-refresh__save-bar { flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
 .menu-refresh__source { flex-shrink: 0; color: var(--text-muted); font-size: 11px; line-height: 1.5; margin-bottom: 0; }
 .menu-refresh__source a { color: var(--accent); }
 .menu-refresh__spice { max-width: 100%; flex-wrap: wrap; line-height: 1.3; }
