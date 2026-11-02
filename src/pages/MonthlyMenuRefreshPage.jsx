@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, ChevronDown, Flame, Info, LockKeyhole, RefreshCw, Save, Search, Utensils } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Flame, Info, Leaf, LockKeyhole, RefreshCw, Save, Search, Soup, Sparkles, Utensils } from "lucide-react";
 import { apiFetch } from "../api.js";
 import { getSpecialMenu } from "../../supabase/functions/dashboard-api/menu-calendar.js";
 import "./MonthlyMenuRefreshPage.css";
@@ -29,15 +29,21 @@ async function request(path, options) {
   return data;
 }
 
-function ChefGuidance({ item }) {
-  if (!item) return <span className="menu-refresh__muted">Select a current food to see guidance.</span>;
-  return <div className="menu-refresh__guidance">
-    <small>Based on current dish</small>
-    <div className="menu-refresh__guidance-line">
-      <span className={`menu-refresh__diet menu-refresh__diet--${item.diet}`}>{DIETS[item.diet] || "Type not specified"}</span>
-      <span className="menu-refresh__spice"><Flame size={14} aria-hidden="true" />Spice: {item.spiceLevel == null ? "Not specified" : `${item.spiceLevel}/5`}</span>
-    </div>
-    {item.hasVariants && <small>Menu item has variants.</small>}
+function AutoFilledTile({ item, value, label, Icon, tone = "category" }) {
+  if (!item) return <div className="menu-refresh__metadata menu-refresh__metadata--empty"><span className="sr-only">Select a current food to fill {label.toLowerCase()}.</span><span aria-hidden="true">—</span></div>;
+  return <div className={`menu-refresh__metadata menu-refresh__metadata--${tone}`}>
+    <span className="menu-refresh__metadata-stamp"><Sparkles size={14} aria-hidden="true" />Auto-filled</span>
+    <span className="menu-refresh__metadata-value"><Icon size={25} aria-hidden="true" /><strong>{value || "Not specified"}</strong></span>
+  </div>;
+}
+
+function SpiceTile({ item }) {
+  if (!item) return <AutoFilledTile label="Spice level" Icon={Flame} />;
+  const level = Number.isInteger(item.spiceLevel) && item.spiceLevel >= 0 && item.spiceLevel <= 5 ? item.spiceLevel : null;
+  return <div className="menu-refresh__metadata menu-refresh__metadata--spice">
+    <span className="menu-refresh__metadata-stamp"><Sparkles size={14} aria-hidden="true" />Auto-filled</span>
+    <span className="menu-refresh__metadata-value"><Flame size={25} aria-hidden="true" /><strong aria-label={level == null ? undefined : `${level} out of 5`}>{level == null ? "Not specified" : `${level}/5`}</strong></span>
+    {level != null && <span className="menu-refresh__spice-scale" aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <Flame key={index} size={19} className={index < level ? "is-active" : ""} />)}</span>}
   </div>;
 }
 
@@ -211,11 +217,11 @@ export default function MonthlyMenuRefreshPage() {
 
       <section className="menu-refresh__card menu-refresh__changes">
         <div className="menu-refresh__section-heading"><h2>{monthTitle(month)} changes</h2><span>{completed} of {snapshot.targetCount} replacements entered</span></div>
-        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table"><thead><tr className="menu-refresh__group-head"><th colSpan="4">Current AYCE item</th><th colSpan="2">New menu item</th></tr><tr><th scope="col">#</th><th scope="col">Food name</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">New food name</th><th scope="col">Chef guidance</th></tr></thead><tbody>{rows.map((row, index) => {
+        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table"><colgroup><col className="menu-refresh__col-number" /><col className="menu-refresh__col-food" /><col className="menu-refresh__col-category" /><col className="menu-refresh__col-subcategory" /><col className="menu-refresh__col-new" /><col className="menu-refresh__col-diet" /><col className="menu-refresh__col-spice" /></colgroup><thead><tr className="menu-refresh__group-head"><th colSpan="4">Current AYCE item</th><th colSpan="3">New menu item</th></tr><tr><th scope="col">#</th><th scope="col">Current food</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">New food name</th><th scope="col">Dietary type</th><th scope="col">Spice level</th></tr></thead><tbody>{rows.map((row, index) => {
           const item = itemById.get(row.currentItemId);
-          return <tr key={index}><td>{String(index + 1).padStart(2, "0")}</td><td><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, ...(event.target.value ? {} : { newFoodName: "" }) })} disabled={blocked}><option value="">Select current food</option>{chefItems.filter((candidate) => candidate.id === row.currentItemId || !selectedIds.has(candidate.id)).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} · {candidate.subcategory}</option>)}</select></td><td><span className="menu-refresh__autofill">{item?.category || "—"}</span></td><td><span className="menu-refresh__autofill">{item?.subcategory || "—"}</span></td><td><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td><td><ChefGuidance item={item} /></td></tr>;
+          return <tr key={index} className={item ? "menu-refresh__row--selected" : ""}><td>{String(index + 1).padStart(2, "0")}</td><td><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, ...(event.target.value ? {} : { newFoodName: "" }) })} disabled={blocked}><option value="">Select current food</option>{chefItems.filter((candidate) => candidate.id === row.currentItemId || !selectedIds.has(candidate.id)).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} · {candidate.subcategory}</option>)}</select></td><td><AutoFilledTile item={item} value={item?.category} label="Category" Icon={Utensils} /></td><td><AutoFilledTile item={item} value={item?.subcategory} label="Subcategory" Icon={Soup} /></td><td><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td><td><AutoFilledTile item={item} value={DIETS[item?.diet] || "Not specified"} label="Dietary type" Icon={item?.diet === "vegan" || item?.diet === "vegetarian" ? Leaf : Utensils} tone={`diet-${item?.diet || "not-specified"}`} /></td><td><SpiceTile item={item} /></td></tr>;
         })}</tbody></table></div> : <div className="menu-refresh__empty"><Utensils size={28} /><strong>{snapshot.configured ? "No menu changes planned for this month." : "This month is waiting for Anastan’s configuration."}</strong><p>{canConfigure ? "Set the item count and enable the foods the chef can choose, then save the configuration." : "The chef’s rows will appear when Anastan saves the monthly target and available dishes."}</p></div>}
-        <p className="menu-refresh__helper"><Info size={15} />Selecting a food fills its category, subcategory and chef guidance automatically.</p>
+        <p className="menu-refresh__helper"><Info size={15} />Selecting a food fills its category, subcategory, dietary type and spice level automatically.</p>
         <footer className="menu-refresh__save-bar"><span className={rowDirty ? "" : "menu-refresh__muted"}>{rowDirty ? "Unsaved food changes" : "All food changes saved"}</span><button type="button" className="btn menu-refresh__primary" onClick={() => save("rows")} disabled={blocked || !rowDirty || snapshot.targetCount === 0}><Save size={16} />{saving === "rows" ? "Saving…" : "Save changes"}</button></footer>
       </section>
       <p className="menu-refresh__source">AYCE food reference: <a href="https://karikaala.de/speisekarte/" target="_blank" rel="noreferrer">KARIKAALA website</a>. Dietary and spice guidance describes the current dish; missing ratings remain unspecified.</p>
