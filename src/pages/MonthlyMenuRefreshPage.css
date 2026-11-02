@@ -10,7 +10,7 @@
 .menu-refresh__header .dashboard__subtitle { font-size: 13px; margin-bottom: 0; }
 .menu-refresh .dashboard__header { margin-bottom: 0; }
 .menu-refresh__header-actions { display: flex; align-items: center; gap: 12px; }
-.menu-refresh select, .menu-refresh input[type="text"], .menu-refresh input[type="number"], .menu-refresh input[type="search"] { min-height: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-primary); font: inherit; font-size: 14px; padding: 10px 12px; }
+.menu-refresh select, .menu-refresh input[type="text"], .menu-refresh input[type="number"], .menu-refresh input[type="search"], .menu-refresh input[type="datetime-local"] { min-height: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-primary); font: inherit; font-size: 14px; padding: 10px 12px; }
 .menu-refresh input:focus-visible, .menu-refresh select:focus-visible, .menu-refresh button:focus-visible, .menu-refresh a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .menu-refresh button:disabled, .menu-refresh input:disabled, .menu-refresh select:disabled { opacity: .55; cursor: not-allowed; }
 .menu-refresh__period { color: var(--text-muted); font-size: 13px; }
@@ -74,7 +74,7 @@ p.menu-refresh__muted { margin: 12px 0 0; }
 .menu-refresh__rotation--chef { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
 .menu-refresh__rotation--chef .menu-refresh__rotation-top { flex: 1 1 300px; min-width: 0; }
 .menu-refresh__rotation--chef .menu-refresh__metrics { flex: 1 1 340px; margin: 0; padding: 0; border: 0; }
-.menu-refresh__table-scroll { flex: 1 1 auto; min-height: 0; min-width: 0; width: 100%; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--border); border-radius: 9px; }
+.menu-refresh__table-scroll { position: relative; flex: 1 1 auto; min-height: 0; min-width: 0; width: 100%; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--border); border-radius: 9px; }
 .menu-refresh__table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: left; }
 .menu-refresh__column--number { width: 5%; }
 .menu-refresh__column--category { width: 14%; }
@@ -191,8 +191,8 @@ p.menu-refresh__muted { margin: 12px 0 0; }
 .menu-refresh__table tbody tr.menu-refresh__row--selected td:first-child { border-left: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
 .menu-refresh__table tbody tr.menu-refresh__row--selected td:last-child { border-right: 1px solid color-mix(in srgb, var(--accent) 70%, var(--border)); border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
 @container menu-refresh (max-width: 1040px) {
-  .restricted-app .menu-refresh { height: auto; min-height: 0; }
-  .restricted-app .menu-refresh__changes { flex: none; height: min(72dvh,620px); min-height: 340px; }
+  .menu-refresh { height: auto; min-height: 0; }
+  .menu-refresh__changes { flex: none; height: min(72dvh,620px); min-height: 340px; }
   .menu-refresh__table tbody tr.menu-refresh__row--selected { border-color: color-mix(in srgb, var(--accent) 70%, var(--border)); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
   .menu-refresh__table tbody tr.menu-refresh__row--selected td { background: transparent; border-radius: 0; }
 }
@@ -203,4 +203,35 @@ p.menu-refresh__muted { margin: 12px 0 0; }
 @media (max-height: 820px) {
   .restricted-app .menu-refresh { height: auto; min-height: 0; }
   .restricted-app .menu-refresh__changes { flex: none; height: min(72dvh,620px); min-height: 340px; }
+}
+
+.menu-refresh__target-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.menu-refresh__availability-control { display: flex; flex: 1 1 225px; flex-direction: column; gap: 6px; min-width: 0; max-width: 280px; }
+.menu-refresh__availability-control input[type="datetime-local"] { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; font-size: 14px; }
+.menu-refresh__availability-control > small, .menu-refresh__availability-zone { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+.menu-refresh__admin-summary { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 16px 24px; min-width: 0; }
+.menu-refresh__availability-view { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; padding-left: 22px; border-left: 1px solid var(--border); }
+.menu-refresh__availability-label { font-size: 14px; font-weight: 600; }
+.menu-refresh__availability-unset { color: var(--text-muted); font-size: 16px; font-weight: 500; }
+.menu-refresh__availability-date { color: var(--text-primary); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.menu-refresh__countdown { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.menu-refresh__countdown > span { display: flex; align-items: center; flex-direction: column; gap: 3px; min-width: 44px; padding: 6px 7px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); }
+.menu-refresh__countdown strong { color: var(--accent); font-size: 18px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.menu-refresh__countdown small { color: var(--text-secondary); font-size: 11px; line-height: 1.3; }
+.menu-refresh__available-now { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; margin-top: 2px; border-radius: 7px; background: var(--good-bg); color: var(--good); font-size: 12px; font-weight: 600; }
+.menu-refresh__rotation--chef { display: block; }
+.menu-refresh__rotation--chef .menu-refresh__metrics { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+@container menu-refresh (max-width: 740px) {
+  .menu-refresh__admin-summary { justify-content: flex-start; gap: 14px 20px; }
+  .menu-refresh__availability-view { padding-left: 18px; }
+  .menu-refresh__target-control { align-items: flex-start; }
+  .menu-refresh__target-control > .menu-refresh__primary { align-self: center; }
+}
+@container menu-refresh (max-width: 540px) {
+  .menu-refresh__target-field { flex: 1 1 100px; }
+  .menu-refresh__availability-control { flex: 1 1 220px; max-width: none; }
+  .menu-refresh__target-control > .menu-refresh__primary { width: 100%; flex: 1 1 100%; }
+  .menu-refresh__admin-summary { width: 100%; align-items: flex-start; }
+  .menu-refresh__availability-view { flex: 1 1 210px; padding-left: 0; border-left: 0; }
+  .menu-refresh__countdown > span { min-width: 46px; }
 }

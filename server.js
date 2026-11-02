@@ -623,9 +623,11 @@ const start = async () => {
       target_count integer NOT NULL DEFAULT 0 CHECK (target_count >= 0),
       allowed_item_ids jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(allowed_item_ids) = 'array'),
       rows jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(rows) = 'array'),
+      available_at timestamptz,
       version integer NOT NULL DEFAULT 1 CHECK (version > 0),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    ALTER TABLE public.menu_rotation_months ADD COLUMN IF NOT EXISTS available_at timestamptz;
     ALTER TABLE public.menu_rotation_months ENABLE ROW LEVEL SECURITY;
     REVOKE ALL ON public.menu_rotation_months FROM PUBLIC;
   `);

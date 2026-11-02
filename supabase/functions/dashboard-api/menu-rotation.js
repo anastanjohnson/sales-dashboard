@@ -18,6 +18,20 @@ export function validateMonth(value) {
   if (typeof value !== "string" || !/^(?:20\d\d|2100)-(?:0[1-9]|1[0-2])$/.test(value)) fail("Choose a valid month between 2000 and 2100.");
   return value;
 }
+export function validateAvailableAt(value) {
+  if (value === null) return null;
+  const match = typeof value === "string" && /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(?:\.(\d{1,3}))?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.exec(value);
+  if (!match) fail("Menu Available must be a valid date and time with an explicit timezone.");
+  const [, year, month, day] = match;
+  if (Number(year) === 0) fail("Menu Available must use a year from 0001 to 9999.");
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  if (calendar.getUTCFullYear() !== Number(year) || calendar.getUTCMonth() !== Number(month) - 1 || calendar.getUTCDate() !== Number(day)) fail("Menu Available must be a real calendar date.");
+  const timestamp = new Date(value);
+  if (!Number.isFinite(timestamp.getTime())) fail("Menu Available must be a valid date and time.");
+  if (timestamp.getUTCFullYear() < 1 || timestamp.getUTCFullYear() > 9999) fail("Menu Available must use a UTC year from 0001 to 9999.");
+  return timestamp.toISOString();
+}
 function validateVersion(value) {
   if (!Number.isSafeInteger(value) || value < 0) fail("A valid saved version is required. Refresh this month and try again.");
   return value;
@@ -31,12 +45,13 @@ export function activeRows(state) {
   return Array.from({ length: state.targetCount }, (_, index) => ({ ...EMPTY_ROW(), ...storedRows(state)[index] }));
 }
 export function defaultRotation(month) {
-  return { month, targetCount: 0, allowedItemIds: [], rows: [], version: 0, configured: false, updatedAt: null };
+  return { month, targetCount: 0, allowedItemIds: [], rows: [], availableAt: null, version: 0, configured: false, updatedAt: null };
 }
 export function deserializeRotation(row, month) {
   if (!row) return defaultRotation(month);
   return { month: row.month, targetCount: row.target_count, allowedItemIds: row.allowed_item_ids,
-    rows: row.rows, version: row.version, configured: true, updatedAt: row.updated_at };
+    rows: row.rows, availableAt: row.available_at == null ? null : new Date(row.available_at).toISOString(),
+    version: row.version, configured: true, updatedAt: row.updated_at };
 }
 export function rotationResponse(state, role, catalog) {
   const canConfigure = role === OWNER_ROLE;
@@ -49,10 +64,11 @@ export function rotationResponse(state, role, catalog) {
 }
 export function configureRotation(state, body, catalog, role) {
   if (role !== OWNER_ROLE) fail("Only Anastan can configure the monthly rotation.", 403);
-  bodyShape(body, ["month", "targetCount", "allowedItemIds", "version"]);
+  bodyShape(body, ["month", "targetCount", "allowedItemIds", "availableAt", "version"]);
   validateMonth(body.month); requireRotationEnabled(body.month); validateVersion(body.version);
   if (body.month !== state.month) fail("The selected month does not match this rotation.");
   if (body.version !== state.version) fail("This month changed in another login. Refresh before saving.", 409);
+  const availableAt = Object.prototype.hasOwnProperty.call(body, "availableAt") ? validateAvailableAt(body.availableAt) : state.availableAt ?? null;
   if (!Number.isInteger(body.targetCount) || body.targetCount < 0 || body.targetCount > catalog.length) fail(`Items to change must be a whole number from 0 to ${catalog.length}.`);
   if (!Array.isArray(body.allowedItemIds)) fail("Choose the dishes that the chef may change.");
   const known = new Set(catalog.map(item => item.id));
@@ -66,7 +82,7 @@ export function configureRotation(state, body, catalog, role) {
   const activeIds = nextRows.slice(0, body.targetCount).map(row => row.currentItemId).filter(Boolean);
   if (new Set(activeIds).size !== activeIds.length) fail("Restoring these rows would select the same dish twice. Clear or change the active selection before increasing the target.");
   return { ...state, targetCount: body.targetCount, allowedItemIds: [...body.allowedItemIds], rows: nextRows,
-    version: state.version + 1, configured: true };
+    availableAt, version: state.version + 1, configured: true };
 }
 export function saveRotationRows(state, body, role) {
   if (!ACCESS_ROLES.has(role)) fail("Menu rotation access is required.", 403);
@@ -102,17 +118,17 @@ export function installMenuRotationRoutes(app, { database, tableName, requireAut
   const requireAccess = (req, res, next) => ACCESS_ROLES.has(req.session?.role) ? next() : res.status(403).json({ error: "Menu rotation access is required." });
   const requireOwner = (req, res, next) => req.session?.role === OWNER_ROLE ? next() : res.status(403).json({ error: "Only Anastan can configure the monthly rotation." });
   const read = async month => {
-    const result = await database.query(`SELECT month, target_count, allowed_item_ids, rows, version, updated_at FROM ${tableName} WHERE month = $1`, [month]);
+    const result = await database.query(`SELECT month, target_count, allowed_item_ids, rows, available_at, version, updated_at FROM ${tableName} WHERE month = $1`, [month]);
     return deserializeRotation(result.rows[0], month);
   };
   const persist = async (state, expectedVersion) => {
-    const values = [state.month, state.targetCount, JSON.stringify(state.allowedItemIds), JSON.stringify(state.rows), state.version, expectedVersion];
-    const result = await database.query(`INSERT INTO ${tableName} AS saved (month, target_count, allowed_item_ids, rows, version, updated_at)
-      VALUES ($1, $2, $3::jsonb, $4::jsonb, $5, now())
+    const values = [state.month, state.targetCount, JSON.stringify(state.allowedItemIds), JSON.stringify(state.rows), state.version, expectedVersion, state.availableAt ?? null];
+    const result = await database.query(`INSERT INTO ${tableName} AS saved (month, target_count, allowed_item_ids, rows, available_at, version, updated_at)
+      VALUES ($1, $2, $3::jsonb, $4::jsonb, $7::timestamptz, $5, now())
       ON CONFLICT (month) DO UPDATE SET target_count = EXCLUDED.target_count, allowed_item_ids = EXCLUDED.allowed_item_ids,
-        rows = EXCLUDED.rows, version = EXCLUDED.version, updated_at = now()
+        rows = EXCLUDED.rows, available_at = EXCLUDED.available_at, version = EXCLUDED.version, updated_at = now()
       WHERE saved.version = $6
-      RETURNING month, target_count, allowed_item_ids, rows, version, updated_at`, values);
+      RETURNING month, target_count, allowed_item_ids, rows, available_at, version, updated_at`, values);
     if (result.rows.length !== 1) fail("This month changed in another login. Refresh before saving.", 409);
     return deserializeRotation(result.rows[0], state.month);
   };

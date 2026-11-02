@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   MenuRotationError, activeRows, configureRotation, defaultRotation,
-  installMenuRotationRoutes, rotationResponse, saveRotationRows, validateMonth,
+  installMenuRotationRoutes, rotationResponse, saveRotationRows, validateAvailableAt, validateMonth,
 } from "../supabase/functions/dashboard-api/menu-rotation.js";
 import { getSpecialMenu } from "../supabase/functions/dashboard-api/menu-calendar.js";
 
@@ -59,6 +59,29 @@ test("months are isolated and calendar values are validated", () => {
   for (const value of ["2026-11", "2000-01", "2100-12"]) assert.equal(validateMonth(value), value);
   for (const value of ["2026-00", "2026-13", "1999-11", "2101-01", "2026-1", undefined, [month]]) assert.throws(() => validateMonth(value), MenuRotationError);
   assert.deepEqual(activeRows(defaultRotation(month)), []);
+});
+test("Menu Available accepts explicit ISO instants and normalizes them to UTC", () => {
+  assert.equal(validateAvailableAt(null), null);
+  assert.equal(validateAvailableAt("2026-11-10T15:30:00+01:00"), "2026-11-10T14:30:00.000Z");
+  assert.equal(validateAvailableAt("2027-07-10T15:30:00+02:00"), "2027-07-10T13:30:00.000Z");
+  assert.equal(validateAvailableAt("2028-02-29T12:00:00.125Z"), "2028-02-29T12:00:00.125Z");
+  assert.equal(validateAvailableAt("0001-01-01T00:00:00Z"), "0001-01-01T00:00:00.000Z");
+  assert.equal(validateAvailableAt("9999-12-31T23:59:59Z"), "9999-12-31T23:59:59.000Z");
+  for (const value of [undefined, "", 1794234600000, "2026-11-10", "2026-11-10T15:30:00", "2026-02-29T12:00:00Z", "2026-04-31T12:00:00Z", "2026-11-10T24:00:00Z", "2026-11-10T15:60:00Z", "2026-11-10T15:30:00+24:00", "0000-01-01T00:00:00Z", "0001-01-01T00:00:00+01:00", "9999-12-31T23:59:59-01:00", "tomorrow"]) {
+    assert.throws(() => validateAvailableAt(value), errorWith(400, /Menu Available/));
+  }
+});
+test("availability is owner-controlled, optional for older clients and preserved by row saves", () => {
+  let state = configureRotation(defaultRotation(month), { month, version: 0, targetCount: 1, allowedItemIds: ["one"], availableAt: "2026-11-10T15:30:00+01:00" }, catalog, owner);
+  assert.equal(state.availableAt, "2026-11-10T14:30:00.000Z");
+  assert.equal(rotationResponse(state, chef, catalog).availableAt, state.availableAt);
+  state = configureRotation(state, { month, version: 1, targetCount: 1, allowedItemIds: ["one"] }, catalog, owner);
+  assert.equal(state.availableAt, "2026-11-10T14:30:00.000Z");
+  state = saveRotationRows(state, { month, version: 2, rows: [{ currentItemId: "one", newFoodName: "Replacement" }] }, chef);
+  assert.equal(state.availableAt, "2026-11-10T14:30:00.000Z");
+  assert.throws(() => saveRotationRows(state, { month, version: 3, availableAt: null, rows: activeRows(state) }, chef), MenuRotationError);
+  state = configureRotation(state, { month, version: 3, targetCount: 1, allowedItemIds: ["one"], availableAt: null }, catalog, owner);
+  assert.equal(state.availableAt, null);
 });
 test("only Anastan can set the monthly count or dish pool", () => {
   assert.throws(() => configureRotation(defaultRotation(month), { month, version: 0, targetCount: 1, allowedItemIds: ["one"] }, catalog, chef), errorWith(403, /Only Anastan/));
@@ -132,7 +155,7 @@ function apiHarness() {
     const existing = records.get(values[0]);
     if (conflict) { conflict = false; return { rows: [] }; }
     if (existing && existing.version !== values[5]) return { rows: [] };
-    const row = { month: values[0], target_count: values[1], allowed_item_ids: JSON.parse(values[2]), rows: JSON.parse(values[3]), version: values[4], updated_at: "2026-11-02T12:00:00.000Z" };
+    const row = { month: values[0], target_count: values[1], allowed_item_ids: JSON.parse(values[2]), rows: JSON.parse(values[3]), available_at: values[6] ?? null, version: values[4], updated_at: "2026-11-02T12:00:00.000Z" };
     records.set(values[0], row); return { rows: [structuredClone(row)] };
   } };
   const requireAuth = (req, res, next) => req.session ? next() : res.status(401).json({ error: "Authentication required" });
@@ -168,6 +191,36 @@ test("API shares the configured target with Admin and isolates months", async ()
   assert.equal(read.body.targetCount, 1); assert.equal(read.body.catalog.length, 2); assert.equal(read.body.canConfigure, false);
   const other = await api.request("GET", "/api/menu-refresh", { role: chef, query: { month: "2026-12" } });
   assert.equal(other.body.targetCount, 0);
+});
+test("API persists availability and exposes a read-only value to Admin", async () => {
+  const api = apiHarness();
+  const settings = { month, version: 0, targetCount: 1, allowedItemIds: ["one"], availableAt: "2026-11-10T15:30:00+01:00" };
+  const configured = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: settings });
+  assert.equal(configured.code, 200); assert.equal(configured.body.availableAt, "2026-11-10T14:30:00.000Z");
+  assert.equal(api.records.get(month).available_at, configured.body.availableAt);
+  const read = await api.request("GET", "/api/menu-refresh", { role: chef });
+  assert.equal(read.body.availableAt, configured.body.availableAt); assert.equal(read.body.canConfigure, false);
+  const blocked = await api.request("PUT", "/api/menu-refresh/config", { role: chef, body: { ...settings, version: 1, availableAt: null } });
+  assert.equal(blocked.code, 403); assert.equal(api.records.get(month).version, 1);
+  const rows = [{ currentItemId: "one", newFoodName: "Replacement" }];
+  const tampered = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: 1, rows, availableAt: null } });
+  assert.equal(tampered.code, 400); assert.equal(api.records.get(month).version, 1);
+  const savedRows = await api.request("PUT", "/api/menu-refresh/rows", { role: chef, body: { month, version: 1, rows } });
+  assert.equal(savedRows.code, 200); assert.equal(savedRows.body.availableAt, configured.body.availableAt);
+  const oldClient = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: 2, targetCount: 1, allowedItemIds: ["one"] } });
+  assert.equal(oldClient.code, 200); assert.equal(oldClient.body.availableAt, configured.body.availableAt);
+  const stale = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { ...settings, version: 2, availableAt: null } });
+  assert.equal(stale.code, 409); assert.equal(api.records.get(month).available_at, configured.body.availableAt);
+  const cleared = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { ...settings, version: 3, availableAt: null } });
+  assert.equal(cleared.code, 200); assert.equal(cleared.body.availableAt, null);
+});
+test("invalid availability cannot write any configuration", async () => {
+  const api = apiHarness();
+  for (const availableAt of ["2026-02-30T12:00:00Z", "2026-11-10T14:30", "", 123]) {
+    const response = await api.request("PUT", "/api/menu-refresh/config", { role: owner, body: { month, version: 0, targetCount: 1, allowedItemIds: ["one"], availableAt } });
+    assert.equal(response.code, 400); assert.match(response.body.error, /Menu Available/);
+  }
+  assert.equal(api.counts().writes, 0); assert.equal(api.records.size, 0);
 });
 test("API returns 409 when a second writer wins after the initial read", async () => {
   const api = apiHarness();

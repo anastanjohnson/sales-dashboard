@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Flame, Info, LockKeyhole, RefreshCw, Save, Search, Utensils } from "lucide-react";
 import { apiFetch } from "../api.js";
 import { getSpecialMenu } from "../../supabase/functions/dashboard-api/menu-calendar.js";
+import { formatBerlinDateTimeInput, getCountdownParts, parseBerlinDateTimeInput } from "../menuRefresh/dateTime.js";
 import "./MonthlyMenuRefreshPage.css";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -48,6 +49,32 @@ function ChefGuidance({ item }) {
   </div>;
 }
 
+function MenuAvailability({ availableAt }) {
+  const [now, setNow] = useState(Date.now);
+  const valid = Boolean(availableAt && Number.isFinite(Date.parse(availableAt)));
+  useEffect(() => {
+    setNow(Date.now());
+    if (!valid) return undefined;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [availableAt, valid]);
+  const countdown = valid ? getCountdownParts(availableAt, now) : null;
+  const displayDate = valid ? new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin", day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short",
+  }).format(new Date(availableAt)) : null;
+  return <div className="menu-refresh__availability-view">
+    <span className="menu-refresh__availability-label">Menu Available</span>
+    {!valid ? <strong className="menu-refresh__availability-unset">Not set</strong> : <>
+      <strong className="menu-refresh__availability-date">{displayDate}</strong>
+      <small className="menu-refresh__availability-zone">Germany time (Europe/Berlin)</small>
+      {countdown?.isAvailable ? <span className="menu-refresh__available-now"><Check size={14} aria-hidden="true" />Available now</span> : countdown && <div className="menu-refresh__countdown" role="timer" aria-live="off" aria-label="Time until the menu is available">
+        {[["Days", countdown.days], ["Hours", countdown.hours], ["Minutes", countdown.minutes], ["Seconds", countdown.seconds]].map(([label, value]) => <span key={label}><strong>{String(value).padStart(2, "0")}</strong><small>{label}</small></span>)}
+      </div>}
+    </>}
+  </div>;
+}
+
 export default function MonthlyMenuRefreshPage() {
   const [month, setMonth] = useState(currentMonth);
   const windowStart = currentMonth();
@@ -62,6 +89,7 @@ export default function MonthlyMenuRefreshPage() {
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState([]);
   const [target, setTarget] = useState("0");
+  const [availableInput, setAvailableInput] = useState("");
   const [allowed, setAllowed] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,7 +104,7 @@ export default function MonthlyMenuRefreshPage() {
   const dirty = useRef(false);
   const busy = useRef(false);
   const rowDirty = Boolean(snapshot && JSON.stringify(rows) !== JSON.stringify(normalizedRows(snapshot)));
-  const configDirty = Boolean(snapshot?.canConfigure && (String(snapshot.targetCount) !== target || sortIds(snapshot.allowedItemIds || []) !== sortIds(allowed)));
+  const configDirty = Boolean(snapshot?.canConfigure && (String(snapshot.targetCount) !== target || sortIds(snapshot.allowedItemIds || []) !== sortIds(allowed) || formatBerlinDateTimeInput(snapshot.availableAt) !== availableInput));
   const filterDirty = Boolean(snapshot && JSON.stringify(filters) !== JSON.stringify(filtersFromData(snapshot)));
   dirty.current = rowDirty || configDirty || filterDirty;
   busy.current = Boolean(saving);
@@ -100,7 +128,7 @@ export default function MonthlyMenuRefreshPage() {
         return { category: previous[index].category, subcategory: categoryItems.some((item) => item.subcategory === previous[index].subcategory) ? previous[index].subcategory : "" };
       });
     });
-    if (!keepConfiguration) { setTarget(String(data.targetCount)); setAllowed(data.allowedItemIds || []); }
+    if (!keepConfiguration) { setTarget(String(data.targetCount)); setAllowed(data.allowedItemIds || []); setAvailableInput(formatBerlinDateTimeInput(data.availableAt)); }
   }, []);
 
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -120,7 +148,7 @@ export default function MonthlyMenuRefreshPage() {
   }, [month, accept]);
 
   useEffect(() => {
-    setSnapshot(null); setRows([]); setFilters([]); setNotice(""); setSearch(""); setPoolOpen(false);
+    setSnapshot(null); setRows([]); setFilters([]); setAvailableInput(""); setNotice(""); setSearch(""); setPoolOpen(false);
     load();
     return () => { requestNumber.current += 1; };
   }, [load]);
@@ -150,14 +178,14 @@ export default function MonthlyMenuRefreshPage() {
     requestNumber.current += 1;
     try {
       const body = kind === "config"
-        ? { month, targetCount: Number(target), allowedItemIds: allowed, version: snapshot.version }
+        ? { month, targetCount: Number(target), allowedItemIds: allowed, availableAt: availableInput === formatBerlinDateTimeInput(snapshot.availableAt) ? snapshot.availableAt || null : parseBerlinDateTimeInput(availableInput), version: snapshot.version }
         : { month, rows: rows.map((row) => ({ ...row, currentItemId: row.currentItemId || null })), version: snapshot.version };
       const data = await request(`/api/menu-refresh/${kind === "config" ? "config" : "rows"}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       if (activeMonth.current !== month) return;
       accept(data, { keepConfiguration: kind === "rows" && configDirty, keepFilters: true });
-      setNotice(kind === "config" ? "Monthly target and chef options saved." : "Food changes saved.");
+      setNotice(kind === "config" ? "Monthly configuration saved." : "Food changes saved.");
     } catch (failure) { setError(failure); }
     finally { setSaving(""); }
   };
@@ -212,10 +240,10 @@ export default function MonthlyMenuRefreshPage() {
       <section className={`menu-refresh__card menu-refresh__rotation${canConfigure ? "" : " menu-refresh__rotation--chef"}`}>
         <div className="menu-refresh__rotation-top"><div><h2>Menu Rotation</h2><p>{monthTitle(month)}</p></div>
           {canConfigure ? <div className="menu-refresh__target-control">
-            <label htmlFor="menu-refresh-target">Items to change</label>
-            <input id="menu-refresh-target" type="number" min="0" max={allowed.length} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} />
+            <div className="menu-refresh__target-field"><label htmlFor="menu-refresh-target">Items to change</label><input id="menu-refresh-target" type="number" min="0" max={allowed.length} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} /></div>
+            <div className="menu-refresh__availability-control"><label htmlFor="menu-refresh-available">Menu Available</label><input id="menu-refresh-available" type="datetime-local" step="60" value={availableInput} onChange={(event) => { setAvailableInput(event.target.value); setNotice(""); }} disabled={blocked} aria-describedby="menu-refresh-availability-zone" /><small id="menu-refresh-availability-zone">Germany time (Europe/Berlin)</small></div>
             <button type="button" className="btn menu-refresh__primary" onClick={() => save("config")} disabled={blocked || !validTarget || rowDirty || (!configDirty && snapshot.configured)}><Save size={16} />{saving === "config" ? "Saving…" : "Save configuration"}</button>
-          </div> : <div className="menu-refresh__static-target"><span>Items to change</span><strong>{snapshot.targetCount}</strong><small><LockKeyhole size={13} />Set by Anastan</small></div>}
+          </div> : <div className="menu-refresh__admin-summary"><div className="menu-refresh__static-target"><span>Items to change</span><strong>{snapshot.targetCount}</strong><small><LockKeyhole size={13} />Set by Anastan</small></div><MenuAvailability availableAt={snapshot.availableAt} /></div>}
         </div>
         <div className="menu-refresh__metrics"><span><Utensils size={16} /><strong>{available}</strong> dishes available to the chef</span><span><strong>{selectedIds.size}</strong> selected</span><span><strong>{remaining}</strong> still available to select</span></div>
         {canConfigure && <div className="menu-refresh__configuration">
