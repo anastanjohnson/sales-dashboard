@@ -46,6 +46,14 @@ function ChefGuidance({ item }) {
 
 export default function MonthlyMenuRefreshPage() {
   const [month, setMonth] = useState(currentMonth);
+  const windowStart = currentMonth();
+  const planningMonths = useMemo(() => {
+    const [year, firstMonth] = windowStart.split("-").map(Number);
+    return Array.from({ length: 12 }, (_, offset) => {
+      const date = new Date(Date.UTC(year, firstMonth - 1 + offset, 1, 12));
+      return { value: date.toISOString().slice(0, 7), label: MONTHS[date.getUTCMonth()], year: date.getUTCFullYear() };
+    });
+  }, [windowStart]);
   const [snapshot, setSnapshot] = useState(null);
   const [rows, setRows] = useState([]);
   const [target, setTarget] = useState("0");
@@ -65,6 +73,10 @@ export default function MonthlyMenuRefreshPage() {
   const configDirty = Boolean(snapshot?.canConfigure && (String(snapshot.targetCount) !== target || sortIds(snapshot.allowedItemIds || []) !== sortIds(allowed)));
   dirty.current = rowDirty || configDirty;
   busy.current = Boolean(saving);
+
+  useEffect(() => {
+    if (month < windowStart && !dirty.current && !busy.current) setMonth(windowStart);
+  }, [month, windowStart, rowDirty, configDirty, saving]);
 
   const accept = useCallback((data, { keepConfiguration = false } = {}) => {
     setSnapshot(data);
@@ -108,7 +120,7 @@ export default function MonthlyMenuRefreshPage() {
   }, []);
 
   const changeMonth = (value) => {
-    if (value === month || saving) return;
+    if (value === month || value < windowStart || saving) return;
     if (dirty.current && !window.confirm("Leave this month and discard your unsaved changes?")) return;
     dirty.current = false; setMonth(value);
   };
@@ -143,9 +155,6 @@ export default function MonthlyMenuRefreshPage() {
   const remaining = chefItems.filter((item) => !selectedIds.has(item.id)).length;
   const filteredCatalog = catalog.filter((item) => `${item.name} ${item.category} ${item.subcategory}`.toLowerCase().includes(search.trim().toLowerCase()));
   const checked = new Set(allowed);
-  const year = month.slice(0, 4);
-  const thisYear = Number(currentMonth().slice(0, 4));
-  const years = [...new Set([2026, thisYear - 1, thisYear, thisYear + 1, Number(year)])].sort((a, b) => a - b);
   const canConfigure = snapshot?.canConfigure === true;
   const blocked = Boolean(saving) || error?.status === 409;
 
@@ -160,15 +169,14 @@ export default function MonthlyMenuRefreshPage() {
     <header className="dashboard__header menu-refresh__header">
       <div><h1>Monthly Menu Refresh</h1><p className="dashboard__subtitle">Plan the monthly AYCE menu rotation.</p></div>
       <div className="menu-refresh__header-actions">
-        <label className="menu-refresh__year"><span className="sr-only">Year</span><select value={year} onChange={(event) => changeMonth(`${event.target.value}-${month.slice(5)}`)} disabled={Boolean(saving)}>{years.map((value) => <option key={value}>{value}</option>)}</select></label>
+        <span className="menu-refresh__period">Current and upcoming months</span>
         <button className="btn btn--ghost" onClick={reloadSaved} disabled={loading || Boolean(saving)} aria-label="Reload saved menu refresh"><RefreshCw size={15} />Refresh</button>
       </div>
     </header>
 
-    <nav className="menu-refresh__months" aria-label="Menu refresh month">{MONTHS.map((label, index) => {
-      const value = `${year}-${String(index + 1).padStart(2, "0")}`;
-      return <button type="button" key={label} aria-pressed={value === month} className={value === month ? "is-active" : ""} onClick={() => changeMonth(value)} disabled={Boolean(saving)}>{label}</button>;
-    })}</nav>
+    <nav className="menu-refresh__months" aria-label="Current and upcoming menu refresh months">{planningMonths.map(({ value, label, year }) => (
+      <button type="button" key={value} aria-label={`${label} ${year}`} aria-pressed={value === month} className={value === month ? "is-active" : ""} onClick={() => changeMonth(value)} disabled={Boolean(saving)}><span>{label}</span><small>{year}</small></button>
+    ))}</nav>
 
     {error && <div className="menu-refresh__alert" role="alert"><AlertTriangle size={18} /><div>{error.status === 409 ? "This month was updated in another login. Reload the saved version before making more changes. Your unsaved entries are still visible." : error.message}</div><button type="button" onClick={reloadSaved} disabled={Boolean(saving)}>Reload saved version</button></div>}
     {notice && <div className="menu-refresh__notice" role="status"><Check size={17} />{notice}</div>}
