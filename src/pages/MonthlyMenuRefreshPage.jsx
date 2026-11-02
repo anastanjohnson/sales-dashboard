@@ -190,7 +190,6 @@ export default function MonthlyMenuRefreshPage() {
           </div> : <div className="menu-refresh__static-target"><span>Items to change</span><strong>{snapshot.targetCount}</strong><small><LockKeyhole size={13} />Set by Anastan</small></div>}
         </div>
         <div className="menu-refresh__metrics"><span><Utensils size={16} /><strong>{available}</strong> dishes available to the chef</span><span><strong>{selectedIds.size}</strong> selected</span><span><strong>{remaining}</strong> still available to select</span></div>
-        <p className="menu-refresh__rotation-note"><LockKeyhole size={14} />{canConfigure ? "Choose the monthly target and the foods Admin can select. Save the configuration to share it with the chef." : "Anastan sets the monthly target and available dishes. Select the current foods and enter their replacements below."}</p>
         {canConfigure && <div className="menu-refresh__configuration">
           <button type="button" className="menu-refresh__pool-toggle" aria-expanded={poolOpen} aria-controls="menu-refresh-pool" onClick={() => setPoolOpen((value) => !value)}><span>Foods available in the chef’s dropdown <strong>{allowed.length}</strong></span><ChevronDown size={18} className={poolOpen ? "is-open" : ""} /></button>
           {poolOpen && <div id="menu-refresh-pool" className="menu-refresh__pool">
