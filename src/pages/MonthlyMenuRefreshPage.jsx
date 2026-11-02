@@ -63,7 +63,7 @@ function RowStatus({ status }) {
   return <span className={`menu-refresh__row-status menu-refresh__row-status--${status.key}`} title={STATUS_HELP[status.key]}><Icon size={13} aria-hidden="true" />{status.label}</span>;
 }
 
-function MenuAvailability({ availableAt }) {
+function MenuAvailability({ availableAt, editor = null, dateDirty = false }) {
   const [now, setNow] = useState(Date.now);
   const valid = Boolean(availableAt && Number.isFinite(Date.parse(availableAt)));
   useEffect(() => {
@@ -76,17 +76,18 @@ function MenuAvailability({ availableAt }) {
   const displayDate = valid ? new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Berlin", day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short",
-  }).format(new Date(availableAt)) : null;
-  return <div className="menu-refresh__availability-view" title="Germany time (Europe/Berlin)">
-    <span className="menu-refresh__availability-label">Menu Available</span>
-    {!valid ? <strong className="menu-refresh__availability-unset">Not set</strong> : <>
-      <strong className="menu-refresh__availability-date">{displayDate}</strong>
-      <small className="menu-refresh__availability-zone sr-only">Germany time (Europe/Berlin)</small>
-      {countdown?.isAvailable ? <span className="menu-refresh__available-now"><Check size={14} aria-hidden="true" />Available now</span> : countdown && <div className="menu-refresh__countdown" role="timer" aria-live="off" aria-label="Time until the menu is available">
-        {[["Days", countdown.days], ["Hours", countdown.hours], ["Minutes", countdown.minutes], ["Seconds", countdown.seconds]].map(([label, value]) => <span key={label}><strong>{String(value).padStart(2, "0")}</strong><small>{label}</small></span>)}
+  }).format(new Date(availableAt)).replace(", ", " · ") : null;
+  return <>
+    <div className="menu-refresh__summary-date" title="Germany time (Europe/Berlin)">
+      {editor || <><span className="menu-refresh__availability-label">Menu Available</span><strong className={valid ? "menu-refresh__availability-date" : "menu-refresh__availability-unset"}>{displayDate || "Not set"}</strong><small className="sr-only">Germany time (Europe/Berlin)</small></>}
+    </div>
+    <div className="menu-refresh__summary-clock">
+      {!valid ? <div className="menu-refresh__countdown-empty"><strong>—</strong><span>Countdown</span></div> : countdown?.isAvailable ? <span className="menu-refresh__available-now"><Check size={17} aria-hidden="true" />Available now</span> : countdown && <div className="menu-refresh__countdown" role="timer" aria-live="off" aria-label="Time until the menu is available">
+        {[["Days", countdown.days], ["Hours", countdown.hours], ["Minutes", countdown.minutes], ["Seconds", countdown.seconds]].map(([label, value], index) => <div className="menu-refresh__countdown-part" key={label}><strong>{String(value).padStart(2, "0")}</strong><small>{label}</small>{index < 3 && <span className="menu-refresh__countdown-separator" aria-hidden="true">:</span>}</div>)}
       </div>}
-    </>}
-  </div>;
+      {dateDirty && <small className="menu-refresh__countdown-note">Save date to update countdown.</small>}
+    </div>
+  </>;
 }
 
 export default function MonthlyMenuRefreshPage() {
@@ -255,17 +256,17 @@ export default function MonthlyMenuRefreshPage() {
       <div className="menu-refresh__special-icon"><Utensils size={26} aria-hidden="true" /></div>
       <div><span className="menu-refresh__special-kicker">Seasonal menu</span><h2 id="menu-refresh-special-title">{specialMenu.title}</h2><p className="menu-refresh__special-month">{monthTitle(month)}</p><p className="menu-refresh__special-note">Regular menu rotation is paused for this month.</p></div>
     </section> : loading ? <section className="menu-refresh__card menu-refresh__empty" role="status">Loading menu rotation…</section> : !snapshot ? <section className="menu-refresh__card menu-refresh__empty">Unable to load this month. Use Refresh to try again.</section> : <>
-      <section className={`menu-refresh__card menu-refresh__rotation${canConfigure ? "" : " menu-refresh__rotation--chef"}`}>
+      <section className="menu-refresh__rotation" aria-label="Menu Rotation">
         <div className="menu-refresh__rotation-summary">
           <div className="menu-refresh__summary-main">
-            <div className="menu-refresh__rotation-top"><div><h2>Menu Rotation</h2><p>{monthTitle(month)}</p></div>
-              {canConfigure ? <div className="menu-refresh__target-field"><label htmlFor="menu-refresh-target">Items to change</label><input id="menu-refresh-target" type="number" min="0" max={allowed.length} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} /></div> : <div className="menu-refresh__static-target"><strong>{snapshot.targetCount}</strong><span>items to change</span><small><LockKeyhole size={12} aria-hidden="true" />Set by Anastan</small></div>}
-            </div>
-            <div className="menu-refresh__metrics"><span title="Dishes available to the chef"><Utensils size={14} aria-hidden="true" /><strong>{available}</strong> available</span><span><strong>{selectedIds.size}</strong> selected</span><span title="Dishes still available to select"><strong>{remaining}</strong> remaining</span></div>
+            <h2>{monthTitle(month)}</h2>
+            {canConfigure ? <div className="menu-refresh__target-field"><input id="menu-refresh-target" type="number" min="0" max={allowed.length} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} /><label htmlFor="menu-refresh-target">items to change</label></div> : <div className="menu-refresh__static-target"><strong>{snapshot.targetCount}</strong><span>items to change</span></div>}
           </div>
-          <div className="menu-refresh__summary-availability">
-            {canConfigure ? <div className="menu-refresh__target-control menu-refresh__availability-config"><div className="menu-refresh__availability-control"><label htmlFor="menu-refresh-available">Menu Available</label><input id="menu-refresh-available" type="datetime-local" step="60" value={availableInput} onChange={(event) => { setAvailableInput(event.target.value); setNotice(""); }} disabled={blocked} aria-describedby="menu-refresh-availability-zone" /><small id="menu-refresh-availability-zone" title="Germany time (Europe/Berlin)">Berlin time (Europe/Berlin)</small></div><button type="button" className="btn menu-refresh__primary" onClick={() => save("config")} disabled={blocked || !validTarget || rowDirty || (!configDirty && snapshot.configured)}><Save size={16} />{saving === "config" ? "Saving…" : "Save configuration"}</button></div> : <MenuAvailability availableAt={snapshot.availableAt} />}
-          </div>
+          <MenuAvailability availableAt={snapshot.availableAt} dateDirty={canConfigure && availableInput !== formatBerlinDateTimeInput(snapshot.availableAt)} editor={canConfigure ? <div className="menu-refresh__availability-control"><label htmlFor="menu-refresh-available">Menu Available</label><input id="menu-refresh-available" type="datetime-local" step="60" value={availableInput} onChange={(event) => { setAvailableInput(event.target.value); setNotice(""); }} disabled={blocked} aria-describedby="menu-refresh-availability-zone" /><small id="menu-refresh-availability-zone">Berlin time (Europe/Berlin)</small></div> : null} />
+        </div>
+        <div className="menu-refresh__summary-footer">
+          <div className="menu-refresh__metrics"><span title="Dishes available to the chef"><strong>{available}</strong> available</span><span><strong>{selectedIds.size}</strong> selected</span><span title="Dishes still available to select"><strong>{remaining}</strong> remaining</span></div>
+          <div className="menu-refresh__summary-footer-actions"><span className="menu-refresh__configured-by"><LockKeyhole size={14} aria-hidden="true" />Set by Anastan</span>{canConfigure && <button type="button" className="btn menu-refresh__primary" onClick={() => save("config")} disabled={blocked || !validTarget || rowDirty || (!configDirty && snapshot.configured)}><Save size={16} />{saving === "config" ? "Saving…" : "Save configuration"}</button>}</div>
         </div>
         {canConfigure && <div className="menu-refresh__configuration">
           <button type="button" className="menu-refresh__pool-toggle" aria-expanded={poolOpen} aria-controls="menu-refresh-pool" onClick={() => setPoolOpen((value) => !value)}><span>Foods available in the chef’s dropdown <strong>{allowed.length}</strong></span><ChevronDown size={18} className={poolOpen ? "is-open" : ""} /></button>
