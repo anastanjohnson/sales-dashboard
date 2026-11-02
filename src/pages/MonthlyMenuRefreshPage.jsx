@@ -11,6 +11,13 @@ const normalizedRows = (data) => Array.from({ length: data.targetCount }, (_, in
   currentItemId: data.rows?.[index]?.currentItemId || "",
   newFoodName: data.rows?.[index]?.newFoodName || "",
 }));
+const filtersFromData = (data) => {
+  const items = new Map((data?.catalog || []).map((item) => [item.id, item]));
+  return normalizedRows(data).map((row) => {
+    const item = items.get(row.currentItemId);
+    return { category: item?.category || "", subcategory: item?.subcategory || "" };
+  });
+};
 const currentMonth = () => {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit" }).formatToParts(new Date());
   return `${parts.find((part) => part.type === "year").value}-${parts.find((part) => part.type === "month").value}`;
@@ -53,6 +60,7 @@ export default function MonthlyMenuRefreshPage() {
   }, [windowStart]);
   const [snapshot, setSnapshot] = useState(null);
   const [rows, setRows] = useState([]);
+  const [filters, setFilters] = useState([]);
   const [target, setTarget] = useState("0");
   const [allowed, setAllowed] = useState([]);
   const [search, setSearch] = useState("");
@@ -69,16 +77,29 @@ export default function MonthlyMenuRefreshPage() {
   const busy = useRef(false);
   const rowDirty = Boolean(snapshot && JSON.stringify(rows) !== JSON.stringify(normalizedRows(snapshot)));
   const configDirty = Boolean(snapshot?.canConfigure && (String(snapshot.targetCount) !== target || sortIds(snapshot.allowedItemIds || []) !== sortIds(allowed)));
-  dirty.current = rowDirty || configDirty;
+  const filterDirty = Boolean(snapshot && JSON.stringify(filters) !== JSON.stringify(filtersFromData(snapshot)));
+  dirty.current = rowDirty || configDirty || filterDirty;
   busy.current = Boolean(saving);
 
   useEffect(() => {
     if (month < windowStart && !dirty.current && !busy.current) setMonth(windowStart);
-  }, [month, windowStart, rowDirty, configDirty, saving]);
+  }, [month, windowStart, rowDirty, configDirty, filterDirty, saving]);
 
-  const accept = useCallback((data, { keepConfiguration = false } = {}) => {
+  const accept = useCallback((data, { keepConfiguration = false, keepFilters = false } = {}) => {
     setSnapshot(data);
     setRows(normalizedRows(data));
+    setFilters((previous) => {
+      const next = filtersFromData(data);
+      if (!keepFilters) return next;
+      const enabledIds = new Set(data.allowedItemIds || []);
+      const enabledItems = (data.catalog || []).filter((item) => enabledIds.has(item.id));
+      return next.map((filter, index) => {
+        if (filter.category || !previous[index]?.category) return filter;
+        const categoryItems = enabledItems.filter((item) => item.category === previous[index].category);
+        if (!categoryItems.length) return filter;
+        return { category: previous[index].category, subcategory: categoryItems.some((item) => item.subcategory === previous[index].subcategory) ? previous[index].subcategory : "" };
+      });
+    });
     if (!keepConfiguration) { setTarget(String(data.targetCount)); setAllowed(data.allowedItemIds || []); }
   }, []);
 
@@ -99,7 +120,7 @@ export default function MonthlyMenuRefreshPage() {
   }, [month, accept]);
 
   useEffect(() => {
-    setSnapshot(null); setRows([]); setNotice(""); setSearch(""); setPoolOpen(false);
+    setSnapshot(null); setRows([]); setFilters([]); setNotice(""); setSearch(""); setPoolOpen(false);
     load();
     return () => { requestNumber.current += 1; };
   }, [load]);
@@ -135,7 +156,7 @@ export default function MonthlyMenuRefreshPage() {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       if (activeMonth.current !== month) return;
-      accept(data, { keepConfiguration: kind === "rows" && configDirty });
+      accept(data, { keepConfiguration: kind === "rows" && configDirty, keepFilters: true });
       setNotice(kind === "config" ? "Monthly target and chef options saved." : "Food changes saved.");
     } catch (failure) { setError(failure); }
     finally { setSaving(""); }
@@ -145,6 +166,7 @@ export default function MonthlyMenuRefreshPage() {
   const itemById = useMemo(() => new Map(catalog.map((item) => [item.id, item])), [catalog]);
   const configuredAllowed = new Set(snapshot?.allowedItemIds || []);
   const chefItems = catalog.filter((item) => configuredAllowed.has(item.id));
+  const categories = [...new Set(chefItems.map((item) => item.category).filter(Boolean))];
   const selectedIds = new Set(rows.map((row) => row.currentItemId).filter(Boolean));
   const completed = rows.filter((row) => row.currentItemId && row.newFoodName.trim()).length;
   const numericTarget = Number(target);
@@ -157,6 +179,10 @@ export default function MonthlyMenuRefreshPage() {
   const blocked = Boolean(saving) || error?.status === 409;
 
   const updateRow = (index, patch) => { setNotice(""); setRows((previous) => previous.map((row, i) => i === index ? { ...row, ...patch } : row)); };
+  const updateFilter = (index, field, value) => {
+    setFilters((previous) => previous.map((filter, i) => i === index ? { category: field === "category" ? value : filter.category, subcategory: field === "category" ? "" : value } : filter));
+    updateRow(index, { currentItemId: "", newFoodName: "" });
+  };
   const toggleAllowed = (id) => { setNotice(""); setAllowed((previous) => previous.includes(id) ? previous.filter((value) => value !== id) : [...previous, id]); };
   const reloadSaved = () => {
     if (dirty.current && !window.confirm("Reload the saved month and discard your unsaved changes?")) return;
@@ -211,12 +237,23 @@ export default function MonthlyMenuRefreshPage() {
 
       <section className="menu-refresh__card menu-refresh__changes">
         <div className="menu-refresh__section-heading"><h2>{monthTitle(month)} changes</h2><span>{completed} of {snapshot.targetCount} replacements entered</span></div>
-        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table"><thead><tr className="menu-refresh__group-head"><th colSpan="4">Current AYCE item</th><th colSpan="2">New menu item</th></tr><tr><th scope="col">#</th><th scope="col">Food name</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">New food name</th><th scope="col">Chef guidance</th></tr></thead><tbody>{rows.map((row, index) => {
+        {snapshot.targetCount > 0 ? <div className="menu-refresh__table-scroll"><table className="menu-refresh__table"><thead><tr className="menu-refresh__group-head"><th colSpan="4">Current AYCE item</th><th colSpan="2">New menu item</th></tr><tr><th scope="col">#</th><th scope="col">Category</th><th scope="col">Subcategory</th><th scope="col">Food name</th><th scope="col">New food name</th><th scope="col">Chef guidance</th></tr></thead><tbody>{rows.map((row, index) => {
           const item = itemById.get(row.currentItemId);
-          return <tr key={index}><td>{String(index + 1).padStart(2, "0")}</td><td><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, ...(event.target.value ? {} : { newFoodName: "" }) })} disabled={blocked}><option value="">Select current food</option>{chefItems.filter((candidate) => candidate.id === row.currentItemId || !selectedIds.has(candidate.id)).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} · {candidate.subcategory}</option>)}</select></td><td><span className="menu-refresh__autofill">{item?.category || "—"}</span></td><td><span className="menu-refresh__autofill">{item?.subcategory || "—"}</span></td><td><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td><td><ChefGuidance item={item} /></td></tr>;
+          const filter = filters[index] || { category: item?.category || "", subcategory: item?.subcategory || "" };
+          const categoryItems = chefItems.filter((candidate) => candidate.category === filter.category);
+          const subcategories = [...new Set(categoryItems.map((candidate) => candidate.subcategory).filter(Boolean))];
+          const foodOptions = categoryItems.filter((candidate) => candidate.subcategory === filter.subcategory && (candidate.id === row.currentItemId || !selectedIds.has(candidate.id)));
+          return <tr key={index}>
+            <td>{String(index + 1).padStart(2, "0")}</td>
+            <td><label className="sr-only" htmlFor={`menu-refresh-category-${index}`}>Category for row {index + 1}</label><select id={`menu-refresh-category-${index}`} value={filter.category} onChange={(event) => updateFilter(index, "category", event.target.value)} disabled={blocked}><option value="">Choose category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></td>
+            <td><label className="sr-only" htmlFor={`menu-refresh-subcategory-${index}`}>Subcategory for row {index + 1}</label><select id={`menu-refresh-subcategory-${index}`} value={filter.subcategory} onChange={(event) => updateFilter(index, "subcategory", event.target.value)} disabled={blocked || !filter.category}><option value="">{filter.category ? "Choose subcategory" : "Choose category first"}</option>{subcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></td>
+            <td><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, newFoodName: "" })} disabled={blocked || !filter.category || !filter.subcategory} aria-describedby={filter.category && filter.subcategory ? `menu-refresh-food-count-${index}` : undefined}><option value="">{!filter.category ? "Choose category first" : !filter.subcategory ? "Choose subcategory first" : "Select current food"}</option>{foodOptions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select>{filter.category && filter.subcategory && <small id={`menu-refresh-food-count-${index}`} className="menu-refresh__food-count">{foodOptions.length} {foodOptions.length === 1 ? "food" : "foods"} available</small>}</td>
+            <td><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /></td>
+            <td><ChefGuidance item={item} /></td>
+          </tr>;
         })}</tbody></table></div> : <div className="menu-refresh__empty"><Utensils size={28} /><strong>{snapshot.configured ? "No menu changes planned for this month." : "This month is waiting for Anastan’s configuration."}</strong><p>{canConfigure ? "Set the item count and enable the foods the chef can choose, then save the configuration." : "The chef’s rows will appear when Anastan saves the monthly target and available dishes."}</p></div>}
-        <p className="menu-refresh__helper"><Info size={15} />Selecting a food fills its category, subcategory and chef guidance automatically.</p>
-        <footer className="menu-refresh__save-bar"><span className={rowDirty ? "" : "menu-refresh__muted"}>{rowDirty ? "Unsaved food changes" : "All food changes saved"}</span><button type="button" className="btn menu-refresh__primary" onClick={() => save("rows")} disabled={blocked || !rowDirty || snapshot.targetCount === 0}><Save size={16} />{saving === "rows" ? "Saving…" : "Save changes"}</button></footer>
+        <p className="menu-refresh__helper"><Info size={15} />Choose a category, then a subcategory, then the current food. Dietary and spice guidance fills automatically.</p>
+        <footer className="menu-refresh__save-bar"><span className={rowDirty ? "" : "menu-refresh__muted"}>{rowDirty ? "Unsaved food changes" : filterDirty ? "Food selection in progress" : "All food changes saved"}</span><button type="button" className="btn menu-refresh__primary" onClick={() => save("rows")} disabled={blocked || !rowDirty || snapshot.targetCount === 0}><Save size={16} />{saving === "rows" ? "Saving…" : "Save changes"}</button></footer>
       </section>
       <p className="menu-refresh__source">AYCE food reference: <a href="https://karikaala.de/speisekarte/" target="_blank" rel="noreferrer">KARIKAALA website</a>. Dietary and spice guidance describes the current dish; missing ratings remain unspecified.</p>
     </>}
