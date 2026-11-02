@@ -138,7 +138,7 @@ const refreshedWeeklyGuestData = mergeDailyGuestRecords(
 // No employee identifiers, salary details, credentials, or session values are logged.
 const roundAudit = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 const hoursAudit = normalizedStaffHoursData.filter((period) => Number(period.year) === 2026
-  && ["sep", "oct"].includes(String(period.month).slice(0, 3).toLowerCase())).map((period) => ({
+  && ["sep", "oct", "nov"].includes(String(period.month).slice(0, 3).toLowerCase())).map((period) => ({
   year: period.year, month: period.month, asOf: period.asOf, partial: period.partial,
   totalHours: roundAudit((period.employees || []).reduce((sum, row) => sum + Number(row.workingHours || 0), 0)),
   employeeCount: period.employees?.length || 0,
@@ -149,7 +149,7 @@ const revenueAudit = refreshedWeeklyPerformanceData.filter((week) => week.startD
     currentRevenue: roundAudit(week.days.reduce((sum, day) => sum + (day.currentRevenue || 0), 0)),
     days: week.days.map(({currentDate, currentRevenue, comparisonRevenue}) => ({currentDate,currentRevenue,comparisonRevenue})),
   }));
-console.info("Dashboard published audit " + JSON.stringify({ version: "2026-11-01-refresh", hours: hoursAudit, revenue: revenueAudit }));
+console.info("Dashboard published audit " + JSON.stringify({ version: "2026-11-02-refresh", hours: hoursAudit, revenue: revenueAudit }));
 
 const monthKey = (value) => String(value || "").trim().slice(0, 3).toLowerCase();
 const findSalaryPaymentEmployee = (sourceData, { year, month, employeeName, department }) => {
