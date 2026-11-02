@@ -31,16 +31,12 @@ async function request(path, options) {
 
 function ChefGuidance({ item }) {
   if (!item) return <span className="menu-refresh__muted">Select a current food to see guidance.</span>;
-  const price = Number(item.supplementEur) > 0
-    ? `+${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(item.supplementEur)} supplement`
-    : item.supplementEur === 0 ? "Included" : item.priceLabel || "Not specified";
   return <div className="menu-refresh__guidance">
     <small>Based on current dish</small>
     <div className="menu-refresh__guidance-line">
       <span className={`menu-refresh__diet menu-refresh__diet--${item.diet}`}>{DIETS[item.diet] || "Type not specified"}</span>
       <span className="menu-refresh__spice"><Flame size={14} aria-hidden="true" />Spice: {item.spiceLevel == null ? "Not specified" : `${item.spiceLevel}/5`}</span>
     </div>
-    <span>AYCE: {price}</span>
     {item.hasVariants && <small>Menu item has variants.</small>}
   </div>;
 }
