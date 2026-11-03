@@ -5,6 +5,7 @@ import {
   installMenuRotationRoutes, rotationResponse, saveRotationRows, validateAvailableAt, validateMonth,
 } from "../supabase/functions/dashboard-api/menu-rotation.js";
 import { getSpecialMenu } from "../supabase/functions/dashboard-api/menu-calendar.js";
+import { ayceMenuCatalog } from "../supabase/functions/dashboard-api/data/ayceMenu.js";
 
 const catalog = [{ id: "one", name: "First dish" }, { id: "two", name: "Second dish" }, { id: "three", name: "Third dish" }];
 const month = "2026-11";
@@ -103,6 +104,49 @@ test("Admin only receives enabled dishes and a fixed target", () => {
   assert.equal(response.targetCount, 1);
   assert.deepEqual(response.catalog, [catalog[1]]);
   assert.equal(rotationResponse(state, owner, catalog).catalog.length, 3);
+});
+test("refreshed food metadata preserves saved configuration, replacements and availability", () => {
+  const seafoodId = "hauptspeise-highlights-seafood-biriyani";
+  const retiredId = "nachtisch-highlights-rich-bread-sweet";
+  const itemById = new Map(ayceMenuCatalog.map(item => [item.id, item]));
+  assert.equal(itemById.get(seafoodId)?.subcategory, "Biriyani");
+  assert.equal(itemById.get(retiredId)?.active, false);
+  const manuallyDisabledId = "vorspeise-salat-paneer-kuruthu";
+  const allowedItemIds = ayceMenuCatalog.map(item => item.id).filter(id => ![manuallyDisabledId, "nachtisch-highlights-jilebi"].includes(id));
+  const state = { month, configured: true, targetCount: 5, allowedItemIds,
+    rows: [{ currentItemId: seafoodId, newFoodName: "Saved seafood replacement" }, { currentItemId: retiredId, newFoodName: "Saved dessert replacement" }, ...Array.from({ length: 3 }, () => ({ currentItemId: "", newFoodName: "" }))],
+    availableAt: "2026-11-10T14:30:00.000Z", version: 17, updatedAt: "2026-11-02T12:00:00.000Z" };
+  const before = structuredClone(state);
+  for (const role of [owner, chef]) {
+    const response = rotationResponse(state, role, ayceMenuCatalog);
+    assert.deepEqual(response.allowedItemIds, before.allowedItemIds);
+    assert.deepEqual(response.rows, before.rows);
+    assert.equal(response.availableAt, before.availableAt);
+    assert.equal(response.version, before.version);
+    assert.equal(response.updatedAt, before.updatedAt);
+    assert.equal(response.catalog.find(item => item.id === retiredId)?.name, "Rich Bread Sweet");
+    assert.equal(response.allowedItemIds.includes(manuallyDisabledId), false);
+    if (role === chef) assert.equal(response.catalog.some(item => item.id === manuallyDisabledId), false);
+  }
+  assert.deepEqual(state, before);
+});
+test("catalog refresh keeps a pending old-client retired-food selection savable and editable", () => {
+  const retiredId = "nachtisch-highlights-rich-bread-sweet";
+  const state = { month, configured: true, targetCount: 5, allowedItemIds: ayceMenuCatalog.map(item => item.id),
+    rows: Array.from({ length: 5 }, () => ({ currentItemId: "", newFoodName: "" })),
+    availableAt: "2026-11-10T14:30:00.000Z", version: 17, updatedAt: "2026-11-02T12:00:00.000Z" };
+  const pendingRows = activeRows(state);
+  pendingRows[0] = { currentItemId: retiredId, newFoodName: "Saved dessert replacement" };
+  const saved = saveRotationRows(state, { month, version: 17, rows: pendingRows }, chef);
+  const editedRows = activeRows(saved);
+  editedRows[0].newFoodName = "Edited dessert replacement";
+  const edited = saveRotationRows(saved, { month, version: 18, rows: editedRows }, chef);
+  const configured = configureRotation(edited, { month, version: 19, targetCount: 5, allowedItemIds: [...state.allowedItemIds] }, ayceMenuCatalog, owner);
+  assert.equal(configured.rows[0].newFoodName, "Edited dessert replacement");
+  assert.equal(configured.rows[0].currentItemId, retiredId);
+  assert.deepEqual(configured.allowedItemIds, state.allowedItemIds);
+  assert.equal(configured.availableAt, state.availableAt);
+  assert.equal(configured.version, 20);
 });
 test("chef can save partial drafts but cannot inject a disabled or duplicate dish", () => {
   const state = configureRotation(defaultRotation(month), { month, version: 0, targetCount: 2, allowedItemIds: ["one", "two"] }, catalog, owner);

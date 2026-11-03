@@ -2,29 +2,21 @@
 export const menuCatalogMetadata = {
   "sourceUrl": "https://karikaala.de/speisekarte/",
   "menuType": "All You Can Experience",
-  "checkedAt": "2026-11-02",
-  "idStrategy": "Generated deterministic category-subcategory-name slugs; website source item IDs not exposed in visible DOM.",
+  "checkedAt": "2026-11-03",
+  "idStrategy": "Retain existing IDs for exact category/subcategory/name matches or uniquely named dishes that moved; no new IDs required in this refresh.",
   "notes": [
     "Extracted all food category tabs from rendered official public AYCE menu; excludes drinks and gift vouchers.",
     "Website vegetarian and vegan SVG markers are retained. Non-veg labels are inferred from meat/seafood dish names and absence of vegetarian/vegan markers; Roll is left not-specified.",
     "Null spiceLevel means no rating shown, not zero spice. Variant-group spice values are shared by all displayed variants.",
     "priceLabel is the AYCE included/supplement indication, not ingredient cost or standalone dish price.",
-    "Same-name entries in different subcategories are preserved; Lamb Burger displays 2/5 in Burger and 1/5 in childrens category."
-  ]
+    "Same-name entries in different subcategories are preserved; Lamb Burger displays 2/5 in Burger and 1/5 in childrens category.",
+    "Freshly retrieved 3 November 2026. Highlights food subcategories removed. Former Highlights dishes moved to normal subcategories; Rich Bread Sweet and Jilebi absent. Existing IDs preserved across moves.",
+    "106 current food entries are active. Two removed dishes (Jilebi and Rich Bread Sweet) retain their full historical metadata with active:false for existing saved records only; they are not available for new selection."
+  ],
+  "activeItemCount": 106,
+  "historicalItemCount": 2
 };
 export const ayceMenuCatalog = [
-  {
-    "id": "vorspeise-highlights-soja-kola-urunda",
-    "name": "Soja Kola Urunda",
-    "category": "Vorspeise",
-    "subcategory": "Highlights",
-    "diet": "vegan",
-    "spiceLevel": null,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
   {
     "id": "vorspeise-salat-paneer-kuruthu",
     "name": "Paneer Kuruthu",
@@ -35,7 +27,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-salat-thalir",
@@ -47,7 +40,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-suppe-pumpkin-coconut-soup",
@@ -59,7 +53,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-suppe-dal-soup",
@@ -71,7 +66,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-snacks-roll",
@@ -99,7 +95,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "vorspeise-snacks-samosa-pyramid",
@@ -127,7 +124,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "vorspeise-snacks-vadai",
@@ -155,7 +153,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "vorspeise-snacks-fish-cutlet",
@@ -167,7 +166,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-snacks-jackfruit-cutlet",
@@ -179,7 +179,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-snacks-fish-amritsari",
@@ -207,7 +208,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "vorspeise-snacks-vaanavil",
@@ -219,7 +221,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-snacks-appalam",
@@ -231,7 +234,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-snacks-chicken-65",
@@ -259,7 +263,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "vorspeise-snacks-nethili-65",
@@ -271,7 +276,21 @@ export const ayceMenuCatalog = [
     "priceLabel": "€2",
     "supplementEur": 2.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "vorspeise-highlights-soja-kola-urunda",
+    "name": "Soja Kola Urunda",
+    "category": "Vorspeise",
+    "subcategory": "Snacks",
+    "diet": "vegan",
+    "spiceLevel": null,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-tandoori-chicken",
@@ -283,7 +302,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-saffron-chicken-tikka",
@@ -295,7 +315,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-hariyali-chicken-tikka",
@@ -307,7 +328,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-jheenga-tikka",
@@ -319,7 +341,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€2",
     "supplementEur": 2.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-tandoori-aloo",
@@ -331,7 +354,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-chicken-tikka",
@@ -343,7 +367,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-tandoori-salmon-filet",
@@ -355,7 +380,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€2",
     "supplementEur": 2.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-pani-puri-sweet-pani-puri",
@@ -367,7 +393,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-pani-puri-spicy-pani-puri",
@@ -379,7 +406,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "vorspeise-pani-puri-dhai-puri",
@@ -391,31 +419,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
-  {
-    "id": "hauptspeise-highlights-kovai-meen-curry",
-    "name": "Kovai Meen Curry",
-    "category": "Hauptspeise",
-    "subcategory": "Highlights",
-    "diet": "non-veg",
-    "spiceLevel": 3,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
-  },
-  {
-    "id": "hauptspeise-highlights-seafood-biriyani",
-    "name": "Seafood Biriyani",
-    "category": "Hauptspeise",
-    "subcategory": "Highlights",
-    "diet": "non-veg",
-    "spiceLevel": 3,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-biriyani-lamb-biriyani",
@@ -427,7 +432,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-biriyani-chicken-biriyani",
@@ -439,7 +445,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-biriyani-mushroom-biriyani",
@@ -451,7 +458,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-biriyani-seerasamba-chicken-biryani",
@@ -463,7 +471,21 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "hauptspeise-highlights-seafood-biriyani",
+    "name": "Seafood Biriyani",
+    "category": "Hauptspeise",
+    "subcategory": "Biriyani",
+    "diet": "non-veg",
+    "spiceLevel": 3,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-kotthu-rotti-chicken-kotthu",
@@ -475,7 +497,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-kotthu-rotti-paneer-kotthu",
@@ -487,7 +510,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-kotthu-rotti-lamb-kotthu",
@@ -499,7 +523,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-kotthu-rotti-jackfruit-kotthu",
@@ -511,7 +536,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-kadalai-curry",
@@ -523,7 +549,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-saambar",
@@ -535,7 +562,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-kathirikai-curry",
@@ -547,7 +575,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-mushroom-masala",
@@ -559,7 +588,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-pineapple-coconut-curry",
@@ -571,7 +601,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-paneer-tikka-masala",
@@ -583,7 +614,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-vegetarische-curries-dal-makhani",
@@ -595,7 +627,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-chicken-malai",
@@ -607,7 +640,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-tamil-chicken-curry",
@@ -619,7 +653,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-tamil-lamb-curry",
@@ -631,7 +666,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-butter-chicken",
@@ -643,7 +679,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-chemmeen-curry",
@@ -655,7 +692,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-chicken-tikka-masala",
@@ -667,7 +705,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-royal-nihari-lamb",
@@ -679,7 +718,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-curries-mango-chicken-curry",
@@ -691,7 +731,21 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "hauptspeise-highlights-kovai-meen-curry",
+    "name": "Kovai Meen Curry",
+    "category": "Hauptspeise",
+    "subcategory": "Curries",
+    "diet": "non-veg",
+    "spiceLevel": 3,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-burger-sarakku-fish-burger",
@@ -703,7 +757,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-burger-chicken-tandoori-burger",
@@ -715,7 +770,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-burger-paneer-spinach-burger",
@@ -727,7 +783,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-burger-jackfruit-burger",
@@ -739,7 +796,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-burger-lamb-burger",
@@ -751,7 +809,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-fur-die-kleinen-gaste-chicken-nuggets",
@@ -763,7 +822,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-fur-die-kleinen-gaste-french-fries",
@@ -775,7 +835,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-fur-die-kleinen-gaste-lamb-burger",
@@ -787,7 +848,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "hauptspeise-fur-die-kleinen-gaste-paneer-spinach-burger",
@@ -799,7 +861,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-traditional-food-idli",
@@ -811,7 +874,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-traditional-food-paper-ghee-roast",
@@ -839,7 +903,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "beilage-traditional-food-wholemeal-rice",
@@ -851,7 +916,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-traditional-food-basmati-rice",
@@ -863,7 +929,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-traditional-food-masala-dosai",
@@ -891,7 +958,8 @@ export const ayceMenuCatalog = [
         "priceLabel": "inkl.",
         "supplementEur": 0
       }
-    ]
+    ],
+    "active": true
   },
   {
     "id": "beilage-traditional-food-appam",
@@ -903,7 +971,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-traditional-food-egg-appam",
@@ -915,7 +984,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-chappathi",
@@ -927,7 +997,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-butter-naan",
@@ -939,7 +1010,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-tandoori-naan",
@@ -951,7 +1023,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-mutton-aloo-naan",
@@ -963,7 +1036,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-parotta",
@@ -975,7 +1049,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-chicken-aloo-naan",
@@ -987,7 +1062,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "dish name and absence of vegetarian/vegan marker"
+    "dietSource": "dish name and absence of vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-garlic-naan",
@@ -999,7 +1075,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-paneer-aloo-naan",
@@ -1011,7 +1088,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-brot-truffel-naan",
@@ -1023,7 +1101,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€2",
     "supplementEur": 2.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-chillipaste",
@@ -1035,7 +1114,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-tomato-chutney",
@@ -1047,7 +1127,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-tamarind-chutney",
@@ -1059,7 +1140,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-chillisauce",
@@ -1071,7 +1153,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-mayonnaise",
@@ -1083,7 +1166,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-raita",
@@ -1095,7 +1179,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-sweet-joghurt",
@@ -1107,7 +1192,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-mint-chutney",
@@ -1119,7 +1205,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-coconut-chutney",
@@ -1131,7 +1218,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-sweet-mango-chutney",
@@ -1143,7 +1231,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-saucen-ketchup",
@@ -1155,7 +1244,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-extras-cucumber",
@@ -1167,7 +1257,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-extras-onions",
@@ -1179,7 +1270,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-extras-lime",
@@ -1191,7 +1283,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "beilage-extras-chilli",
@@ -1203,55 +1296,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
-  {
-    "id": "nachtisch-highlights-bhoondi-laddu",
-    "name": "Bhoondi Laddu",
-    "category": "Nachtisch",
-    "subcategory": "Highlights",
-    "diet": "vegetarian",
-    "spiceLevel": null,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
-  {
-    "id": "nachtisch-highlights-avocado-nelli-ice-mit-kokos",
-    "name": "Avocado Nelli Ice mit Kokos",
-    "category": "Nachtisch",
-    "subcategory": "Highlights",
-    "diet": "vegan",
-    "spiceLevel": null,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
-  {
-    "id": "nachtisch-highlights-jilebi",
-    "name": "Jilebi",
-    "category": "Nachtisch",
-    "subcategory": "Highlights",
-    "diet": "vegetarian",
-    "spiceLevel": null,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
-  },
-  {
-    "id": "nachtisch-highlights-rich-bread-sweet",
-    "name": "Rich Bread Sweet",
-    "category": "Nachtisch",
-    "subcategory": "Highlights",
-    "diet": "vegetarian",
-    "spiceLevel": null,
-    "priceLabel": "inkl.",
-    "supplementEur": 0,
-    "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-appam-kinder-riegel-appam",
@@ -1263,7 +1309,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-appam-paal-ice-appam",
@@ -1275,7 +1322,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-appam-smarties-appam",
@@ -1287,7 +1335,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-appam-sweet-appam",
@@ -1299,7 +1348,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-appam-oreo-appam",
@@ -1311,7 +1361,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-eis-saffron-jackfruit-ice",
@@ -1323,7 +1374,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-eis-paalkova-ice",
@@ -1335,7 +1387,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-eis-rosewater-lassi-ice",
@@ -1347,7 +1400,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-eis-mango-lassi-ice",
@@ -1359,7 +1413,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-eis-milo-ice",
@@ -1371,7 +1426,21 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "nachtisch-highlights-avocado-nelli-ice-mit-kokos",
+    "name": "Avocado Nelli Ice mit Kokos",
+    "category": "Nachtisch",
+    "subcategory": "Eis",
+    "diet": "vegan",
+    "spiceLevel": null,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-sweets-kesari",
@@ -1383,7 +1452,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-sweets-carrot-halwa",
@@ -1395,7 +1465,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-sweets-gulab-jamun",
@@ -1407,7 +1478,8 @@ export const ayceMenuCatalog = [
     "priceLabel": "inkl.",
     "supplementEur": 0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
   },
   {
     "id": "nachtisch-sweets-chocolate-lava-cake",
@@ -1419,6 +1491,46 @@ export const ayceMenuCatalog = [
     "priceLabel": "€1",
     "supplementEur": 1.0,
     "hasVariants": false,
-    "dietSource": "website vegetarian/vegan marker"
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "nachtisch-highlights-bhoondi-laddu",
+    "name": "Bhoondi Laddu",
+    "category": "Nachtisch",
+    "subcategory": "Sweets",
+    "diet": "vegetarian",
+    "spiceLevel": null,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "website vegetarian/vegan marker",
+    "active": true
+  },
+  {
+    "id": "nachtisch-highlights-jilebi",
+    "name": "Jilebi",
+    "category": "Nachtisch",
+    "subcategory": "Highlights",
+    "diet": "vegetarian",
+    "spiceLevel": null,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "website vegetarian/vegan marker",
+    "active": false
+  },
+  {
+    "id": "nachtisch-highlights-rich-bread-sweet",
+    "name": "Rich Bread Sweet",
+    "category": "Nachtisch",
+    "subcategory": "Highlights",
+    "diet": "vegetarian",
+    "spiceLevel": null,
+    "priceLabel": "inkl.",
+    "supplementEur": 0,
+    "hasVariants": false,
+    "dietSource": "website vegetarian/vegan marker",
+    "active": false
   }
 ];

@@ -4,6 +4,7 @@ import { apiFetch } from "../api.js";
 import { getSpecialMenu } from "../../supabase/functions/dashboard-api/menu-calendar.js";
 import { formatBerlinDateTimeInput, getCountdownParts, parseBerlinDateTimeInput } from "../menuRefresh/dateTime.js";
 import { getMenuRowStatus } from "../menuRefresh/rowStatus.js";
+import { getActiveMenuCatalog, getRowMenuOptions } from "../menuRefresh/catalogChoices.js";
 import "./MonthlyMenuRefreshPage.css";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -132,7 +133,7 @@ export default function MonthlyMenuRefreshPage() {
       const next = filtersFromData(data);
       if (!keepFilters) return next;
       const enabledIds = new Set(data.allowedItemIds || []);
-      const enabledItems = (data.catalog || []).filter((item) => enabledIds.has(item.id));
+      const enabledItems = getActiveMenuCatalog(data.catalog || []).filter((item) => enabledIds.has(item.id));
       return next.map((filter, index) => {
         if (filter.category || !previous[index]?.category) return filter;
         const categoryItems = enabledItems.filter((item) => item.category === previous[index].category);
@@ -203,21 +204,23 @@ export default function MonthlyMenuRefreshPage() {
   };
 
   const catalog = snapshot?.catalog || [];
+  const activeCatalog = getActiveMenuCatalog(catalog);
   const itemById = useMemo(() => new Map(catalog.map((item) => [item.id, item])), [catalog]);
   const configuredAllowed = new Set(snapshot?.allowedItemIds || []);
-  const chefItems = catalog.filter((item) => configuredAllowed.has(item.id));
-  const categories = [...new Set(chefItems.map((item) => item.category).filter(Boolean))];
+  const chefItems = activeCatalog.filter((item) => configuredAllowed.has(item.id));
   const selectedIds = new Set(rows.map((row) => row.currentItemId).filter(Boolean));
+  const activeSelectedCount = chefItems.filter((item) => selectedIds.has(item.id)).length;
   const savedRows = snapshot ? normalizedRows(snapshot) : [];
   const rowStatuses = rows.map((row, index) => getMenuRowStatus(row, filters[index], savedRows[index]));
   const doneCount = rowStatuses.filter((status) => status.key === "done").length;
   const notStartedCount = rowStatuses.filter((status) => status.key === "not-started").length;
   const inProgressCount = rows.length - doneCount - notStartedCount;
   const numericTarget = Number(target);
-  const validTarget = target !== "" && Number.isInteger(numericTarget) && numericTarget >= 0 && numericTarget <= allowed.length;
+  const activeAllowedCount = activeCatalog.filter((item) => allowed.includes(item.id)).length;
+  const validTarget = target !== "" && Number.isInteger(numericTarget) && numericTarget >= 0 && numericTarget <= activeAllowedCount;
   const available = chefItems.length;
   const remaining = chefItems.filter((item) => !selectedIds.has(item.id)).length;
-  const filteredCatalog = catalog.filter((item) => `${item.name} ${item.category} ${item.subcategory}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const filteredCatalog = activeCatalog.filter((item) => `${item.name} ${item.category} ${item.subcategory}`.toLowerCase().includes(search.trim().toLowerCase()));
   const checked = new Set(allowed);
   const canConfigure = !specialMenu && snapshot?.canConfigure === true;
   const blocked = Boolean(saving) || error?.status === 409;
@@ -257,16 +260,16 @@ export default function MonthlyMenuRefreshPage() {
         <div className="menu-refresh__rotation-ribbon">
           <h2>{new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T12:00:00Z`))}</h2>
           <span className="menu-refresh__locked-target" title="Set by Anastan"><LockKeyhole size={14} aria-hidden="true" /><strong>{snapshot.targetCount}</strong> items to change</span>
-          <div className="menu-refresh__ribbon-metrics"><span title="Dishes available to the chef"><strong>{available}</strong> available</span><span><strong>{selectedIds.size}</strong> selected</span><span title="Dishes still available to select"><strong>{remaining}</strong> remaining</span></div>
+          <div className="menu-refresh__ribbon-metrics"><span title="Dishes available to the chef"><strong>{available}</strong> available</span><span title="Current AYCE dishes selected"><strong>{activeSelectedCount}</strong> selected</span><span title="Dishes still available to select"><strong>{remaining}</strong> remaining</span></div>
           <MenuAvailability availableAt={snapshot.availableAt} month={month} />
         </div>
         {canConfigure && <div className="menu-refresh__owner-config">
-          <div className="menu-refresh__target-field"><label htmlFor="menu-refresh-target">Items to change</label><input id="menu-refresh-target" type="number" min="0" max={allowed.length} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} /></div>
+          <div className="menu-refresh__target-field"><label htmlFor="menu-refresh-target">Items to change</label><input id="menu-refresh-target" type="number" min="0" max={activeAllowedCount} step="1" value={target} onChange={(event) => { setTarget(event.target.value); setNotice(""); }} disabled={blocked} /></div>
           <div className="menu-refresh__availability-control"><label htmlFor="menu-refresh-available">Menu Available</label><input id="menu-refresh-available" type="datetime-local" step="60" value={availableInput} onChange={(event) => { setAvailableInput(event.target.value); setNotice(""); }} disabled={blocked} aria-describedby="menu-refresh-availability-zone" /><small id="menu-refresh-availability-zone">Berlin time (Europe/Berlin)</small></div>
           <button type="button" className="btn menu-refresh__primary" onClick={() => save("config")} disabled={blocked || !validTarget || rowDirty || (!configDirty && snapshot.configured)}><Save size={16} />{saving === "config" ? "Saving…" : "Save configuration"}</button>
         </div>}
         {canConfigure && <div className="menu-refresh__configuration">
-          <button type="button" className="menu-refresh__pool-toggle" aria-expanded={poolOpen} aria-controls="menu-refresh-pool" onClick={() => setPoolOpen((value) => !value)}><span>Foods available in the chef’s dropdown <strong>{allowed.length}</strong></span><ChevronDown size={18} className={poolOpen ? "is-open" : ""} /></button>
+          <button type="button" className="menu-refresh__pool-toggle" aria-expanded={poolOpen} aria-controls="menu-refresh-pool" onClick={() => setPoolOpen((value) => !value)}><span>Foods available in the chef’s dropdown <strong>{activeAllowedCount}</strong></span><ChevronDown size={18} className={poolOpen ? "is-open" : ""} /></button>
           {poolOpen && <div id="menu-refresh-pool" className="menu-refresh__pool">
             <p>Select the AYCE dishes the chef is allowed to rotate for {monthTitle(month)}.</p>
             <div className="menu-refresh__pool-tools"><label className="menu-refresh__search"><Search size={16} /><input type="search" aria-label="Search AYCE foods" placeholder="Search food, category or subcategory" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
@@ -274,9 +277,9 @@ export default function MonthlyMenuRefreshPage() {
               <button type="button" className="btn btn--ghost" disabled={blocked} onClick={() => { const visible = new Set(filteredCatalog.map((item) => item.id)); setAllowed((previous) => previous.filter((id) => !visible.has(id))); }}>Clear shown</button>
             </div>
             <div className="menu-refresh__food-pool">{filteredCatalog.map((item) => <label key={item.id} className={`menu-refresh__food-option ${checked.has(item.id) ? "is-checked" : ""}`}><input type="checkbox" checked={checked.has(item.id)} onChange={() => toggleAllowed(item.id)} disabled={blocked} /><span><strong>{item.name}</strong><small>{item.category} / {item.subcategory}</small></span><span className={`menu-refresh__diet menu-refresh__diet--${item.diet}`}>{DIETS[item.diet] || "Not specified"}</span></label>)}{filteredCatalog.length === 0 && <p className="menu-refresh__empty">No matching AYCE foods.</p>}</div>
-            <p className="menu-refresh__muted">{allowed.length} of {catalog.length} AYCE foods enabled. Foods already selected in the active rows must stay enabled.</p>
+            <p className="menu-refresh__muted">{activeAllowedCount} of {activeCatalog.length} current AYCE foods enabled. Foods already selected in the active rows must stay enabled.</p>
           </div>}
-          {!validTarget && <p className="menu-refresh__validation" role="status">Set a whole number from 0 to {allowed.length}. Enable at least as many foods as the target.</p>}
+          {!validTarget && <p className="menu-refresh__validation" role="status">Set a whole number from 0 to {activeAllowedCount}. Enable at least as many foods as the target.</p>}
           {rowDirty && <p className="menu-refresh__muted">Save the food changes below before updating the configuration.</p>}
           {configDirty && <p className="menu-refresh__muted">Configuration changes have not yet been shared with Admin.</p>}
         </div>}
@@ -288,14 +291,12 @@ export default function MonthlyMenuRefreshPage() {
           const item = itemById.get(row.currentItemId);
           const status = rowStatuses[index];
           const filter = filters[index] || { category: item?.category || "", subcategory: item?.subcategory || "" };
-          const categoryItems = chefItems.filter((candidate) => candidate.category === filter.category);
-          const subcategories = [...new Set(categoryItems.map((candidate) => candidate.subcategory).filter(Boolean))];
-          const foodOptions = categoryItems.filter((candidate) => candidate.subcategory === filter.subcategory && (candidate.id === row.currentItemId || !selectedIds.has(candidate.id)));
+          const { categories, subcategories, foodOptions, retiredItem, legacyCategory, legacySubcategory } = getRowMenuOptions(chefItems, item, filter, selectedIds);
           return <tr key={index} role="row" className={`${item ? "menu-refresh__row--selected" : ""}${status.key === "done" ? " menu-refresh__row--done" : ""}`}>
             <td role="cell" data-label="Change"><span className="menu-refresh__number-wrap">{String(index + 1).padStart(2, "0")}</span></td>
-            <td role="cell" data-label="Category"><label className="sr-only" htmlFor={`menu-refresh-category-${index}`}>Category for row {index + 1}</label><select id={`menu-refresh-category-${index}`} value={filter.category} onChange={(event) => updateFilter(index, "category", event.target.value)} disabled={blocked}><option value="">Choose category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></td>
-            <td role="cell" data-label="Subcategory"><label className="sr-only" htmlFor={`menu-refresh-subcategory-${index}`}>Subcategory for row {index + 1}</label><select id={`menu-refresh-subcategory-${index}`} value={filter.subcategory} onChange={(event) => updateFilter(index, "subcategory", event.target.value)} disabled={blocked || !filter.category}><option value="">{filter.category ? "Choose subcategory" : "Choose category first"}</option>{subcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></td>
-            <td role="cell" data-label="Current food"><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, newFoodName: "" })} disabled={blocked || !filter.category || !filter.subcategory} aria-describedby={filter.category && filter.subcategory ? `menu-refresh-food-count-${index}` : undefined}><option value="">{!filter.category ? "Choose category first" : !filter.subcategory ? "Choose subcategory first" : "Select current food"}</option>{foodOptions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select>{filter.category && filter.subcategory && <small id={`menu-refresh-food-count-${index}`} className="menu-refresh__food-count">{foodOptions.length} {foodOptions.length === 1 ? "food" : "foods"} available</small>}</td>
+            <td role="cell" data-label="Category"><label className="sr-only" htmlFor={`menu-refresh-category-${index}`}>Category for row {index + 1}</label><select id={`menu-refresh-category-${index}`} value={filter.category} onChange={(event) => updateFilter(index, "category", event.target.value)} disabled={blocked}><option value="">Choose category</option>{legacyCategory && <option value={filter.category} disabled>{filter.category} (previous menu)</option>}{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></td>
+            <td role="cell" data-label="Subcategory"><label className="sr-only" htmlFor={`menu-refresh-subcategory-${index}`}>Subcategory for row {index + 1}</label><select id={`menu-refresh-subcategory-${index}`} value={filter.subcategory} onChange={(event) => updateFilter(index, "subcategory", event.target.value)} disabled={blocked || !filter.category}><option value="">{filter.category ? "Choose subcategory" : "Choose category first"}</option>{legacySubcategory && <option value={filter.subcategory} disabled>{filter.subcategory} (previous menu)</option>}{subcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></td>
+            <td role="cell" data-label="Current food"><label className="sr-only" htmlFor={`menu-refresh-food-${index}`}>Current food for row {index + 1}</label><select id={`menu-refresh-food-${index}`} value={row.currentItemId} onChange={(event) => updateRow(index, { currentItemId: event.target.value, newFoodName: "" })} disabled={blocked || !filter.category || !filter.subcategory} aria-describedby={[filter.category && filter.subcategory ? `menu-refresh-food-count-${index}` : "", retiredItem ? `menu-refresh-food-retired-${index}` : ""].filter(Boolean).join(" ") || undefined}><option value="">{!filter.category ? "Choose category first" : !filter.subcategory ? "Choose subcategory first" : "Select current food"}</option>{retiredItem && <option value={retiredItem.id} disabled>{retiredItem.name} — No longer on current AYCE menu</option>}{foodOptions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select>{filter.category && filter.subcategory && <small id={`menu-refresh-food-count-${index}`} className="menu-refresh__food-count">{foodOptions.length} {foodOptions.length === 1 ? "food" : "foods"} available</small>}{retiredItem && <small id={`menu-refresh-food-retired-${index}`} className="menu-refresh__food-count">No longer on current AYCE menu</small>}</td>
             <td role="cell" data-label="New food name"><label className="sr-only" htmlFor={`menu-refresh-new-${index}`}>New food name for row {index + 1}</label><input id={`menu-refresh-new-${index}`} type="text" placeholder="Enter new food name" maxLength="160" value={row.newFoodName} onChange={(event) => updateRow(index, { newFoodName: event.target.value })} disabled={blocked || !row.currentItemId} /><RowStatus status={status} /></td>
             <td role="cell" data-label="Chef guidance"><ChefGuidance item={item} /></td>
           </tr>;
