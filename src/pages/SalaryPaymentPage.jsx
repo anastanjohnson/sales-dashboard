@@ -104,7 +104,8 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
       month: selectedPeriod.month,
       employeeName: employee.name,
       department: employee.department,
-      salary: Number(employee.salary) || 0,
+      salary: employee.salaryPending && employee.salary == null ? null : Number(employee.salary) || 0,
+      salaryPending: Boolean(employee.salaryPending && employee.salary == null),
       tips: Number(employee.tips) || 0,
     }))
     .sort((a, b) => a.department.localeCompare(b.department) || a.employeeName.localeCompare(b.employeeName)),
@@ -124,7 +125,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
 
   const startSalaryEdit = (row) => {
     if (!canEnterSalary || salaryEdit || entryStatus === "saving" || openingMonth || Object.values(rowStatus).includes("deleting")) return;
-    setSalaryEdit({ key: keyFor(row), salary: String(row.salary), tips: String(row.tips), saving: false });
+    setSalaryEdit({ key: keyFor(row), salary: row.salary == null ? "" : String(row.salary), tips: String(row.tips), saving: false });
     setSalaryEditMessage("");
     setError("");
   };
@@ -301,9 +302,11 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
       <div className="stat-grid salary-payment-summary">
         <div className="stat-card"><div className="stat-card__label">Revenue</div><div className="stat-card__value">{currency.format(Number(selectedPeriod?.revenue) || 0)}</div><div className="sales-kpi-note">{selectedMonth} 2026</div></div>
         <div className="stat-card"><div className="stat-card__label">Tips</div><div className="stat-card__value">{currency.format(Number(selectedPeriod?.totalTips) || totals.tips)}</div><div className="sales-kpi-note">Monthly restaurant tips</div></div>
-        <div className="stat-card"><div className="stat-card__label">Salary in Cash</div><div className="stat-card__value">{currency.format(totals.salary)}</div><div className="sales-kpi-note">Selected employees</div></div>
-        <div className="stat-card"><div className="stat-card__label">Payable Total</div><div className="stat-card__value">{currency.format(totals.total)}</div><div className="sales-kpi-note">Cash salary + allocated tips</div></div>
+        <div className="stat-card"><div className="stat-card__label">{selectedPeriod?.partial ? "Provisional cash balance" : "Salary in Cash"}</div><div className="stat-card__value">{currency.format(totals.salary)}</div><div className="sales-kpi-note">{rows.some((row) => row.salaryPending) ? "Recorded balances · pending salaries excluded" : "Selected employees"}</div></div>
+        <div className="stat-card"><div className="stat-card__label">{selectedPeriod?.partial ? "Provisional total" : "Payable Total"}</div><div className="stat-card__value">{currency.format(totals.total)}</div><div className="sales-kpi-note">Cash salary + allocated tips</div></div>
       </div>
+
+      {selectedPeriod?.partial && <div className="salary-payment-notice" role="status">Month in progress — cash salary balances may be negative until recorded hours are complete.</div>}
 
       <div className="panel salary-payment-panel">
         <div className="salary-panel__head">
@@ -336,7 +339,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
                 <td className="salary-payment-table__employee"><span>{row.employeeName}</span><small>{row.department}</small></td>
                 {["salary", "tips"].map((field) => <td key={field}>{editing
                   ? <div className="salary-payment-amount salary-payment-edit-amount"><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" form={editFormId} aria-label={`${field === "salary" ? "Salary" : "Tips"} for ${row.employeeName}`} value={salaryEdit[field]} onChange={(event) => setSalaryEdit((current) => ({ ...current, [field]: event.target.value }))} disabled={salaryEdit.saving} autoFocus={field === "salary"} required /></div>
-                  : currency.format(row[field])}</td>)}
+                  : field === "salary" && row.salaryPending ? "Pending" : currency.format(row[field])}</td>)}
                 <td className="salary-payment-table__total">{currency.format(row.salary + row.tips)}</td>
                 <td><div className={`salary-payment-amount ${locked ? "salary-payment-field--locked" : ""}`}><span>€</span><input type="number" min="0" max="1000000" step="0.01" inputMode="decimal" aria-label={`Paid Amount for ${row.employeeName}`} value={values.paidAmount} onChange={(event) => updateField(row, "paidAmount", event.target.value)} disabled={locked || busy || editing} required /></div></td>
                 <td><input className={`salary-payment-date ${locked ? "salary-payment-field--locked" : ""}`} type="date" aria-label={`Paid Date for ${row.employeeName}`} value={values.paidDate} onChange={(event) => updateField(row, "paidDate", event.target.value)} disabled={locked || busy || editing} required /></td>
@@ -349,7 +352,7 @@ export default function SalaryPaymentPage({ canEnterSalary = false }) {
                 </>}</div>}{!editing && !busy && paymentHint && <small id={paymentHintId} role="status" style={{ display: "block", marginTop: "6px", maxWidth: "190px", color: "var(--text-secondary, #6b7280)", lineHeight: 1.4 }}>{paymentHint}</small>}</td>
               </tr>;
             })}</tbody>
-            <tfoot><tr><td colSpan="3">Total</td><td className="salary-payment-table__total">{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
+            <tfoot><tr><td colSpan="3">{selectedPeriod?.partial ? "Provisional total" : "Total"}</td><td className="salary-payment-table__total">{currency.format(totals.total)}</td><td colSpan="3" /></tr></tfoot>
           </table>
         </div>
       </div>
