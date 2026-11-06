@@ -181,6 +181,10 @@ export const latestDailyRevenue = [
   {
     "date": "2026-11-02",
     "revenue": 589.4
+  },
+  {
+    "date": "2026-11-05",
+    "revenue": 297.4
   }
 ];
 
@@ -283,3 +287,4 @@ export const latestDailyGuests = [
     "currentCoversSource": "User-confirmed on 2026-10-06"
   }
 ];
+
