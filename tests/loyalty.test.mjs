@@ -1,4 +1,4 @@
-import {visitorChart} from '../src/loyalty/visitorChart.js';
+import {visitorChart,shiftChartDate} from '../src/loyalty/visitorChart.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MONTH_PERIODS, DAY_TYPES, visitPeriod, visitDayType, visitSlot, normalizeVisits, guestSummary, monthlyVisits, matchesVisitFilters, dinerTotals } from '../src/loyalty/model.js';
@@ -48,16 +48,38 @@ test('previous visit uses completed matched OpenTable history before the latest 
  assert.equal(guestSummary({...guest,openTableHistory:{...guest.openTableHistory,matchedPassCode:'OTHER'}}).previous,null);
 });
 
-test('visitor bars group by Monday weeks and month/year with unique pass counts',async()=>{
- const {visitorChart,shiftChartDate}=await import('../src/loyalty/visitorChart.js');
+test('visitor bars group by Monday weeks and month/year with unique pass counts',()=>{
  const guests=[{passCode:'A',visits:[{date:'2026-10-18'},{date:'2026-10-18'},{date:'2026-10-19'}]},{passCode:'B',visits:[{date:'2026-10-19'},{date:'2026-11-01'}]}];
  const daily=visitorChart(guests,'2026-10-19','day');
  assert.equal(daily.start,'2026-10-19');assert.equal(daily.end,'2026-10-25');assert.equal(daily.rows[0].guests,1);assert.equal(daily.rows.length,7);
  const weekly=visitorChart(guests,'2026-10-22','week');
- assert.equal(weekly.guests,2);assert.equal(weekly.visits,2);assert.equal(weekly.rows.find(r=>r.key==='2026-10-12').guests,1);
+ assert.equal(weekly.guests,2);assert.equal(weekly.visits,3);assert.equal(weekly.rows.find(r=>r.key==='2026-10-12').guests,1);
  assert.equal(weekly.rows.find(r=>r.key==='2026-10-19').guests,1);
  const monthly=visitorChart(guests,'2026-10-22','month');assert.equal(monthly.rows.length,3);assert.equal(monthly.rows[0].guests,2);assert.equal(monthly.rows[1].guests,1);assert.equal(monthly.guests,2);
- assert.equal(shiftChartDate('2026-01-31','week',1),'2026-02-01');assert.equal(shiftChartDate('2026-10-19','day',-1),'2026-10-12');
+ assert.equal(shiftChartDate('2026-01-31','week',1),'2026-02-02');assert.equal(shiftChartDate('2026-10-19','day',-1),'2026-10-12');
+});
+
+test('a week crossing a month boundary appears once with both months’ eligible visits',()=>{
+ const guests=[
+  {passCode:'A',visits:[{date:'2026-10-29'},{date:'2026-11-01'},{date:'2026-11-03'}]},
+  {passCode:'B',visits:[{date:'2026-10-31'}]},
+  {passCode:'C',visits:[{date:'2026-10-31'}]}
+ ];
+ const october=visitorChart(guests,'2026-10-29','week');
+ assert.equal(october.end,'2026-11-01');
+ assert.deepEqual(october.rows.at(-1),{key:'2026-10-26',label:'26 Oct',guests:3,visits:4});
+ assert.deepEqual(visitorChart(guests,'2026-11-01','week'),october);
+ const next=shiftChartDate('2026-11-01','week',1);
+ assert.equal(next,'2026-11-02');
+ const november=visitorChart(guests,next,'week');
+ assert.equal(november.start,'2026-11-02');
+ assert.equal(november.rows.some(row=>row.key==='2026-10-26'),false);
+ assert.equal(november.visits,0);
+ assert.deepEqual(visitorChart(guests,shiftChartDate(next,'week',-1),'week'),october);
+ const december=visitorChart([],'2027-01-03','week');
+ assert.equal(december.rows.at(-1).key,'2026-12-28');
+ assert.equal(december.end,'2027-01-03');
+ assert.equal(shiftChartDate('2027-01-03','week',1),'2027-01-04');
 });
 
 test('pre-opening scans remain in history but are excluded from valid visiting time slots',async()=>{

@@ -3,14 +3,20 @@ const at = date => new Date(`${date}T12:00:00Z`);
 const iso = date => date.toISOString().slice(0,10);
 const shiftDays = (date, days) => { const d=at(date); d.setUTCDate(d.getUTCDate()+days); return iso(d); };
 const monday = date => shiftDays(date,-(at(date).getUTCDay()+6)%7);
+const firstMonday = month => monday(`${month}-07`);
 export function visitorChart(guests,date,view='day') {
-  const year=date.slice(0,4), month=date.slice(0,7), buckets=[];
+  const year=date.slice(0,4), buckets=[];
   let start,end;
   if(view==='month') {
     start=`${year}-01-01`;end=`${year}-12-31`;
     for(let n=1;n<=12;n++) {const key=`${year}-${String(n).padStart(2,'0')}`;buckets.push({key,label:new Intl.DateTimeFormat('en-GB',{month:'short',timeZone:'UTC'}).format(at(`${key}-01`))});}
   } else if(view==='week') {
-    start=`${month}-01`;const d=at(start);d.setUTCMonth(d.getUTCMonth()+1,0);end=iso(d);
+    // A whole week belongs to the month in which its Monday falls.
+    const month=monday(date).slice(0,7);
+    start=firstMonday(month);
+    const d=at(`${month}-01`);
+    d.setUTCMonth(d.getUTCMonth()+1,0);
+    end=shiftDays(monday(iso(d)),6);
     for(let key=monday(start);key<=end;key=shiftDays(key,7)) buckets.push({key,label:`${key.slice(8)} ${new Intl.DateTimeFormat('en-GB',{month:'short',timeZone:'UTC'}).format(at(key))}`});
   } else {
     start=monday(date);end=shiftDays(start,6);
@@ -32,7 +38,11 @@ export function visitorChart(guests,date,view='day') {
 export function shiftChartDate(date,view,direction) {
   const d=at(date);
   if(view==='month'){d.setUTCDate(1);d.setUTCFullYear(d.getUTCFullYear()+direction);}
-  else if(view==='week'){d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+direction);}
+  else if(view==='week'){
+    const first=at(`${monday(date).slice(0,7)}-01`);
+    first.setUTCMonth(first.getUTCMonth()+direction);
+    return firstMonday(iso(first).slice(0,7));
+  }
   else d.setUTCDate(d.getUTCDate()+direction*7);
   return iso(d);
 }
