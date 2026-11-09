@@ -21,8 +21,9 @@ export const salesData = [
   { month: "Aug", monthName: "August", year: 2026, revenue: 52322.30, orders: 526, averageOrder: 99.47, tips: 2671.68, operatingDays: 23 },
   { month: "Sep", monthName: "September", year: 2026, revenue: 37864.30, orders: 400, averageOrder: 94.66, tips: 2128.54, operatingDays: 20, partial: false, asOf: "2026-09-28" },
   { month: "Oct", monthName: "October", year: 2026, revenue: 63899.53, orders: 702, averageOrder: 91.02, tips: 3463.20, operatingDays: 23, partial: false, asOf: "2026-10-31" },
-  { month: "Nov", monthName: "November", year: 2026, revenue: 8790.50, orders: 101, averageOrder: 87.03, tips: 466.80, operatingDays: 5, partial: true, asOf: "2026-11-07" },
+  { month: "Nov", monthName: "November", year: 2026, revenue: 11921.00, orders: 134, averageOrder: 88.96, tips: 641.13, operatingDays: 6, partial: true, asOf: "2026-11-08" },
 ];
+
 
 
 
