@@ -21,7 +21,7 @@ export const salesData = [
   { month: "Aug", monthName: "August", year: 2026, revenue: 52322.30, orders: 526, averageOrder: 99.47, tips: 2671.68, operatingDays: 23 },
   { month: "Sep", monthName: "September", year: 2026, revenue: 37864.30, orders: 400, averageOrder: 94.66, tips: 2128.54, operatingDays: 20, partial: false, asOf: "2026-09-28" },
   { month: "Oct", monthName: "October", year: 2026, revenue: 63899.53, orders: 702, averageOrder: 91.02, tips: 3463.20, operatingDays: 23, partial: false, asOf: "2026-10-31" },
-  { month: "Nov", monthName: "November", year: 2026, revenue: 11921.00, orders: 134, averageOrder: 88.96, tips: 641.13, operatingDays: 6, partial: true, asOf: "2026-11-08" },
+  { month: "Nov", monthName: "November", year: 2026, revenue: 13321.50, orders: 142, averageOrder: 93.81, tips: 641.13, operatingDays: 7, partial: true, asOf: "2026-11-09", revenueSource: "General Ledger plus user-confirmed 9 November revenue", ordersSource: "Recorded ledger invoice rows; 9 November ledger incomplete", tipsAsOf: "2026-11-08" },
 ];
 
 

@@ -1,7 +1,8 @@
 // Verified General Ledger totals and OpenTable Cover Trends (all shifts).
-// User-confirmed guest counts are identified on the individual records.
+// User-confirmed revenue and guest counts are identified on the individual records.
 // OpenTable comparison uses equivalent weekdays in 2025; no guest personal data.
 export const latestDailyRevenue = [
+  { date: "2026-11-09", revenue: 1400.50, source: "User-confirmed on 2026-11-10; ledger incomplete" },
   {
     "date": "2026-09-03",
     "revenue": 1360.2
@@ -201,6 +202,7 @@ export const latestDailyRevenue = [
 ];
 
 export const latestDailyGuests = [
+  { date: "2026-11-09", currentCovers: 40, currentCoversSource: "User-confirmed on 2026-11-10" },
   {
     "comparisonCovers": 88,
     "currentCovers": 62,

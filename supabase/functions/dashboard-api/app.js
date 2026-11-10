@@ -153,7 +153,12 @@ const revenueAudit = refreshedWeeklyPerformanceData.filter((week) => week.startD
     currentRevenue: roundAudit(week.days.reduce((sum, day) => sum + (day.currentRevenue || 0), 0)),
     days: week.days.map(({currentDate, currentRevenue, comparisonRevenue}) => ({currentDate,currentRevenue,comparisonRevenue})),
   }));
-console.info("Dashboard published audit " + JSON.stringify({ version: "2026-11-03-refresh", hours: hoursAudit, revenue: revenueAudit }));
+const guestAudit = refreshedWeeklyGuestData.filter((week) => week.startDate >= "2026-11-01")
+  .map((week) => ({ startDate: week.startDate, endDate: week.endDate, asOf: week.asOf, partial: week.partial,
+    currentCovers: week.currentCovers,
+    days: week.days.map(({currentDate,currentCovers}) => ({currentDate,currentCovers})),
+  }));
+console.info("Dashboard published audit " + JSON.stringify({ version: "2026-11-10-confirmed", hours: hoursAudit, revenue: revenueAudit, guests: guestAudit }));
 
 const monthKey = (value) => String(value || "").trim().slice(0, 3).toLowerCase();
 const findSalaryPaymentEmployee = (sourceData, { year, month, employeeName, department }) => {
